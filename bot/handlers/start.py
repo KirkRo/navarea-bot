@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from ..config import config
+from ..services.access import is_effectively_premium, is_owner
 from ..services.db import Database
 
 WELCOME = """Привет! Это бот-монитор навигационных предупреждений (NAVAREA/NAVTEX) для моряков.
@@ -50,13 +51,16 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     db: Database = context.bot_data["db"]
     user_id = update.effective_user.id
     areas = db.get_user_areas(user_id)
-    is_premium = db.is_premium_active(user_id)
+    is_premium = is_effectively_premium(db, user_id)
     user = db.get_user(user_id)
 
-    lines = [f"Тариф: {'Premium ⭐' if is_premium else 'Бесплатный'}"]
-    if is_premium and user and user.premium_until:
-        until = datetime.fromisoformat(user.premium_until)
-        lines.append(f"Действует до {until.strftime('%d.%m.%Y')}")
+    if is_owner(user_id):
+        lines = ["Тариф: Premium ⭐ (доступ владельца бота, без подписки)"]
+    else:
+        lines = [f"Тариф: {'Premium ⭐' if is_premium else 'Бесплатный'}"]
+        if is_premium and user and user.premium_until:
+            until = datetime.fromisoformat(user.premium_until)
+            lines.append(f"Действует до {until.strftime('%d.%m.%Y')}")
 
     limit = config.premium_areas_limit if is_premium else config.free_areas_limit
     lines.append(f"Районы ({len(areas)}/{limit}): {', '.join(areas) if areas else '—'}")

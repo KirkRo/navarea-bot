@@ -57,7 +57,7 @@ class Config:
     poll_interval_minutes: int = field(default_factory=lambda: _get_int("POLL_INTERVAL_MINUTES", 30))
 
     # --- Тарифы ---
-    free_areas_limit: int = field(default_factory=lambda: _get_int("FREE_AREAS_LIMIT", 1))
+    free_areas_limit: int = field(default_factory=lambda: _get_int("FREE_AREAS_LIMIT", 2))
     free_qa_daily_limit: int = field(default_factory=lambda: _get_int("FREE_QA_DAILY_LIMIT", 5))
     premium_areas_limit: int = field(default_factory=lambda: _get_int("PREMIUM_AREAS_LIMIT", 10))
 

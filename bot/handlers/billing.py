@@ -17,6 +17,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice, U
 from telegram.ext import ContextTypes
 
 from ..config import config
+from ..services.access import is_owner
 from ..services.db import Database
 
 SUBSCRIPTION_PERIOD_SECONDS = 2592000  # 30 дней -- единственное разрешённое значение в Bot API
@@ -26,6 +27,10 @@ INVOICE_PAYLOAD = "navarea_premium_monthly"
 async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db: Database = context.bot_data["db"]
     user_id = update.effective_user.id
+
+    if is_owner(user_id):
+        await update.message.reply_text("Ты владелец бота, Premium уже доступен без оплаты. Платить самому себе незачем 🙂")
+        return
 
     if db.is_premium_active(user_id):
         await update.message.reply_text("У тебя уже активна платная подписка ✅. /status покажет детали.")

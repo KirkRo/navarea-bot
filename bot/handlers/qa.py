@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from ..config import config
+from ..services.access import is_effectively_premium
 from ..services.claude_qa import ClaudeQA
 from ..services.db import Database
 
@@ -14,7 +15,7 @@ async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     user_id = update.effective_user.id
     question = update.message.text
 
-    is_premium = db.is_premium_active(user_id)
+    is_premium = is_effectively_premium(db, user_id)
     if not is_premium:
         allowed = db.try_consume_qa_quota(user_id, config.free_qa_daily_limit)
         if not allowed:
