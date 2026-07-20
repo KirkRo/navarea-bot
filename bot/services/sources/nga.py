@@ -180,7 +180,7 @@ class NgaSource:
 
     async def fetch_raw(self, area_code: str) -> str:
         url = build_url(area_code)
-        headers = {"User-Agent": "navarea-bot/1.0 (личный бот для мониторинга NAVAREA, некоммерческий)"}
+        headers = {"User-Agent": "navarea-bot/1.0 (personal non-commercial NAVAREA warnings monitor)"}
         async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
             resp = await client.get(url)
             resp.raise_for_status()

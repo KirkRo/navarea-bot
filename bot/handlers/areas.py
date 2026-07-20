@@ -85,8 +85,16 @@ async def _send_catchup(context: ContextTypes.DEFAULT_TYPE, user_id: int, area_c
     не дожидаясь планового цикла опроса (который может быть через 30 минут)."""
     db = context.bot_data["db"]
 
-    await fetch_and_store_area(db, area_code)  # подтягиваем самое свежее прямо сейчас
+    _new_ids, error = await fetch_and_store_area(db, area_code)  # подтягиваем самое свежее прямо сейчас
     rows = db.active_warnings(area_code, limit=CATCHUP_LIMIT)
+
+    if error and not rows:
+        await context.bot.send_message(
+            user_id,
+            f"Не получилось прямо сейчас достучаться до источника NAVAREA {area_code}. "
+            f"Бот попробует ещё раз при следующем плановом опросе.",
+        )
+        return
 
     if not rows:
         await context.bot.send_message(

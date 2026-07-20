@@ -129,7 +129,7 @@ class SpainIhmSource:
         self._timeout = timeout
 
     async def fetch_raw(self, area_code: str) -> str:
-        headers = {"User-Agent": "navarea-bot/1.0 (личный бот для мониторинга NAVAREA, некоммерческий)"}
+        headers = {"User-Agent": "navarea-bot/1.0 (personal non-commercial NAVAREA warnings monitor)"}
         async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
             resp = await client.get(URL)
             resp.raise_for_status()

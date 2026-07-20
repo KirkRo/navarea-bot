@@ -7,34 +7,66 @@
 fetch_and_store_area вынесена отдельно, чтобы её же можно было вызвать
 сразу в момент подписки на район (bot/handlers/areas.py) -- не дожидаясь
 следующего планового цикла.
+
+Если источник падает, владельцу (OWNER_IDS) прилетает сообщение в
+Telegram с точным текстом ошибки -- не нужно лезть в логи хостинга,
+чтобы узнать что именно сломалось. Чтобы не заспамить при длительном
+падении источника, повторный алерт по тому же району шлётся не чаще
+раза в ALERT_COOLDOWN_SECONDS.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 
 from telegram.ext import ContextTypes
 
+from .config import config
 from .services.sources.nga import normalize_msgnum
 from .services.sources.registry import SOURCES
 
 logger = logging.getLogger(__name__)
 
 MAX_TEXT_LEN = 3500  # запас от лимита Telegram в 4096 символов
+ALERT_COOLDOWN_SECONDS = 6 * 3600  # не чаще раза в 6 часов на один и тот же район
+
+_last_alert_at: dict[str, float] = {}
 
 
-async def fetch_and_store_area(db, area_code: str) -> list[int]:
+async def fetch_and_store_area(db, area_code: str) -> tuple[list[int], str | None]:
     """Скачивает источник района, сохраняет новые сообщения в БД (с дедупликацией
-    по тексту) и отмечает отменённые. Возвращает id только НОВЫХ записей."""
+    по тексту) и отмечает отменённые. Возвращает (id новых записей, текст ошибки или None).
+
+    Если запрос падает, делаем одну повторную попытку через паузу -- на случай
+    короткого сетевого сбоя, а не постоянной проблемы с источником."""
     source = SOURCES.get(area_code)
     if source is None:
-        return []
+        return [], None
+
+    raw = None
+    last_error: Exception | None = None
+    for attempt in range(2):
+        try:
+            raw = await source.fetch_raw(area_code)
+            last_error = None
+            break
+        except Exception as e:
+            last_error = e
+            if attempt == 0:
+                await asyncio.sleep(5)
+
+    if last_error is not None:
+        error_text = f"{type(last_error).__name__}: {last_error}"
+        logger.exception("Не удалось опросить источник %s для района %s (%s)", source.source_id, area_code, error_text, exc_info=last_error)
+        return [], error_text
 
     try:
-        raw = await source.fetch_raw(area_code)
         parsed = source.parse(area_code, raw)
-    except Exception:
-        logger.exception("Не удалось опросить источник %s для района %s", source.source_id, area_code)
-        return []
+    except Exception as e:
+        error_text = f"{type(e).__name__}: {e}"
+        logger.exception("Не удалось разобрать ответ источника %s для района %s (%s)", source.source_id, area_code, error_text)
+        return [], error_text
 
     new_ids: list[int] = []
     for warning in parsed:
@@ -55,7 +87,27 @@ async def fetch_and_store_area(db, area_code: str) -> list[int]:
             normalized = normalize_msgnum(cancelled_num) or cancelled_num
             db.mark_cancelled(area_code, normalized)
 
-    return new_ids
+    return new_ids, None
+
+
+async def _alert_owner_if_due(context: ContextTypes.DEFAULT_TYPE, area_code: str, error_text: str) -> None:
+    now = time.time()
+    last = _last_alert_at.get(area_code, 0)
+    if now - last < ALERT_COOLDOWN_SECONDS:
+        return
+    _last_alert_at[area_code] = now
+
+    text = (
+        f"⚠️ Источник NAVAREA {area_code} не отвечает.\n\n"
+        f"{error_text}\n\n"
+        f"Если это повторяется -- возможно сайт-источник поменял формат или "
+        f"блокирует запросы с сервера. Смотри bot/services/sources/ для этого района."
+    )
+    for owner_id in config.owner_ids:
+        try:
+            await context.bot.send_message(owner_id, text)
+        except Exception:
+            logger.exception("Не удалось отправить алерт владельцу %s", owner_id)
 
 
 async def poll_sources_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -67,7 +119,10 @@ async def poll_sources_job(context: ContextTypes.DEFAULT_TYPE) -> None:
             areas_in_use.add(area)
 
     for area_code in areas_in_use:
-        new_ids = await fetch_and_store_area(db, area_code)
+        new_ids, error = await fetch_and_store_area(db, area_code)
+        if error:
+            await _alert_owner_if_due(context, area_code, error)
+            continue
         if not new_ids:
             continue
 
