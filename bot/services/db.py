@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -85,6 +86,18 @@ class User:
     premium_until: Optional[str]
     qa_count_today: int
     qa_count_date: Optional[str]
+
+
+def _msgnum_sort_key(row) -> tuple[int, int]:
+    """Сортируем по году и номеру предупреждения (не по времени, когда бот его нашёл) --
+    иначе при первой подписке старые сообщения из архива могли попасть выше свежих."""
+    msgnum = row["msg_number"] or ""
+    m = re.match(r"(\d+)/(\d{2,4})", msgnum)
+    if not m:
+        return (0, 0)
+    num, year = int(m.group(1)), m.group(2)
+    year = int("20" + year) if len(year) == 2 else int(year)
+    return (year, num)
 
 
 class Database:
@@ -260,15 +273,11 @@ class Database:
     def active_warnings(self, area_code: str, limit: int = 20) -> list[sqlite3.Row]:
         with self._conn() as conn:
             rows = conn.execute(
-                """
-                SELECT * FROM warnings
-                WHERE area_code = ? AND is_cancelled = 0
-                ORDER BY first_seen_at DESC
-                LIMIT ?
-                """,
-                (area_code, limit),
+                "SELECT * FROM warnings WHERE area_code = ? AND is_cancelled = 0",
+                (area_code,),
             ).fetchall()
-        return rows
+        rows = sorted(rows, key=_msgnum_sort_key, reverse=True)
+        return rows[:limit]
 
     def get_warning(self, warning_id: int) -> Optional[sqlite3.Row]:
         with self._conn() as conn:

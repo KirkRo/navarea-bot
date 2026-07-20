@@ -26,6 +26,7 @@ from typing import Optional
 
 from .base import WarningSource
 from .nga import NgaSource
+from .peru_dhn import PeruDhnSource
 from .spain_ihm import SpainIhmSource
 from .ukho import UkhoSource
 
@@ -56,10 +57,10 @@ AREAS: dict[str, AreaInfo] = {
                     "http://www.hidro.gov.ar/", "unknown"),
     "VII": AreaInfo("VII", "Юго-восточная Атлантика (Южная Африка)", "ЮАР (SANHO)",
                      "http://www.sanho.co.za/", "unknown"),
-    "VIII": AreaInfo("VIII", "Индийский океан (север)", "Индия (Naval Hydrographic Department)",
-                      "http://www.hydrobharat.nic.in/", "unknown"),
+    "VIII": AreaInfo("VIII", "Индийский океан (север)", "Индия (National Hydrographic Office)",
+                      "https://hydrobharat.gov.in/navarea-warnings", "unknown"),
     "IX": AreaInfo("IX", "Аравийское море, Персидский залив", "Пакистан (Pakistan Navy)",
-                    "http://www.paknavy.gov.pk/hydro/", "unknown"),
+                    "https://www.paknavy.gov.pk/hydro/", "blocked"),
     "X": AreaInfo("X", "Юго-восточная часть Индийского и западная часть Тихого океана (Австралия)",
                    "Австралия (AMSA)", None, "unknown"),
     "XI": AreaInfo("XI", "Северо-западная часть Тихого океана (Япония)", "Япония (Japan Coast Guard)",
@@ -71,9 +72,9 @@ AREAS: dict[str, AreaInfo] = {
     "XIV": AreaInfo("XIV", "Юго-западная часть Тихого океана (Новая Зеландия)", "Новая Зеландия (Maritime NZ)",
                      "https://www.maritimenz.govt.nz/navarea", "blocked"),
     "XV": AreaInfo("XV", "Юго-восточная часть Тихого океана (Чили)", "Чили (SHOA)",
-                    "http://www.shoa.mil.cl/", "unknown"),
+                    "http://www.shoa.mil.cl/php/info_radioavisos.php?idioma=en", "unknown"),
     "XVI": AreaInfo("XVI", "Юго-восточная часть Тихого океана (Перу)", "Перу (DHN)",
-                     "https://www.dhn.mil.pe/radioavisos_warnings", "unknown"),
+                     "https://www.dhn.mil.pe/portal/navarea/radioavisos-warnings", "live"),
     "XVII": AreaInfo("XVII", "Северо-восточная часть Тихого океана (западная Канада)", "Канада (CCG)",
                       None, "unknown"),
     "XVIII": AreaInfo("XVIII", "Канадская Арктика / Гудзонов залив", "Канада (CCG)",
@@ -92,6 +93,7 @@ AREAS: dict[str, AreaInfo] = {
 _nga = NgaSource()
 _ukho = UkhoSource()
 _spain = SpainIhmSource()
+_peru = PeruDhnSource()
 
 SOURCES: dict[str, WarningSource] = {
     "I": _ukho,
@@ -101,6 +103,7 @@ SOURCES: dict[str, WarningSource] = {
     "XII": _nga,
     "HYDROLANT": _nga,
     "HYDROPAC": _nga,
+    "XVI": _peru,
 }
 
 LIVE_AREAS = [code for code, info in AREAS.items() if info.status == "live"]
