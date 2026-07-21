@@ -54,9 +54,12 @@ class Config:
     port: int = field(default_factory=lambda: _get_int("PORT", 8080))
 
     # --- Публичный адрес бота, чтобы строить ссылки на карту предупреждений.
-    # На Render это твой https://<имя>.onrender.com. Если не задано --
-    # бот просто даёт ссылку на Google Maps без своей страницы карты.
-    public_url: str = field(default_factory=lambda: os.getenv("PUBLIC_URL", "").strip())
+    # Приоритет: свой PUBLIC_URL, если задан -> RENDER_EXTERNAL_URL, который
+    # Render проставляет сам для веб-сервисов -> пусто (тогда бот даёт ссылку
+    # на Google Maps без своей страницы карты, актуально для Oracle без домена).
+    public_url: str = field(
+        default_factory=lambda: (os.getenv("PUBLIC_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").strip()
+    )
 
     # --- Опрос источников NAVAREA ---
     poll_interval_minutes: int = field(default_factory=lambda: _get_int("POLL_INTERVAL_MINUTES", 30))
@@ -68,6 +71,11 @@ class Config:
 
     # --- Подписка через Telegram Stars ---
     stars_price_monthly: int = field(default_factory=lambda: _get_int("STARS_PRICE_MONTHLY", 150))
+
+    def __post_init__(self) -> None:
+        if self.public_url and not self.public_url.startswith(("http://", "https://")):
+            self.public_url = f"https://{self.public_url}"
+        self.public_url = self.public_url.rstrip("/")
 
     def validate(self) -> list[str]:
         """Возвращает список проблем конфигурации (пусто = всё ок)."""
