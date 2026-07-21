@@ -21,6 +21,7 @@ NAVAREA XVI NNN/YY за один вызов (используем первую �
 """
 from __future__ import annotations
 
+import html
 import re
 
 import httpx
@@ -33,9 +34,20 @@ _BLOCK_HEADER = re.compile(r"\d+-\d{4}\s+MESSAGE IN FORCE", re.IGNORECASE)
 _MSG_REF = re.compile(r"NAVAREA\s+XVI\s+(\d+/\d{2,4})")
 _END_MARK = re.compile(r"\bNNNN\b")
 _CANCEL_REF = re.compile(r"CANCEL(?:\s+THIS\s+MESSAGE)?\s+(?:NAVAREA\s+XVI\s+)?(\d+/\d{2,4})?", re.IGNORECASE)
+_BR_TAG = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
+_ANY_TAG = re.compile(r"<[^>]+>")
+
+
+def _clean_html(raw: str) -> str:
+    """Сайт иногда отдаёт текст с <br /> вместо переносов строк -- превращаем
+    обратно в переносы, остальные теги (если попадутся) вырезаем целиком."""
+    text = _BR_TAG.sub("\n", raw)
+    text = _ANY_TAG.sub("", text)
+    return html.unescape(text)
 
 
 def parse_messages(area_code: str, raw_text: str) -> list[ParsedWarning]:
+    raw_text = _clean_html(raw_text)
     blocks = _BLOCK_HEADER.split(raw_text)[1:]  # первый кусок до первого блока -- мусор/шапка
     seen_msgnums: set[str] = set()
     results: list[ParsedWarning] = []

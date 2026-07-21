@@ -17,18 +17,21 @@ Telegram с точным текстом ошибки -- не нужно лезт
 from __future__ import annotations
 
 import asyncio
+import html as html_lib
 import logging
 import time
 
 from telegram.ext import ContextTypes
 
 from .config import config
+from .services.geo import extract_coordinates, google_maps_url
 from .services.sources.nga import normalize_msgnum
 from .services.sources.registry import SOURCES
+from .webapp import build_map_url
 
 logger = logging.getLogger(__name__)
 
-MAX_TEXT_LEN = 3500  # запас от лимита Telegram в 4096 символов
+MAX_TEXT_LEN = 3800  # запас от лимита Telegram в 4096 символов
 ALERT_COOLDOWN_SECONDS = 6 * 3600  # не чаще раза в 6 часов на один и тот же район
 
 _last_alert_at: dict[str, float] = {}
@@ -68,6 +71,9 @@ async def fetch_and_store_area(db, area_code: str) -> tuple[list[int], str | Non
         logger.exception("Не удалось разобрать ответ источника %s для района %s (%s)", source.source_id, area_code, error_text)
         return [], error_text
 
+    logger.info("Источник %s для района %s: разобрано %d сообщений в сыром ответе (%d байт)",
+                source.source_id, area_code, len(parsed), len(raw or ""))
+
     new_ids: list[int] = []
     for warning in parsed:
         if db.warning_exists(warning.raw_text):
@@ -87,6 +93,7 @@ async def fetch_and_store_area(db, area_code: str) -> tuple[list[int], str | Non
             normalized = normalize_msgnum(cancelled_num) or cancelled_num
             db.mark_cancelled(area_code, normalized)
 
+    logger.info("Источник %s для района %s: %d новых записей сохранено", source.source_id, area_code, len(new_ids))
     return new_ids, None
 
 
@@ -136,17 +143,41 @@ async def poll_sources_job(context: ContextTypes.DEFAULT_TYPE) -> None:
                 if db.already_notified(user_id, wid):
                     continue
                 try:
-                    await context.bot.send_message(user_id, text[:MAX_TEXT_LEN])
+                    await context.bot.send_message(user_id, text, parse_mode="HTML", disable_web_page_preview=True)
                     db.mark_notified(user_id, wid)
                 except Exception:
                     logger.exception("Не удалось отправить уведомление пользователю %s", user_id)
 
 
 def format_warning_message(area_code: str, row, is_new: bool = True) -> str:
+    """HTML-разметка для Telegram (parse_mode="HTML"). Координаты из текста,
+    если находятся, превращаются в ссылку на карту (свою, если задан
+    PUBLIC_URL, иначе на Google Maps по центру области)."""
     num = row["msg_number"] or "—"
     region = row["region"] or ""
     icon = "🆕" if is_new else "📋"
-    header = f"{icon} NAVAREA {area_code} №{num}"
+
+    header = f"{icon} <b>NAVAREA {html_lib.escape(area_code)} №{html_lib.escape(num)}</b>"
     if region:
-        header += f" — {region}"
-    return f"{header}\n\n{row['raw_text']}"
+        header += f"\n📍 <i>{html_lib.escape(region)}</i>"
+
+    footer = ""
+    coords = extract_coordinates(row["raw_text"])
+    if coords:
+        title = f"NAVAREA {area_code} №{num}"
+        map_url = (
+            build_map_url(config.public_url, coords, title, region)
+            if config.public_url
+            else google_maps_url(coords)
+        )
+        label = "Показать на карте" if len(coords) == 1 else f"Показать область на карте ({len(coords)} точ.)"
+        footer = f'\n\n🗺 <a href="{html_lib.escape(map_url, quote=True)}">{label}</a>'
+
+    fixed_len = len(header) + 2 + len(footer)
+    budget = max(MAX_TEXT_LEN - fixed_len, 200)
+    body_raw = row["raw_text"]
+    if len(body_raw) > budget:
+        body_raw = body_raw[:budget].rsplit(" ", 1)[0] + "…"
+    body = html_lib.escape(body_raw)
+
+    return f"{header}\n\n{body}{footer}"

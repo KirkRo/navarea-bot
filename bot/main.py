@@ -19,10 +19,10 @@ from telegram.ext import (
 
 from .config import config
 from .handlers import admin, areas, billing, qa, start, warnings
-from .health import start_health_server
 from .scheduler import poll_sources_job
 from .services.claude_qa import ClaudeQA
 from .services.db_factory import build_database
+from .webapp import start_web_server
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -42,7 +42,7 @@ def build_application() -> Application:
 
     application = Application.builder().token(config.bot_token).build()
 
-    start_health_server(config.port)
+    start_web_server(config.port)
 
     db = build_database(config.database_url, config.db_path)
     qa_client = ClaudeQA(config.anthropic_api_key, config.claude_model, config.claude_max_tokens)

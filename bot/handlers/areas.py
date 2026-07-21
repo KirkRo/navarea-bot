@@ -13,7 +13,6 @@ from ..services.sources.registry import AREAS, POLLABLE_AREAS
 logger = logging.getLogger(__name__)
 
 CALLBACK_PREFIX = "area:"
-MAX_TEXT_LEN = 3500
 CATCHUP_LIMIT = 15  # чтобы не заспамить при районе с большим числом действующих предупреждений
 
 
@@ -22,7 +21,7 @@ def _build_keyboard(subscribed: list[str]) -> InlineKeyboardMarkup:
     for code in POLLABLE_AREAS:
         mark = "✅" if code in subscribed else "▫️"
         info = AREAS[code]
-        rows.append([InlineKeyboardButton(f"{mark} NAVAREA {code} — {info.name}", callback_data=f"{CALLBACK_PREFIX}{code}")])
+        rows.append([InlineKeyboardButton(f"{mark} {code} — {info.name}", callback_data=f"{CALLBACK_PREFIX}{code}")])
     rows.append([InlineKeyboardButton("Готово", callback_data=f"{CALLBACK_PREFIX}done")])
     return InlineKeyboardMarkup(rows)
 
@@ -107,7 +106,7 @@ async def _send_catchup(context: ContextTypes.DEFAULT_TYPE, user_id: int, area_c
     for row in rows:
         text = format_warning_message(area_code, row, is_new=False)
         try:
-            await context.bot.send_message(user_id, text[:MAX_TEXT_LEN])
+            await context.bot.send_message(user_id, text, parse_mode="HTML", disable_web_page_preview=True)
             db.mark_notified(user_id, row["id"])
         except Exception:
             logger.exception("Не удалось отправить предупреждение %s пользователю %s", row["id"], user_id)

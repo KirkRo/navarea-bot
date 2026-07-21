@@ -36,51 +36,49 @@ from .base import ParsedWarning
 
 URL = "https://armada.defensa.gob.es/ihm/XML/navareas_crudo.xml"
 
-# "1.- DRILLING OPERATIONS BY FATIH ... 2.- CANCEL THIS MESSAGE ... 3.- CANCEL NAVAREA III 0037/26"
-_ES_EN_SPLIT = re.compile(r"NAVAREA III IN FORCE ON", re.IGNORECASE)
-_PARAGRAPH = re.compile(r"(?:^|\s)(\d+)\.-\s")
-_CANCEL_REF = re.compile(r"CANCEL(?:AR)?\s+(?:NAVAREA\s*III\s*)?(\d+/\d{2,4})", re.IGNORECASE)
 _IN_FORCE_LIST = re.compile(r"IN FORCE ON.*?UTC\.?\s*((?:\d{4}:[\d, ]+\s*)+)", re.IGNORECASE)
 
-# Стандартные сноски, которые повторяются в каждом дайджесте -- не настоящие
-# предупреждения, отсеиваем по подстроке.
+# Настоящий якорь одной записи: 6-значный код, номер/год, ISO-дата, дальше акватория.
+# Например: "220124 0124/22 2022-03-23T00:00:00 MAR NEGRO BLACK SEA"
+_RECORD_MARKER = re.compile(
+    r"\d{6}\s+(\d+)[/-](\d{2,4})\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\s+[A-ZÁÉÍÓÚÑÜ /]{3,60}"
+)
+_CANCEL_REF = re.compile(r"CANCEL(?:AR)?\s+(?:NAVAREA\s*III\s*)?(\d+[/-]\d{2,4})", re.IGNORECASE)
+
 _BOILERPLATE = (
     "ARE TRANSMITTED DAILY BY SAFETYNET",
     "ARE AVAILABLE ON THE WEBSITE",
     "ARE ALSO PUBLISHED IN THE WEEKLY GROUP",
-    "CANCEL THIS MESSAGE ON",
 )
 
 
 def _strip_tags(raw: str) -> str:
     try:
         root = ET.fromstring(raw)
-        return " ".join(root.itertext())
+        text = " ".join(root.itertext())
     except ET.ParseError:
         # не well-formed XML (или это HTML-обёртка) -- грубо срезаем теги
-        return re.sub(r"<[^>]+>", " ", raw)
-
-
-def parse_english_text(raw: str) -> str:
-    """Документ двуязычный: испанский блок, потом английский. Берём английский."""
-    text = _strip_tags(raw)
-    text = re.sub(r"\s+", " ", text).strip()
-    m = _ES_EN_SPLIT.search(text)
-    return text[m.start():] if m else text
+        text = re.sub(r"<[^>]+>", " ", raw)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def parse_messages(area_code: str, raw_text: str) -> list[ParsedWarning]:
     """
-    Эвристический разбор: ищем список номеров из блока "IN FORCE ON ...",
-    затем режем оставшийся текст на пронумерованные абзацы "N.- ...".
-    Это не даёт чистого msg_number на каждое сообщение (в отличие от NGA/UKHO),
-    поэтому raw_text каждого фрагмента стоит целиком отдавать в Q&A/уведомление,
-    а не полагаться на msg_number для дедупликации -- для этого есть text_hash в БД.
+    Каждую отдельную запись подряд открывает узнаваемый маркер: шестизначный
+    код, номер/год, ISO-дата и следом акватория заглавными буквами. Это
+    надёжнее, чем резать по пронумерованным абзацам "N.-", потому что не
+    путает испанскую и английскую версию одного и того же предупреждения
+    между собой и не путает сноски-примечания с отдельными сообщениями.
+
+    Само содержимое между двумя маркерами по-прежнему двуязычное (испанский
+    и английский текст вперемешку) -- разделять его чисто не получилось
+    без доступа к сырым тегам XML, поэтому оба языка остаются в одном
+    сообщении. Не идеально, но статус "experimental" в реестре и так
+    предупреждает об этом.
     """
-    text = parse_english_text(raw_text)
+    text = _strip_tags(raw_text)
     results: list[ParsedWarning] = []
 
-    # 1) сводка "какие номера сейчас действуют" -- отдаём отдельным служебным сообщением
     force_match = _IN_FORCE_LIST.search(text)
     if force_match:
         results.append(
@@ -95,23 +93,27 @@ def parse_messages(area_code: str, raw_text: str) -> list[ParsedWarning]:
             )
         )
 
-    # 2) пронумерованные абзацы с конкретными опасностями
-    matches = list(_PARAGRAPH.finditer(text))
+    matches = list(_RECORD_MARKER.finditer(text))
+    seen: set[str] = set()
     for i, m in enumerate(matches):
-        start = m.start()
+        msgnum = f"{m.group(1)}/{m.group(2)}"
+        if msgnum in seen:
+            continue
+        seen.add(msgnum)
+
+        start = m.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         body = text[start:end].strip()
-        if len(body) < 20:
+        if len(body) < 15 or any(phrase in body.upper() for phrase in _BOILERPLATE):
             continue
-        if any(phrase in body.upper() for phrase in _BOILERPLATE):
-            continue
-        cancels = _CANCEL_REF.findall(body)
+
+        cancels = [c.replace("-", "/") for c in _CANCEL_REF.findall(body)]
         results.append(
             ParsedWarning(
                 area_code=area_code,
-                msg_number=None,
+                msg_number=msgnum,
                 category=None,
-                issued_at_raw=None,
+                issued_at_raw=m.group(3),
                 region="MEDITERRANEAN / BLACK SEA / AZOV SEA",
                 raw_text=body,
                 cancels=cancels,

@@ -53,6 +53,11 @@ class Config:
     # На Oracle просто не используется.
     port: int = field(default_factory=lambda: _get_int("PORT", 8080))
 
+    # --- Публичный адрес бота, чтобы строить ссылки на карту предупреждений.
+    # На Render это твой https://<имя>.onrender.com. Если не задано --
+    # бот просто даёт ссылку на Google Maps без своей страницы карты.
+    public_url: str = field(default_factory=lambda: os.getenv("PUBLIC_URL", "").strip())
+
     # --- Опрос источников NAVAREA ---
     poll_interval_minutes: int = field(default_factory=lambda: _get_int("POLL_INTERVAL_MINUTES", 30))
 
