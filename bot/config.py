@@ -72,6 +72,11 @@ class Config:
     # --- Подписка через Telegram Stars ---
     stars_price_monthly: int = field(default_factory=lambda: _get_int("STARS_PRICE_MONTHLY", 150))
 
+    # --- Sealagom (платный агрегатор всех 21 района NAVAREA, $20/мес) ---
+    # Если задан -- используется вместо собственных скрейперов (NGA/UKHO/Peru/Spain)
+    # сразу для всех районов. Если пусто -- работают только свои источники.
+    sealagom_api_token: str = field(default_factory=lambda: os.getenv("SEALAGOM_API_TOKEN", "").strip())
+
     def __post_init__(self) -> None:
         if self.public_url and not self.public_url.startswith(("http://", "https://")):
             self.public_url = f"https://{self.public_url}"
