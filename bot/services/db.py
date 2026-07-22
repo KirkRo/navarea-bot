@@ -253,6 +253,29 @@ class Database:
     ) -> Optional[int]:
         h = text_hash(raw_text)
         with self._conn() as conn:
+            # Если у сообщения есть номер и для этого района уже есть запись с таким
+            # же номером -- обновляем её, а не плодим дубль (актуально когда источник
+            # переотдаёт тот же номер с чуть другим текстом, например после починки
+            # парсера на нашей стороне).
+            if msg_number:
+                existing = conn.execute(
+                    "SELECT id, text_hash FROM warnings WHERE area_code = ? AND msg_number = ?",
+                    (area_code, msg_number),
+                ).fetchone()
+                if existing:
+                    if existing["text_hash"] == h:
+                        return None  # текст не поменялся, показывать как новое не нужно
+                    conn.execute(
+                        """
+                        UPDATE warnings
+                        SET source = ?, category = ?, issued_at = ?, region = ?,
+                            raw_text = ?, text_hash = ?, first_seen_at = ?, is_cancelled = 0
+                        WHERE id = ?
+                        """,
+                        (source, category, issued_at, region, raw_text, h, _now(), existing["id"]),
+                    )
+                    return existing["id"]
+
             cur = conn.execute(
                 """
                 INSERT OR IGNORE INTO warnings

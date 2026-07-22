@@ -3,6 +3,7 @@ from __future__ import annotations
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from ..scheduler import format_warning_message
 from ..services.claude_qa import ClaudeQA
 from ..services.db import Database
 
@@ -22,15 +23,10 @@ async def cmd_active(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         if not rows:
             continue
         any_sent = True
-        lines = [f"NAVAREA {area}, действующие ({len(rows)}):\n"]
-        for r in rows:
-            num = r["msg_number"] or "—"
-            region = r["region"] or ""
-            preview = r["raw_text"][:200].replace("\n", " ")
-            lines.append(f"№{num} {region}\n{preview}…\n")
-        text = "\n".join(lines)
-        for i in range(0, len(text), 3500):
-            await update.message.reply_text(text[i:i + 3500])
+        await update.message.reply_text(f"NAVAREA {area}, действующие ({len(rows)}):")
+        for row in rows:
+            text = format_warning_message(area, row, is_new=False)
+            await update.message.reply_text(text, parse_mode="HTML", disable_web_page_preview=True)
 
     if not any_sent:
         await update.message.reply_text(

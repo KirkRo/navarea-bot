@@ -264,6 +264,26 @@ class PostgresDatabase:
     ) -> Optional[int]:
         h = text_hash(raw_text)
         with self._conn() as conn, conn.cursor() as cur:
+            if msg_number:
+                cur.execute(
+                    "SELECT id, text_hash FROM warnings WHERE area_code = %s AND msg_number = %s",
+                    (area_code, msg_number),
+                )
+                existing = cur.fetchone()
+                if existing:
+                    if existing["text_hash"] == h:
+                        return None
+                    cur.execute(
+                        """
+                        UPDATE warnings
+                        SET source = %s, category = %s, issued_at = %s, region = %s,
+                            raw_text = %s, text_hash = %s, first_seen_at = %s, is_cancelled = 0
+                        WHERE id = %s
+                        """,
+                        (source, category, issued_at, region, raw_text, h, _now(), existing["id"]),
+                    )
+                    return existing["id"]
+
             cur.execute(
                 """
                 INSERT INTO warnings
