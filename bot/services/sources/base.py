@@ -36,3 +36,29 @@ class WarningSource(Protocol):
     def parse(self, area_code: str, raw_text: str) -> list[ParsedWarning]:
         """Разобрать сырой текст на отдельные сообщения."""
         ...
+
+
+class FallbackSource:
+    """Пробует primary; если он прямо сейчас недоступен (сеть, 4xx/5xx,
+    что угодно) -- прозрачно переходит на fallback. parse() потом
+    использует тот же источник, который реально ответил на fetch_raw()."""
+
+    def __init__(self, primary: WarningSource, fallback: WarningSource):
+        self._primary = primary
+        self._fallback = fallback
+        self._last_used: WarningSource = primary
+        self.source_id = f"{primary.source_id}(+{fallback.source_id} fallback)"
+        self.covers_areas = primary.covers_areas
+
+    async def fetch_raw(self, area_code: str) -> str:
+        try:
+            raw = await self._primary.fetch_raw(area_code)
+            self._last_used = self._primary
+            return raw
+        except Exception:
+            raw = await self._fallback.fetch_raw(area_code)
+            self._last_used = self._fallback
+            return raw
+
+    def parse(self, area_code: str, raw_text: str) -> list[ParsedWarning]:
+        return self._last_used.parse(area_code, raw_text)

@@ -104,26 +104,55 @@ class SealagomSource:
     source_id = "sealagom"
     covers_areas = list(ROMAN_TO_ID.keys())
 
-    def __init__(self, api_token: str, timeout: float = 25.0, cache_seconds: float = 60.0):
+    _MINIMAL_PARAMS = {"include_messages": "true"}
+
+    def __init__(self, api_token: str, timeout: float = 25.0, cache_seconds: float = 60.0, error_cache_seconds: float = 45.0):
         self._api_token = api_token
         self._timeout = timeout
         self._cache_seconds = cache_seconds
+        self._error_cache_seconds = error_cache_seconds
         self._cache: Optional[dict] = None
         self._cache_at: float = 0.0
+        self._last_error: Optional[Exception] = None
+        self._last_error_at: float = 0.0
+
+    async def _request(self, params: dict) -> dict:
+        headers = {"X-API-Token": self._api_token}
+        async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
+            resp = await client.get(NAVAREA_URL, params=params)
+            resp.raise_for_status()
+            return resp.json()
 
     async def _fetch_all(self) -> dict:
         now = time.time()
         if self._cache is not None and (now - self._cache_at) < self._cache_seconds:
             return self._cache
 
-        headers = {"X-API-Token": self._api_token}
-        async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
-            resp = await client.get(NAVAREA_URL, params=_NAVAREA_PARAMS)
-            resp.raise_for_status()
-            data = resp.json()
+        # Если недавно уже падало -- не долбимся по API на каждый следующий
+        # район в этом же цикле опроса, сразу отдаём ту же ошибку.
+        if self._last_error is not None and (now - self._last_error_at) < self._error_cache_seconds:
+            raise self._last_error
 
-        self._cache = data
-        self._cache_at = now
+        try:
+            data = await self._request(_NAVAREA_PARAMS)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 403:
+                # Может быть запрошены параметры не по тарифу (coordinates/keywords/
+                # архив требуют Full) -- пробуем облегчённый запрос как запасной вариант.
+                try:
+                    data = await self._request(self._MINIMAL_PARAMS)
+                except Exception as e2:
+                    self._last_error, self._last_error_at = e2, now
+                    raise
+            else:
+                self._last_error, self._last_error_at = e, now
+                raise
+        except Exception as e:
+            self._last_error, self._last_error_at = e, now
+            raise
+
+        self._cache, self._cache_at = data, now
+        self._last_error = None
         return data
 
     async def fetch_raw(self, area_code: str) -> str:

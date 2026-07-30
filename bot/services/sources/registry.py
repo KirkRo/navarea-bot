@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ...config import config
-from .base import WarningSource
+from .base import FallbackSource, WarningSource
 from .nga import NgaSource
 from .peru_dhn import PeruDhnSource
 from .sealagom import SealagomSource
@@ -120,22 +120,29 @@ SOURCES: dict[str, WarningSource] = dict(_OWN_SOURCES)
 if config.sealagom_api_token:
     _sealagom = SealagomSource(config.sealagom_api_token)
     for _roman_code in SealagomSource.covers_areas:
-        SOURCES[_roman_code] = _sealagom
+        if _roman_code in _OWN_SOURCES:
+            # для этого района уже есть свой скрейпер -- используем Sealagom
+            # как основной источник, а свой скрейпер как запасной на случай
+            # если Sealagom прямо сейчас недоступен (см. FallbackSource)
+            SOURCES[_roman_code] = FallbackSource(_sealagom, _OWN_SOURCES[_roman_code])
+        else:
+            SOURCES[_roman_code] = _sealagom
         if _roman_code not in AREAS:
             AREAS[_roman_code] = AreaInfo(_roman_code, _roman_code, "Sealagom", "https://www.sealagom.com/", "live")
 
 # Статус "live" считаем динамически: если Sealagom настроен, все районы,
 # которые он покрывает, живые независимо от того, что написано в AREAS
 # статически (та таблица -- результат ручного разбора БЕЗ Sealagom).
+# Отдельно III остаётся "experimental" пока Sealagom не настроен -- в
+# одиночку это по-прежнему разбор с оговорками (см. spain_ihm.py).
 def _effective_status(code: str, info: "AreaInfo") -> str:
-    if code in SOURCES:
-        source = SOURCES[code]
-        if config.sealagom_api_token and code in SealagomSource.covers_areas:
-            return "live"
-        if source is _spain:
-            return "experimental"
+    if code not in SOURCES:
+        return info.status
+    if config.sealagom_api_token and code in SealagomSource.covers_areas:
         return "live"
-    return info.status
+    if code == "III":
+        return "experimental"
+    return "live"
 
 
 LIVE_AREAS = [code for code, info in AREAS.items() if _effective_status(code, info) == "live"]
