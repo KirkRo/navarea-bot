@@ -1,31 +1,253 @@
 """
-Маленький HTTP-сервер на стандартной библиотеке, без новых зависимостей.
-Делает две вещи:
+HTTP-сервер бота на стандартной библиотеке (без Flask/FastAPI, чтобы не
+тянуть зависимости). Отдаёт:
 
-  1) отвечает "OK" на любой левый запрос -- нужно, чтобы Render видел, что
-     процесс слушает порт, и чтобы внешний пинг-сервис мог будить бота
-     на бесплатном тарифе (см. README, вариант хостинга Б);
+  /                  health-check ("OK") -- по нему Render понимает, что
+                     процесс жив, и внешний пинг-сервис будит бота
+  /app               Telegram Mini App (одностраничное приложение)
+  /map               отдельная страница карты для ссылок из сообщений бота
+  /api/stats         сводка по всем районам (кэш STATS_TTL секунд)
+  /api/warnings      список/поиск предупреждений
+  /api/favorites     избранные районы (GET) и переключение
+  /api/ports         поиск порта по названию
+  /api/voyage        предупреждения вдоль маршрута между двумя портами
 
-  2) отдаёт /map?pts=...&title=...&info=... -- страницу с картой
-     (Leaflet + OpenStreetMap, без ключей API) с отмеченными координатами
-     из конкретного предупреждения. Одна точка -- маркер, две и больше --
-     контур области с точками, при клике всплывает подсказка с текстом.
-
-На варианте хостинга Oracle этот сервер тоже поднимается, просто ссылки
-на карту будут работать только если в .env заполнен PUBLIC_URL (см. FAQ
-в README) -- иначе бот использует запасной вариант со ссылкой на Google
-Maps на середину области, без своей страницы.
+Все /api/* отдают JSON. Данные, привязанные к пользователю (избранное),
+доступны только после проверки подписи Telegram initData -- иначе кто
+угодно мог бы читать и менять чужое избранное, зная user_id.
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from string import Template
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 logger = logging.getLogger(__name__)
+
+STATS_TTL = 30.0  # секунд, кэш статистики
+
+_state: dict = {"db": None, "bot_token": "", "started_at": time.time()}
+_stats_cache: dict = {"data": None, "at": 0.0}
+
+
+# ---------------------------------------------------------------------- #
+# Проверка подписи Telegram Mini App
+# ---------------------------------------------------------------------- #
+
+def validate_init_data(init_data: str, bot_token: str) -> dict | None:
+    """Проверяет подпись initData из Telegram.WebApp и возвращает данные
+    пользователя. None -- если подпись неверная или её нет.
+
+    Алгоритм из документации Telegram: secret = HMAC_SHA256("WebAppData",
+    bot_token), затем HMAC_SHA256(secret, отсортированные пары ключ=значение)
+    должен совпасть с полем hash."""
+    if not init_data or not bot_token:
+        return None
+    try:
+        received_hash = None
+        data_pairs = []
+        for pair in init_data.split("&"):
+            if not pair:
+                continue
+            key, _, value = pair.partition("=")
+            if key == "hash":
+                received_hash = value
+            else:
+                data_pairs.append((key, unquote(value)))
+        if not received_hash:
+            return None
+
+        check_string = "\n".join(f"{k}={v}" for k, v in sorted(data_pairs))
+        secret = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
+        computed = hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(computed, received_hash):
+            return None
+
+        for k, v in data_pairs:
+            if k == "user":
+                return json.loads(v)
+        return None
+    except Exception:
+        logger.exception("Не удалось проверить initData")
+        return None
+
+
+def _user_id_from_query(query: dict) -> int | None:
+    init_data = (query.get("initData") or [""])[0]
+    user = validate_init_data(init_data, _state["bot_token"])
+    if not user:
+        return None
+    uid = user.get("id")
+    return int(uid) if uid else None
+
+
+# ---------------------------------------------------------------------- #
+# Данные для API
+# ---------------------------------------------------------------------- #
+
+def _row_to_dict(row, with_coords: bool = True) -> dict:
+    from .services.geo import extract_coordinates
+
+    data = {
+        "id": row["id"],
+        "area_code": row["area_code"],
+        "msg_number": row["msg_number"],
+        "region": row["region"],
+        "text": row["raw_text"],
+        "issued_at": row["issued_at"],
+        "first_seen_at": row["first_seen_at"],
+        "is_cancelled": bool(row["is_cancelled"]),
+    }
+    if with_coords:
+        data["coords"] = extract_coordinates(row["raw_text"])[:40]
+    return data
+
+
+def _build_stats() -> dict:
+    from .services.sources.registry import AREAS, POLLABLE_AREAS
+
+    db = _state["db"]
+    per_area = db.area_stats()
+
+    areas = []
+    for code in POLLABLE_AREAS:
+        info = AREAS.get(code)
+        s = per_area.get(code, {})
+        areas.append({
+            "code": code,
+            "name": info.name if info else code,
+            "coordinator": info.coordinator if info else "",
+            "in_force": s.get("in_force", 0),
+            "archived": s.get("archived", 0),
+            "added_today": s.get("added_today", 0),
+            "added_week": s.get("added_week", 0),
+            "last_update": s.get("last_update"),
+        })
+
+    totals = {
+        "in_force": sum(a["in_force"] for a in areas),
+        "archived": sum(a["archived"] for a in areas),
+        "added_today": sum(a["added_today"] for a in areas),
+        "added_week": sum(a["added_week"] for a in areas),
+        "areas_count": len(areas),
+    }
+    last_update = max((a["last_update"] for a in areas if a["last_update"]), default=None)
+
+    return {
+        "totals": totals,
+        "areas": areas,
+        "last_update": last_update,
+        "server": {
+            "status": "ok",
+            "uptime_seconds": int(time.time() - _state["started_at"]),
+            "synced_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+    }
+
+
+def _cached_stats() -> dict:
+    now = time.time()
+    if _stats_cache["data"] is not None and (now - _stats_cache["at"]) < STATS_TTL:
+        return _stats_cache["data"]
+    data = _build_stats()
+    _stats_cache["data"], _stats_cache["at"] = data, now
+    return data
+
+
+def invalidate_stats_cache() -> None:
+    """Вызывается после сохранения новых предупреждений, чтобы Mini App
+    сразу увидел свежие цифры, не дожидаясь истечения TTL."""
+    _stats_cache["data"] = None
+
+
+# ---------------------------------------------------------------------- #
+# Маршруты API
+# ---------------------------------------------------------------------- #
+
+def _api_stats(query: dict) -> dict:
+    return _cached_stats()
+
+
+def _api_warnings(query: dict) -> dict:
+    db = _state["db"]
+    q = (query.get("q") or [""])[0].strip()
+    areas = [a for a in (query.get("area") or []) if a]
+    include_archived = (query.get("archived") or ["0"])[0] == "1"
+    limit = min(int((query.get("limit") or ["200"])[0]), 500)
+
+    rows = db.search_warnings(query=q, areas=areas or None,
+                              include_archived=include_archived, limit=limit)
+    return {"count": len(rows), "results": [_row_to_dict(r) for r in rows]}
+
+
+def _api_favorites(query: dict) -> dict:
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"error": "unauthorized", "favorites": []}
+
+    toggle = (query.get("toggle") or [""])[0].strip()
+    if toggle:
+        db.toggle_favorite(user_id, toggle)
+    return {"favorites": db.get_favorites(user_id)}
+
+
+def _api_ports(query: dict) -> dict:
+    from .services.voyage import find_ports
+
+    q = (query.get("q") or [""])[0]
+    return {"results": [
+        {"name": p.name, "country": p.country, "lat": p.lat, "lon": p.lon, "label": p.label}
+        for p in find_ports(q)
+    ]}
+
+
+def _api_voyage(query: dict) -> dict:
+    from .services.voyage import (great_circle_points, haversine_nm,
+                                  resolve_point, warnings_on_route)
+
+    db = _state["db"]
+    src = (query.get("from") or [""])[0]
+    dst = (query.get("to") or [""])[0]
+    corridor = float((query.get("corridor") or ["150"])[0])
+
+    a, b = resolve_point(src), resolve_point(dst)
+    if not a or not b:
+        missing = "отправления" if not a else "прибытия"
+        return {"error": f"Не удалось определить порт {missing}. Попробуй другое название или введи координаты."}
+
+    route = great_circle_points(a, b)
+    found = warnings_on_route(route, db.all_active_warnings(), corridor_nm=corridor)
+
+    return {
+        "from": {"label": a.label, "lat": a.lat, "lon": a.lon},
+        "to": {"label": b.label, "lat": b.lat, "lon": b.lon},
+        "distance_nm": round(haversine_nm(a.lat, a.lon, b.lat, b.lon)),
+        "corridor_nm": corridor,
+        "route": [[round(la, 3), round(lo, 3)] for la, lo in route],
+        "count": len(found),
+        "results": found,
+    }
+
+
+API_ROUTES = {
+    "/api/stats": _api_stats,
+    "/api/warnings": _api_warnings,
+    "/api/favorites": _api_favorites,
+    "/api/ports": _api_ports,
+    "/api/voyage": _api_voyage,
+}
+
+
+# ---------------------------------------------------------------------- #
+# Страница карты (для ссылок из сообщений бота)
+# ---------------------------------------------------------------------- #
 
 _MAP_TEMPLATE = Template("""<!DOCTYPE html>
 <html>
@@ -34,7 +256,7 @@ _MAP_TEMPLATE = Template("""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>$title</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>html,body,#map{height:100%;margin:0;font-family:sans-serif}</style>
+<style>html,body,#map{height:100%;margin:0;font-family:system-ui,sans-serif}</style>
 </head>
 <body>
 <div id="map"></div>
@@ -44,19 +266,16 @@ var points = $points_json;
 var popupHtml = $popup_json;
 var map = L.map('map');
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors'
+    maxZoom: 18, attribution: '&copy; OpenStreetMap'
 }).addTo(map);
-
 var layer;
 if (points.length <= 1) {
-    var p = points[0];
-    layer = L.marker(p).addTo(map);
-    map.setView(p, 9);
+    layer = L.marker(points[0]).addTo(map);
+    map.setView(points[0], 9);
 } else {
-    layer = L.polygon(points, {color: '#e8a33e', weight: 3, fillOpacity: 0.15}).addTo(map);
-    points.forEach(function(p) { L.circleMarker(p, {radius: 5, color: '#e8a33e'}).addTo(map); });
-    map.fitBounds(layer.getBounds(), {padding: [30, 30]});
+    layer = L.polygon(points, {color:'#e8a33e', weight:3, fillOpacity:0.15}).addTo(map);
+    points.forEach(function(p){ L.circleMarker(p, {radius:5, color:'#e8a33e'}).addTo(map); });
+    map.fitBounds(layer.getBounds(), {padding:[30,30]});
 }
 layer.bindPopup(popupHtml).openPopup();
 </script>
@@ -66,9 +285,9 @@ layer.bindPopup(popupHtml).openPopup();
 
 
 def _render_map(query: dict) -> bytes:
-    raw_pts = query.get("pts", [""])[0]
-    title = query.get("title", ["NAVAREA"])[0]
-    info = query.get("info", [""])[0]
+    raw_pts = (query.get("pts") or [""])[0]
+    title = (query.get("title") or ["NAVAREA"])[0]
+    info = (query.get("info") or [""])[0]
 
     points = []
     for pair in raw_pts.split(";"):
@@ -86,45 +305,64 @@ def _render_map(query: dict) -> bytes:
     popup = f"<b>{title}</b>"
     if info:
         popup += f"<br>{info}"
+    return _MAP_TEMPLATE.substitute(
+        title=title, points_json=json.dumps(points), popup_json=json.dumps(popup)
+    ).encode("utf-8")
 
-    html = _MAP_TEMPLATE.substitute(
-        title=title,
-        points_json=json.dumps(points),
-        popup_json=json.dumps(popup),
-    )
-    return html.encode("utf-8")
 
+# ---------------------------------------------------------------------- #
+# HTTP
+# ---------------------------------------------------------------------- #
 
 class _Handler(BaseHTTPRequestHandler):
+    def _send(self, code: int, content_type: str, body: bytes) -> None:
+        self.send_response(code)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path == "/map":
-            query = parse_qs(parsed.query)
-            body = _render_map(query)
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(body)
-            return
+        path = parsed.path.rstrip("/") or "/"
+        query = parse_qs(parsed.query)
 
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"navarea-bot: OK")
+        try:
+            if path in API_ROUTES:
+                data = API_ROUTES[path](query)
+                self._send(200, "application/json; charset=utf-8",
+                           json.dumps(data, ensure_ascii=False).encode("utf-8"))
+                return
 
-    def log_message(self, format: str, *args) -> None:  # noqa: A002 -- глушим стандартный access-лог
+            if path == "/map":
+                self._send(200, "text/html; charset=utf-8", _render_map(query))
+                return
+
+            if path == "/app":
+                from .miniapp import MINI_APP_HTML
+                self._send(200, "text/html; charset=utf-8", MINI_APP_HTML.encode("utf-8"))
+                return
+
+            self._send(200, "text/plain; charset=utf-8", b"navarea-bot: OK")
+        except Exception as e:
+            logger.exception("Ошибка при обработке %s", self.path)
+            self._send(500, "application/json; charset=utf-8",
+                       json.dumps({"error": str(e)}).encode("utf-8"))
+
+    def log_message(self, format: str, *args) -> None:  # глушим стандартный access-лог
         pass
 
 
-def start_web_server(port: int) -> None:
+def start_web_server(port: int, db=None, bot_token: str = "") -> None:
+    _state["db"] = db
+    _state["bot_token"] = bot_token
+    _state["started_at"] = time.time()
     server = ThreadingHTTPServer(("0.0.0.0", port), _Handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    logger.info("Веб-сервер (health-check + карта) поднят на порту %s", port)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logger.info("Веб-сервер (Mini App + API + карта) поднят на порту %s", port)
 
 
 def build_map_url(public_url: str, coords: list[tuple[float, float]], title: str, info: str = "") -> str:
-    from urllib.parse import quote
-
     pts = ";".join(f"{lat},{lon}" for lat, lon in coords)
     return f"{public_url.rstrip('/')}/map?pts={quote(pts)}&title={quote(title)}&info={quote(info[:200])}"

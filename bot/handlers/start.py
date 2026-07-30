@@ -26,6 +26,7 @@ GMDSS/NAVTEX на судне. Это вспомогательный инстру
 
 HELP = """Команды:
 
+/app -- открыть приложение (карта, статистика, планирование рейса)
 /areas -- выбрать районы NAVAREA для отслеживания
 /sources -- официальный источник по каждому из 21 района NAVAREA
 /active -- действующие предупреждения по твоим районам
@@ -73,3 +74,24 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         lines.append("Вопросы Claude: без лимита")
 
     await update.message.reply_text("\n".join(lines))
+
+
+async def cmd_app(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Запасной способ открыть Mini App -- кнопкой в сообщении. Основной
+    путь -- постоянная кнопка слева от поля ввода (см. setup_menu_button)."""
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+
+    if not config.public_url:
+        await update.message.reply_text(
+            "Mini App пока недоступен: у бота нет публичного адреса. "
+            "На Render он подставляется сам, на своём сервере нужно задать PUBLIC_URL в .env."
+        )
+        return
+
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("🛰 Открыть NAVAREA Monitor", web_app=WebAppInfo(url=f"{config.public_url}/app"))
+    ]])
+    await update.message.reply_text(
+        "Панель, карта, поиск и планирование перехода:",
+        reply_markup=keyboard,
+    )

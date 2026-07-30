@@ -105,6 +105,7 @@ class SealagomSource:
     covers_areas = list(ROMAN_TO_ID.keys())
 
     _MINIMAL_PARAMS = {"include_messages": "true"}
+    _MAX_PAGES = 50  # страховка от бесконечного цикла, если "next" зациклится
 
     def __init__(self, api_token: str, timeout: float = 25.0, cache_seconds: float = 60.0, error_cache_seconds: float = 45.0):
         self._api_token = api_token
@@ -117,11 +118,26 @@ class SealagomSource:
         self._last_error_at: float = 0.0
 
     async def _request(self, params: dict) -> dict:
+        """Обходит пагинацию: Sealagom отдаёт результат страницами (поле "next"),
+        без этого доезжала только первая страница -- часть районов и часть
+        действующих предупреждений просто терялась."""
         headers = {"X-API-Token": self._api_token}
+        merged: list = []
+        url = NAVAREA_URL
+        query = dict(params)
+        pages = 0
+
         async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
-            resp = await client.get(NAVAREA_URL, params=params)
-            resp.raise_for_status()
-            return resp.json()
+            while url and pages < self._MAX_PAGES:
+                resp = await client.get(url, params=query)
+                resp.raise_for_status()
+                chunk = resp.json()
+                merged.extend(chunk.get("results", []))
+                url = chunk.get("next")
+                query = None  # "next" уже содержит все параметры внутри себя
+                pages += 1
+
+        return {"results": merged}
 
     async def _fetch_all(self) -> dict:
         now = time.time()

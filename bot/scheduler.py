@@ -27,7 +27,7 @@ from .config import config
 from .services.geo import extract_coordinates, google_maps_url
 from .services.sources.nga import normalize_msgnum
 from .services.sources.registry import SOURCES
-from .webapp import build_map_url
+from .webapp import build_map_url, invalidate_stats_cache
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +94,8 @@ async def fetch_and_store_area(db, area_code: str) -> tuple[list[int], str | Non
             db.mark_cancelled(area_code, normalized)
 
     logger.info("Источник %s для района %s: %d новых записей сохранено", source.source_id, area_code, len(new_ids))
+    if new_ids:
+        invalidate_stats_cache()  # чтобы Mini App сразу показал свежие цифры
     return new_ids, None
 
 

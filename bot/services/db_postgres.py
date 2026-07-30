@@ -14,7 +14,7 @@ import hashlib
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Iterator, Optional
 
 import psycopg2
@@ -68,6 +68,13 @@ CREATE TABLE IF NOT EXISTS payments (
     stars_amount INTEGER,
     is_recurring INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS favorites (
+    user_id BIGINT NOT NULL,
+    area_code TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, area_code)
 );
 """
 
@@ -399,3 +406,76 @@ class PostgresDatabase:
             "total_warnings": total_warnings,
             "active_warnings": active_warnings,
         }
+
+    # ------------------------------------------------------------------ #
+    # Данные для Mini App: статистика, избранное, поиск
+    # ------------------------------------------------------------------ #
+
+    def area_stats(self) -> dict[str, dict]:
+        today = datetime.now(timezone.utc).date().isoformat()
+        week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        result: dict[str, dict] = {}
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT area_code,
+                       SUM(CASE WHEN is_cancelled = 0 THEN 1 ELSE 0 END) AS in_force,
+                       SUM(CASE WHEN is_cancelled = 1 THEN 1 ELSE 0 END) AS archived,
+                       SUM(CASE WHEN is_cancelled = 0 AND first_seen_at >= %s THEN 1 ELSE 0 END) AS today,
+                       SUM(CASE WHEN is_cancelled = 0 AND first_seen_at >= %s THEN 1 ELSE 0 END) AS week,
+                       MAX(first_seen_at) AS last_update
+                FROM warnings GROUP BY area_code
+                """,
+                (today, week_ago),
+            )
+            for row in cur.fetchall():
+                result[row["area_code"]] = {
+                    "in_force": int(row["in_force"] or 0),
+                    "archived": int(row["archived"] or 0),
+                    "added_today": int(row["today"] or 0),
+                    "added_week": int(row["week"] or 0),
+                    "last_update": row["last_update"],
+                }
+        return result
+
+    def search_warnings(self, query: str = "", areas: Optional[list[str]] = None,
+                        include_archived: bool = False, limit: int = 200) -> list[dict]:
+        sql = "SELECT * FROM warnings WHERE 1=1"
+        params: list = []
+        if not include_archived:
+            sql += " AND is_cancelled = 0"
+        if areas:
+            sql += " AND area_code = ANY(%s)"
+            params.append(areas)
+        if query:
+            sql += " AND (raw_text ILIKE %s OR msg_number ILIKE %s OR region ILIKE %s)"
+            like = f"%{query}%"
+            params.extend([like, like, like])
+        sql += " LIMIT %s"
+        params.append(limit)
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+        return sorted(rows, key=_msgnum_sort_key, reverse=True)
+
+    def all_active_warnings(self, limit: int = 3000) -> list[dict]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM warnings WHERE is_cancelled = 0 LIMIT %s", (limit,))
+            return cur.fetchall()
+
+    def get_favorites(self, user_id: int) -> list[str]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT area_code FROM favorites WHERE user_id = %s ORDER BY area_code", (user_id,))
+            return [r["area_code"] for r in cur.fetchall()]
+
+    def toggle_favorite(self, user_id: int, area_code: str) -> bool:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM favorites WHERE user_id = %s AND area_code = %s", (user_id, area_code))
+            if cur.fetchone():
+                cur.execute("DELETE FROM favorites WHERE user_id = %s AND area_code = %s", (user_id, area_code))
+                return False
+            cur.execute(
+                "INSERT INTO favorites (user_id, area_code, created_at) VALUES (%s, %s, %s)",
+                (user_id, area_code, _now()),
+            )
+            return True

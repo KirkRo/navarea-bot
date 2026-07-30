@@ -13,7 +13,7 @@ import re
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Iterator, Optional
 
 SCHEMA = """
@@ -64,6 +64,13 @@ CREATE TABLE IF NOT EXISTS payments (
     stars_amount INTEGER,
     is_recurring INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS favorites (
+    user_id INTEGER NOT NULL,
+    area_code TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, area_code)
 );
 """
 
@@ -377,3 +384,82 @@ class Database:
             "total_warnings": total_warnings,
             "active_warnings": active_warnings,
         }
+
+    # ------------------------------------------------------------------ #
+    # Данные для Mini App: статистика, избранное, поиск
+    # ------------------------------------------------------------------ #
+
+    def area_stats(self) -> dict[str, dict]:
+        """По каждому району: сколько действует, сколько добавлено сегодня,
+        за 7 дней, сколько в архиве (отменённых)."""
+        today = datetime.now(timezone.utc).date().isoformat()
+        week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        result: dict[str, dict] = {}
+        with self._conn() as conn:
+            for row in conn.execute(
+                """
+                SELECT area_code,
+                       SUM(CASE WHEN is_cancelled = 0 THEN 1 ELSE 0 END) AS in_force,
+                       SUM(CASE WHEN is_cancelled = 1 THEN 1 ELSE 0 END) AS archived,
+                       SUM(CASE WHEN is_cancelled = 0 AND first_seen_at >= ? THEN 1 ELSE 0 END) AS today,
+                       SUM(CASE WHEN is_cancelled = 0 AND first_seen_at >= ? THEN 1 ELSE 0 END) AS week,
+                       MAX(first_seen_at) AS last_update
+                FROM warnings GROUP BY area_code
+                """,
+                (today, week_ago),
+            ).fetchall():
+                result[row["area_code"]] = {
+                    "in_force": row["in_force"] or 0,
+                    "archived": row["archived"] or 0,
+                    "added_today": row["today"] or 0,
+                    "added_week": row["week"] or 0,
+                    "last_update": row["last_update"],
+                }
+        return result
+
+    def search_warnings(self, query: str = "", areas: Optional[list[str]] = None,
+                        include_archived: bool = False, limit: int = 200) -> list[sqlite3.Row]:
+        sql = "SELECT * FROM warnings WHERE 1=1"
+        params: list = []
+        if not include_archived:
+            sql += " AND is_cancelled = 0"
+        if areas:
+            sql += f" AND area_code IN ({','.join('?' * len(areas))})"
+            params.extend(areas)
+        if query:
+            sql += " AND (raw_text LIKE ? OR msg_number LIKE ? OR region LIKE ?)"
+            like = f"%{query}%"
+            params.extend([like, like, like])
+        sql += " LIMIT ?"
+        params.append(limit)
+        with self._conn() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        return sorted(rows, key=_msgnum_sort_key, reverse=True)
+
+    def all_active_warnings(self, limit: int = 3000) -> list[sqlite3.Row]:
+        with self._conn() as conn:
+            return conn.execute(
+                "SELECT * FROM warnings WHERE is_cancelled = 0 LIMIT ?", (limit,)
+            ).fetchall()
+
+    def get_favorites(self, user_id: int) -> list[str]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT area_code FROM favorites WHERE user_id = ? ORDER BY area_code", (user_id,)
+            ).fetchall()
+        return [r["area_code"] for r in rows]
+
+    def toggle_favorite(self, user_id: int, area_code: str) -> bool:
+        """Возвращает True если стало избранным, False если снято."""
+        with self._conn() as conn:
+            existing = conn.execute(
+                "SELECT 1 FROM favorites WHERE user_id = ? AND area_code = ?", (user_id, area_code)
+            ).fetchone()
+            if existing:
+                conn.execute("DELETE FROM favorites WHERE user_id = ? AND area_code = ?", (user_id, area_code))
+                return False
+            conn.execute(
+                "INSERT INTO favorites (user_id, area_code, created_at) VALUES (?, ?, ?)",
+                (user_id, area_code, _now()),
+            )
+            return True

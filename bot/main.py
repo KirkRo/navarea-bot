@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from telegram import Update
+from telegram import MenuButtonCommands, MenuButtonWebApp, Update, WebAppInfo
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -35,23 +35,51 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.exception("Ошибка при обработке апдейта %s", update, exc_info=context.error)
 
 
+async def setup_menu_button(application: Application) -> None:
+    """Ставит постоянную кнопку слева от поля ввода, которая открывает Mini App.
+    Вызывается сама при каждом запуске бота -- руками в BotFather настраивать
+    ничего не нужно, и адрес всегда актуальный (на Render он подставляется
+    автоматически, см. config.public_url).
+
+    Если публичного адреса нет (например Oracle без домена) -- возвращаем
+    обычную кнопку со списком команд, чтобы не оставить битую ссылку."""
+    try:
+        if config.public_url:
+            await application.bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(
+                    text="Открыть",
+                    web_app=WebAppInfo(url=f"{config.public_url}/app"),
+                )
+            )
+            logger.info("Кнопка меню настроена на Mini App: %s/app", config.public_url)
+        else:
+            await application.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+            logger.warning(
+                "PUBLIC_URL не задан -- Mini App недоступен, кнопка меню показывает список команд"
+            )
+    except Exception:
+        logger.exception("Не удалось настроить кнопку меню")
+
+
 def build_application() -> Application:
     problems = config.validate()
     for p in problems:
         logger.warning("Проблема конфигурации: %s", p)
 
-    application = Application.builder().token(config.bot_token).build()
-
-    start_web_server(config.port)
+    application = Application.builder().token(config.bot_token).post_init(setup_menu_button).build()
 
     db = build_database(config.database_url, config.db_path)
     qa_client = ClaudeQA(config.anthropic_api_key, config.claude_model, config.claude_max_tokens)
+
+    # веб-сервер поднимаем после базы -- Mini App обращается к ней через API
+    start_web_server(config.port, db=db, bot_token=config.bot_token)
     application.bot_data["db"] = db
     application.bot_data["qa"] = qa_client
 
     # --- команды ---
     application.add_handler(CommandHandler("start", start.cmd_start))
     application.add_handler(CommandHandler("help", start.cmd_help))
+    application.add_handler(CommandHandler("app", start.cmd_app))
     application.add_handler(CommandHandler("status", start.cmd_status))
     application.add_handler(CommandHandler("areas", areas.cmd_areas))
     application.add_handler(CommandHandler("sources", areas.cmd_sources))
