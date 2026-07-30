@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from telegram import Update
@@ -8,6 +9,8 @@ from telegram.ext import ContextTypes
 from ..config import config
 from ..services.access import is_effectively_premium, is_owner
 from ..services.db import Database
+
+logger = logging.getLogger(__name__)
 
 WELCOME = """Привет! Это бот-монитор навигационных предупреждений (NAVAREA/NAVTEX) для моряков.
 
@@ -41,6 +44,24 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db: Database = context.bot_data["db"]
     user = update.effective_user
     db.upsert_user(user.id, user.username, user.first_name)
+
+    # Кнопка Mini App ставится и глобально при запуске бота (см. setup_menu_button
+    # в main.py), но Telegram не всегда обновляет её в уже открытых чатах. Здесь
+    # ставим её адресно для этого чата -- так она появляется гарантированно.
+    if config.public_url:
+        try:
+            from telegram import MenuButtonWebApp, WebAppInfo
+
+            await context.bot.set_chat_menu_button(
+                chat_id=update.effective_chat.id,
+                menu_button=MenuButtonWebApp(
+                    text="Открыть",
+                    web_app=WebAppInfo(url=f"{config.public_url}/app"),
+                ),
+            )
+        except Exception:
+            logger.exception("Не удалось поставить кнопку Mini App для чата %s", update.effective_chat.id)
+
     await update.message.reply_text(WELCOME)
 
 

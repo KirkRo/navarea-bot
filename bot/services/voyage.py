@@ -377,7 +377,7 @@ def warnings_on_route(route: list[tuple[float, float]], warnings: list, corridor
 
     warnings -- строки из БД (нужны поля id, area_code, msg_number, region, raw_text).
     Возвращает список словарей, отсортированный по расстоянию от маршрута."""
-    from .geo import extract_coordinates
+    from .geo import extract_coordinates, extract_shapes
 
     result = []
     for w in warnings:
@@ -393,6 +393,7 @@ def warnings_on_route(route: list[tuple[float, float]], warnings: list, corridor
                 "region": w["region"],
                 "raw_text": w["raw_text"],
                 "coords": coords[:40],
+                "shapes": extract_shapes(w["raw_text"]),
                 "distance_nm": round(best, 1),
             })
     result.sort(key=lambda x: x["distance_nm"])

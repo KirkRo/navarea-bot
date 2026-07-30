@@ -66,6 +66,13 @@ def build_application() -> Application:
     for p in problems:
         logger.warning("Проблема конфигурации: %s", p)
 
+    logger.info(
+        "Настройки: публичный адрес=%s | Sealagom=%s | база=%s",
+        config.public_url or "НЕ ЗАДАН (Mini App работать не будет)",
+        "подключён" if config.sealagom_api_token else "не используется",
+        "Postgres" if config.database_url else "SQLite",
+    )
+
     application = Application.builder().token(config.bot_token).post_init(setup_menu_button).build()
 
     db = build_database(config.database_url, config.db_path)

@@ -92,7 +92,7 @@ def _user_id_from_query(query: dict) -> int | None:
 # ---------------------------------------------------------------------- #
 
 def _row_to_dict(row, with_coords: bool = True) -> dict:
-    from .services.geo import extract_coordinates
+    from .services.geo import extract_coordinates, extract_shapes
 
     data = {
         "id": row["id"],
@@ -106,6 +106,7 @@ def _row_to_dict(row, with_coords: bool = True) -> dict:
     }
     if with_coords:
         data["coords"] = extract_coordinates(row["raw_text"])[:40]
+        data["shapes"] = extract_shapes(row["raw_text"])
     return data
 
 
@@ -236,7 +237,13 @@ def _api_voyage(query: dict) -> dict:
     }
 
 
+def _api_zones(query: dict) -> dict:
+    from .services.zones import zones_payload
+    return zones_payload()
+
+
 API_ROUTES = {
+    "/api/zones": _api_zones,
     "/api/stats": _api_stats,
     "/api/warnings": _api_warnings,
     "/api/favorites": _api_favorites,

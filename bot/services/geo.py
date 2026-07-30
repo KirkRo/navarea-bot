@@ -54,3 +54,107 @@ def google_maps_url(coords: list[tuple[float, float]]) -> str:
     """Запасной вариант без своего хостинга -- просто точка в центре на Google Maps."""
     lat, lon = centroid(coords)
     return f"https://www.google.com/maps?q={lat},{lon}"
+
+
+# ---------------------------------------------------------------------- #
+# Разбор геометрии: одно предупреждение может описывать НЕСКОЛЬКО фигур
+# ---------------------------------------------------------------------- #
+
+# Что стоит перед группой координат -- по этому понимаем, что рисовать
+_POLYGON_HINTS = (
+    "BOUND BY", "BOUNDED BY", "BOUNDARY", "IN AREA", "IN AREAS", "AREA BOUND",
+    "DELIMITED BY", "DELIMITADA POR", "DELIMITADO POR", "ZONA", "AREA WITHIN",
+    "AREA DELIMITED", "LIMITED BY", "AREA:", "AREAS:",
+)
+_LINE_HINTS = (
+    "TRACKLINE", "LINE JOINING", "JOINING", "ALONG TRACK", "ALONG THE LINE",
+    "TRACK JOINING", "LINEA", "LINE FROM",
+)
+
+# Разделители, которые НЕ разрывают группу координат (перечисление внутри одной фигуры)
+_SEPARATOR_ONLY = re.compile(r"^[\s,;.\-]*(?:AND|TO|Y|E)?[\s,;.\-]*$", re.IGNORECASE)
+
+
+def _classify(prefix: str) -> str:
+    """Чем является группа координат, судя по тексту перед ней."""
+    upper = prefix.upper()
+    pos_poly = max((upper.rfind(k) for k in _POLYGON_HINTS), default=-1)
+    pos_line = max((upper.rfind(k) for k in _LINE_HINTS), default=-1)
+    if pos_line > pos_poly:
+        return "line"
+    if pos_poly >= 0:
+        return "polygon"
+    return "points"
+
+
+def extract_shapes(text: str, max_shapes: int = 40) -> list[dict]:
+    """Разбирает текст предупреждения на отдельные фигуры.
+
+    Одно сообщение сплошь и рядом описывает несколько НЕ связанных между
+    собой объектов: районы A, B, C, список позиций буровых, перечень
+    погасших огней. Если свалить все координаты в один полигон, получится
+    бессмыслица -- контур через пол-Средиземного моря, соединяющий точки,
+    которые друг к другу отношения не имеют. Поэтому координаты сначала
+    группируются по признаку "идут в тексте подряд, разделены только
+    запятой или словом AND", а тип фигуры определяется по словам перед
+    группой (BOUND BY -> полигон, TRACKLINE JOINING -> линия, иначе точки).
+
+    Возвращает список вида
+        [{"type": "polygon"|"line"|"point", "points": [[lat, lon], ...]}, ...]
+    """
+    matches = list(_COORD_PAIR.finditer(text))
+    if not matches:
+        return []
+
+    # 1) группируем подряд идущие координаты
+    groups: list[list] = []
+    current: list = []
+    prev_end = None
+    for m in matches:
+        if prev_end is not None:
+            between = text[prev_end:m.start()]
+            if not _SEPARATOR_ONLY.match(between):
+                if current:
+                    groups.append(current)
+                current = []
+        current.append(m)
+        prev_end = m.end()
+    if current:
+        groups.append(current)
+
+    # 2) превращаем группы в фигуры
+    shapes: list[dict] = []
+    for group in groups[:max_shapes]:
+        pts = []
+        for m in group:
+            lat_raw, lat_hemi, lon_raw, lon_hemi = m.group(1), m.group(2), m.group(3), m.group(4)
+            try:
+                lat, lon = _parse_dms(lat_raw), _parse_dms(lon_raw)
+            except ValueError:
+                continue
+            if lat > 90 or lon > 180:
+                continue
+            if lat_hemi == "S":
+                lat = -lat
+            if lon_hemi == "W":
+                lon = -lon
+            pts.append([round(lat, 5), round(lon, 5)])
+        if not pts:
+            continue
+
+        kind = _classify(text[max(0, group[0].start() - 140):group[0].start()])
+
+        if len(pts) == 1:
+            shapes.append({"type": "point", "points": pts})
+        elif len(pts) == 2:
+            shapes.append({"type": "line" if kind != "points" else "point", "points": pts})
+        elif kind == "polygon":
+            shapes.append({"type": "polygon", "points": pts})
+        elif kind == "line":
+            shapes.append({"type": "line", "points": pts})
+        else:
+            # перечисление отдельных позиций (буровые, огни) -- каждая сама по себе
+            for p in pts:
+                shapes.append({"type": "point", "points": [p]})
+
+    return shapes[:max_shapes]
