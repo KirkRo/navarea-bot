@@ -21,7 +21,7 @@ MINI_APP_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>NAVAREA Monitor</title>
+<title>Watchkeeper</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
@@ -587,8 +587,8 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <div class="hdr">
     <div style="min-width:0">
-      <div class="hello">Спокойной вахты</div>
-      <div class="h1">Обстановка <span id="hName">в море</span></div>
+      <div class="hello" id="hello">Спокойной вахты</div>
+      <div class="h1">Watch<span>keeper</span></div>
     </div>
     <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
   </div>
@@ -1810,7 +1810,7 @@ function renderDash(){
   if(!S.stats) return;
   const t=S.stats.totals;
   const num=$('#heroNum'); if(num) countUp(num,t.in_force);
-  $('#hName').textContent=S.offline?'из кэша':'в море';
+  const hl=$('#hello'); if(hl) hl.textContent=S.offline?'Данные из кэша':'Инструменты вахтенного помощника';
 
   const cells=[
     {v:t.in_force,k:'Действует',c:'a'},
@@ -2759,6 +2759,10 @@ document.querySelectorAll('.tab[data-i]').forEach(t=>
   t.insertAdjacentHTML('afterbegin', ico(t.dataset.i)));
 document.querySelectorAll('#corr .cat').forEach((c,i)=>
   c.insertAdjacentHTML('afterbegin', ico(['gauge','gauge','wave','compass'][i]||'gauge')));
+
+/* открыть сразу нужную вкладку, если пришли по ссылке вида /app#tools */
+const wantTab=(location.hash||'').replace('#','');
+if(['dash','areas','map','tools','radio','voy'].includes(wantTab)) switchView(wantTab);
 
 if(loadCache())render();
 load(false);

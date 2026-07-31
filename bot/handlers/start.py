@@ -12,33 +12,45 @@ from ..services.db import Database
 
 logger = logging.getLogger(__name__)
 
-WELCOME = """Привет! Это бот-монитор навигационных предупреждений (NAVAREA/NAVTEX) для моряков.
+WELCOME = """⚓️ <b>Watchkeeper</b> — инструменты вахтенного помощника.
 
-Что умеет:
-• следить за выбранными районами NAVAREA и присылать новые предупреждения
-• показывать список действующих предупреждений по команде
-• отвечать на вопросы по судовождению (спроси что угодно текстом)
-• разбирать текст конкретного предупреждения простым языком
+<b>Предупреждения</b>
+Слежу за районами NAVAREA и береговыми предупреждениями, присылаю новые сразу, показываю район на карте контуром, а не точкой.
 
-Важно: бот берёт данные с открытых сайтов официальных координаторов NAVAREA \
-(NGA, UKHO и так далее) и не заменяет получение MSI через штатное оборудование \
-GMDSS/NAVTEX на судне. Это вспомогательный инструмент, а не источник для \
-официального подтверждения безопасности перехода.
+<b>Расчёты мостика</b>
+Расстояние и курс, ETA, запас воды под килём, проседание, CPA/TCPA, точка перекладки руля, якорная стоянка, дифферент, восход и сумерки. Работают без связи — в рейсе это важно.
 
-С чего начать -- /areas, чтобы выбрать районы."""
+<b>Радио</b>
+Станции MF/HF DSC для теста, с отметкой, от каких реально приходит подтверждение.
 
-HELP = """Команды:
+<b>Переход</b>
+Вводишь порты — показываю, какие предупреждения попадают в коридор вдоль маршрута и на каком расстоянии от курса.
 
-/app -- открыть приложение (карта, статистика, планирование рейса)
-/areas -- выбрать районы NAVAREA для отслеживания
-/sources -- официальный источник по каждому из 21 района NAVAREA
-/active -- действующие предупреждения по твоим районам
-/status -- тариф, районы, лимиты
-/subscribe -- оформить Premium
-/cancel_subscription -- отключить автопродление Premium
+Всё это удобнее в приложении — кнопка слева от поля ввода или /app.
 
-Просто напиши текстом вопрос по судовождению, погоде, MSI и так далее -- отвечу через Claude."""
+Важно: данные справочные. Официальный источник — штатное оборудование GMDSS/NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель."""
 
+HELP = """<b>Watchkeeper</b> — что умеет:
+
+<b>Приложение</b>
+/app — открыть целиком: карта, расчёты, радио, переход
+/tools — сразу к расчётам мостика
+/radio — станции MF/HF DSC для теста
+/voyage — проверить маршрут между портами
+/chart — карта предупреждений
+
+<b>Предупреждения</b>
+/areas — выбрать районы для отслеживания
+/active — что действует сейчас
+/sources — откуда берутся данные по каждому району
+/explain — разобрать текст предупреждения простым языком
+
+<b>Прочее</b>
+/status — тариф, районы, лимиты
+/subscribe — оформить Premium
+/cancel_subscription — отключить автопродление
+
+Можно просто написать вопрос текстом — отвечу по судовождению, погоде, формальностям."""
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db: Database = context.bot_data["db"]
@@ -62,11 +74,11 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         except Exception:
             logger.exception("Не удалось поставить кнопку Mini App для чата %s", update.effective_chat.id)
 
-    await update.message.reply_text(WELCOME)
+    await update.message.reply_text(WELCOME, parse_mode="HTML")
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(HELP)
+    await update.message.reply_text(HELP, parse_mode="HTML")
 
 
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -116,3 +128,48 @@ async def cmd_app(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Панель, карта, поиск и планирование перехода:",
         reply_markup=keyboard,
     )
+
+
+# Команды, открывающие приложение сразу на нужной вкладке. Вкладка
+# передаётся через якорь в адресе (#tools и так далее), приложение читает
+# его при запуске -- см. miniapp.py.
+_APP_TABS = {
+    "tools": ("Расчёты мостика", "Расстояние и курс, UKC, проседание, CPA/TCPA, якорь, дифферент и остальное. Работает без связи."),
+    "radio": ("Станции MF/HF DSC", "Кому слать тест и от кого реально придёт подтверждение."),
+    "voy": ("Проверка перехода", "Какие предупреждения попадают в коридор вдоль маршрута."),
+    "map": ("Карта предупреждений", "Все действующие районы контурами, с подложками и слоями."),
+}
+
+
+async def _open_tab(update: Update, context: ContextTypes.DEFAULT_TYPE, tab: str) -> None:
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+
+    title, desc = _APP_TABS[tab]
+    if not config.public_url:
+        await update.message.reply_text(
+            "Приложение пока недоступно: у бота нет публичного адреса. "
+            "На Render он подставляется сам, на своём сервере нужно задать PUBLIC_URL в .env."
+        )
+        return
+
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton(f"Открыть · {title}",
+                             web_app=WebAppInfo(url=f"{config.public_url}/app#{tab}"))
+    ]])
+    await update.message.reply_text(f"<b>{title}</b>\n{desc}", parse_mode="HTML", reply_markup=keyboard)
+
+
+async def cmd_tools(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _open_tab(update, context, "tools")
+
+
+async def cmd_radio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _open_tab(update, context, "radio")
+
+
+async def cmd_voyage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _open_tab(update, context, "voy")
+
+
+async def cmd_chart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await _open_tab(update, context, "map")

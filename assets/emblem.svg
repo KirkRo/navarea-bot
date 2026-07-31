@@ -1,45 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="30%" cy="28%" r="85%">
-      <stop offset="0%" stop-color="#173F6B"/>
-      <stop offset="55%" stop-color="#0C2846"/>
-      <stop offset="100%" stop-color="#071627"/>
-    </radialGradient>
-    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0F3355"/>
-      <stop offset="100%" stop-color="#081C31"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.55" y2="1">
+      <stop offset="0%" stop-color="#173d63"/>
+      <stop offset="52%" stop-color="#0e2742"/>
+      <stop offset="100%" stop-color="#071829"/>
     </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffc472"/>
+      <stop offset="55%" stop-color="#f0a03c"/>
+      <stop offset="100%" stop-color="#d1782a"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d7cb8"/>
+      <stop offset="100%" stop-color="#124a76"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#ffc472" stop-opacity=".45"/>
+      <stop offset="100%" stop-color="#ffc472" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
 
-  <!-- тонкая рамка пеленга по диагонали, как линия курса на карте -->
-  <line x1="60" y1="452" x2="452" y2="60" stroke="#3E6690" stroke-width="2" stroke-dasharray="2 10" opacity="0.55"/>
-
-  <!-- дуги радиосигнала NAVTEX от маяка -->
-  <path d="M 231.16,300.08 A 58.00,58.00 0 0 0 154.27,264.22" fill="none" stroke="#E8A33E" stroke-width="14" stroke-linecap="round" opacity="1.0"/>
-  <path d="M 271.11,287.10 A 100.00,100.00 0 0 0 138.54,225.28" fill="none" stroke="#E8A33E" stroke-width="13" stroke-linecap="round" opacity="0.82"/>
-  <path d="M 312.95,273.50 A 144.00,144.00 0 0 0 122.06,184.49" fill="none" stroke="#E8A33E" stroke-width="12" stroke-linecap="round" opacity="0.62"/>
-  <path d="M 356.70,259.29 A 190.00,190.00 0 0 0 104.82,141.84" fill="none" stroke="#E8A33E" stroke-width="10" stroke-linecap="round" opacity="0.42"/>
-  <path d="M 402.35,244.45 A 238.00,238.00 0 0 0 86.84,97.33" fill="none" stroke="#E8A33E" stroke-width="9" stroke-linecap="round" opacity="0.26"/>
-
-  <!-- скалистый мысок под маяком -->
-  <polygon points="96,398 256,398 226,438 126,438" fill="#0A2038"/>
-  <polygon points="112,398 240,398 218,424 134,424" fill="#123A63"/>
-
-  <!-- корпус маяка -->
-  <path d="M 152,398 L 164,272 L 188,272 L 200,398 Z" fill="#F4E9D8"/>
-  <path d="M 160,332 L 192,332 L 190,352 L 162,352 Z" fill="#0C2846"/>
-  <path d="M 164,272 L 188,272 L 184,252 L 168,252 Z" fill="#0C2846"/>
-
-  <!-- фонарь маяка -->
-  <rect x="163" y="234" width="26" height="20" rx="3" fill="#E8A33E"/>
-  <polygon points="163,234 189,234 176,214" fill="#F4E9D8"/>
-
-  <!-- отметка опасности на карте (как ромб NtM) с числом волны -->
-  <g transform="translate(378,378)">
-    <rect x="-19" y="-19" width="38" height="38" rx="6" transform="rotate(45)" fill="#F4E9D8"/>
-    <rect x="-19" y="-19" width="38" height="38" rx="6" transform="rotate(45)" fill="none" stroke="#0C2846" stroke-width="4"/>
-    <text x="0" y="7" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#0C2846">!</text>
+  <!-- градусная шкала по кругу -->
+  <g stroke="#5b83aa" stroke-linecap="round" opacity=".5">
+    <g stroke-width="4">
+      <path d="M256 66 v20"/><path d="M256 426 v20"/>
+      <path d="M66 256 h20"/><path d="M426 256 h20"/>
+    </g>
+    <g stroke-width="3" opacity=".75">
+      <path d="M390 122 l-14 14"/><path d="M136 376 l-14 14"/>
+      <path d="M122 122 l14 14"/><path d="M376 376 l14 14"/>
+    </g>
   </g>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#38618a" stroke-width="3" opacity=".55"/>
+
+  <!-- свечение вокруг картушки -->
+  <circle cx="256" cy="236" r="150" fill="url(#halo)"/>
+
+  <!-- картушка компаса: четыре главных румба -->
+  <g>
+    <path d="M256 92 L286 236 L256 268 L226 236 Z" fill="url(#brass)"/>
+    <path d="M256 92 L256 268 L226 236 Z" fill="#c9782c" opacity=".55"/>
+    <path d="M256 404 L226 268 L256 236 L286 268 Z" fill="#e8eef5"/>
+    <path d="M256 404 L256 236 L286 268 Z" fill="#9fb3c7" opacity=".6"/>
+    <path d="M92 256 L236 226 L268 256 L236 286 Z" fill="#e8eef5"/>
+    <path d="M92 256 L268 256 L236 286 Z" fill="#9fb3c7" opacity=".6"/>
+    <path d="M420 256 L276 286 L244 256 L276 226 Z" fill="#e8eef5"/>
+    <path d="M420 256 L244 256 L276 226 Z" fill="#9fb3c7" opacity=".6"/>
+  </g>
+
+  <!-- промежуточные румбы -->
+  <g fill="#f0a03c" opacity=".62">
+    <path d="M372 140 L280 216 L296 232 Z"/>
+    <path d="M140 372 L232 296 L216 280 Z"/>
+    <path d="M140 140 L216 232 L232 216 Z"/>
+    <path d="M372 372 L296 280 L280 296 Z"/>
+  </g>
+
+  <!-- центральная ось -->
+  <circle cx="256" cy="256" r="26" fill="#0b2338" stroke="url(#brass)" stroke-width="7"/>
+  <circle cx="256" cy="256" r="9" fill="url(#brass)"/>
+
+  <!-- горизонт: три волны внизу -->
+  <path d="M46 404 q42 -20 84 0 t84 0 t84 0 t84 0 t84 0 v70 h-420 z" fill="url(#sea)" opacity=".92"/>
+  <path d="M46 430 q42 -18 84 0 t84 0 t84 0 t84 0 t84 0 v50 h-420 z" fill="#0d3556"/>
+  <path d="M46 454 q42 -15 84 0 t84 0 t84 0 t84 0 t84 0 v34 h-420 z" fill="#08203a"/>
 </svg>
