@@ -21,6 +21,7 @@
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
@@ -28,9 +29,11 @@ from ...config import config
 from .base import FallbackSource, WarningSource
 from .nga import NgaSource
 from .peru_dhn import PeruDhnSource
-from .sealagom import SealagomSource
+from .sealagom import SealagomCoastalSource, SealagomSource
 from .spain_ihm import SpainIhmSource
 from .ukho import UkhoSource
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -155,3 +158,82 @@ def area_choice_label(code: str) -> str:
     status = _effective_status(code, info)
     icon = {"live": "🟢", "experimental": "🟡", "blocked": "🔒", "unknown": "❔", "none": "🚫"}[status]
     return f"{icon} {code} — {info.name}"
+
+
+# ---------------------------------------------------------------------- #
+# Береговые предупреждения (Coastal / NAVTEX)
+# ---------------------------------------------------------------------- #
+#
+# В отличие от NAVAREA, у береговых регионов нет фиксированной нумерации
+# I-XXI -- это произвольный список стран и зон, который знает только сам
+# Sealagom. Поэтому их нельзя прописать в таблицу заранее: список
+# запрашивается один раз при запуске бота (см. register_coastal_areas,
+# вызывается из main.py) и добавляется в те же AREAS/SOURCES, что и
+# остальные районы. Дальше они работают наравне: выбираются в /areas,
+# попадают в Mini App, рассылаются подписчикам.
+#
+# Код района для них -- "COASTAL:<id>", чтобы не столкнуться с римскими
+# номерами NAVAREA.
+
+_coastal_source: "SealagomCoastalSource | None" = None
+
+
+async def register_coastal_areas() -> int:
+    """Запрашивает список береговых регионов и регистрирует их.
+    Возвращает, сколько зарегистрировано (0 -- если Sealagom не настроен
+    или недоступен, это не ошибка, бот просто работает без них)."""
+    global _coastal_source
+
+    if not config.sealagom_api_token:
+        return 0
+
+    if _coastal_source is None:
+        _coastal_source = SealagomCoastalSource(config.sealagom_api_token)
+
+    try:
+        regions = await _coastal_source.list_regions()
+    except Exception:
+        logger.exception("Не удалось получить список береговых регионов Sealagom")
+        return 0
+
+    added = 0
+    for r in regions:
+        rid, title = r.get("id"), (r.get("title") or "").strip()
+        if rid is None:
+            continue
+        code = f"COASTAL:{rid}"
+        if code in AREAS:
+            continue
+        AREAS[code] = AreaInfo(
+            code=code,
+            name=title or f"Береговой район {rid}",
+            coordinator="Sealagom (береговые предупреждения)",
+            url="https://www.sealagom.com/",
+            status="live",
+        )
+        SOURCES[code] = _coastal_source
+        added += 1
+
+    if added:
+        _rebuild_area_lists()
+        logger.info("Зарегистрировано береговых регионов: %d", added)
+    return added
+
+
+def _rebuild_area_lists() -> None:
+    """AREAS пополняется уже после импорта модуля, поэтому производные
+    списки нужно пересобрать, иначе новые районы не появятся в выборе."""
+    global LIVE_AREAS, EXPERIMENTAL_AREAS, POLLABLE_AREAS
+    LIVE_AREAS = [c for c, i in AREAS.items() if _effective_status(c, i) == "live"]
+    EXPERIMENTAL_AREAS = [c for c, i in AREAS.items() if _effective_status(c, i) == "experimental"]
+    POLLABLE_AREAS = LIVE_AREAS + EXPERIMENTAL_AREAS
+
+
+def area_display_name(code: str) -> str:
+    """Человекочитаемое имя для кнопок и сообщений. Для береговых районов
+    убирает служебный префикс COASTAL:."""
+    info = AREAS.get(code)
+    base = info.name if info else code
+    if code.startswith("COASTAL:"):
+        return f"{base} (берег)"
+    return base

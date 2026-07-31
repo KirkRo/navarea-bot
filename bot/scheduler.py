@@ -86,6 +86,7 @@ async def fetch_and_store_area(db, area_code: str) -> tuple[list[int], str | Non
             issued_at=warning.issued_at_raw,
             region=warning.region,
             raw_text=warning.raw_text,
+            shapes=getattr(warning, "shapes", None),
         )
         if wid:
             new_ids.append(wid)

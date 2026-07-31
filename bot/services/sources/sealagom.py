@@ -61,8 +61,23 @@ _NAVAREA_PARAMS = {
     "include_coordinates": "true",
     "include_enhanced_coordinates": "true",
     "include_keywords": "true",
+    "include_geo_features": "true",
+    "include_archived": "false",
     "include_all": "true",
 }
+
+
+def _browser_headers(token: str) -> dict:
+    """Заголовки как у обычного браузера. Без User-Agent защита сайта
+    (Cloudflare и подобное) часто отдаёт 403 на запросы из скриптов, даже
+    когда токен полностью рабочий -- на это мы уже наступили."""
+    return {
+        "X-API-Token": token,
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
+    }
 
 
 def _region_from_message(msg: dict) -> Optional[str]:
@@ -76,6 +91,80 @@ def _region_from_message(msg: dict) -> Optional[str]:
     if first_line and len(first_line) < 60 and first_line.isupper():
         return first_line
     return None
+
+
+def _shapes_from_sealagom(msg: dict) -> list[dict]:
+    """Готовая геометрия из Sealagom (include_geo_features) в наш формат.
+
+    Их разбор точнее нашего: они отдают уже размеченные полигоны, полосы
+    (lanes), линии и круги радиуса, а не сырой текст, который приходится
+    угадывать регулярками. Если геометрии в ответе нет (не тот тариф или
+    у сообщения её просто нет), возвращаем пустой список -- вызывающий код
+    тогда откатится на собственный разбор текста.
+
+    Координаты у них в GeoJSON-порядке [долгота, широта], у Leaflet
+    наоборот [широта, долгота] -- переворачиваем.
+    """
+    out: list[dict] = []
+    feats = msg.get("geo_features") or msg.get("geometry") or []
+    if isinstance(feats, dict):
+        feats = feats.get("features") or [feats]
+
+    for f in feats:
+        if not isinstance(f, dict):
+            continue
+        geom = f.get("geometry") or f
+        gtype = str(geom.get("type") or f.get("type") or "").lower()
+        coords = geom.get("coordinates")
+        if coords is None:
+            continue
+
+        def flip(pair):
+            try:
+                lon, lat = float(pair[0]), float(pair[1])
+            except (TypeError, ValueError, IndexError):
+                return None
+            if abs(lat) > 90 or abs(lon) > 180:
+                return None
+            return [round(lat, 5), round(lon, 5)]
+
+        if gtype in ("polygon",):
+            for ring in coords:
+                pts = [p for p in (flip(c) for c in ring) if p]
+                if len(pts) >= 3:
+                    out.append({"type": "polygon", "points": pts})
+        elif gtype in ("multipolygon",):
+            for poly in coords:
+                for ring in poly:
+                    pts = [p for p in (flip(c) for c in ring) if p]
+                    if len(pts) >= 3:
+                        out.append({"type": "polygon", "points": pts})
+        elif gtype in ("linestring", "lane", "line"):
+            pts = [p for p in (flip(c) for c in coords) if p]
+            if len(pts) >= 2:
+                out.append({"type": "line", "points": pts})
+        elif gtype in ("multilinestring",):
+            for line in coords:
+                pts = [p for p in (flip(c) for c in line) if p]
+                if len(pts) >= 2:
+                    out.append({"type": "line", "points": pts})
+        elif gtype in ("point",):
+            p = flip(coords)
+            if p:
+                radius = f.get("radius_nm") or f.get("radius") or (f.get("properties") or {}).get("radius_nm")
+                shape = {"type": "point", "points": [p]}
+                if radius:
+                    try:
+                        shape = {"type": "circle", "points": [p], "radius_nm": float(radius)}
+                    except (TypeError, ValueError):
+                        pass
+                out.append(shape)
+        elif gtype in ("multipoint",):
+            for c in coords:
+                p = flip(c)
+                if p:
+                    out.append({"type": "point", "points": [p]})
+    return out
 
 
 def _messages_to_warnings(area_code: str, messages: list[dict]) -> list[ParsedWarning]:
@@ -92,6 +181,7 @@ def _messages_to_warnings(area_code: str, messages: list[dict]) -> list[ParsedWa
                 region=_region_from_message(msg),
                 raw_text=(msg.get("content") or "").strip(),
                 cancels=[],  # отмену Sealagom сообщает через cancel_date, не через ссылки в тексте
+                shapes=_shapes_from_sealagom(msg) or None,
             )
         )
     return results
@@ -121,13 +211,13 @@ class SealagomSource:
         """Обходит пагинацию: Sealagom отдаёт результат страницами (поле "next"),
         без этого доезжала только первая страница -- часть районов и часть
         действующих предупреждений просто терялась."""
-        headers = {"X-API-Token": self._api_token}
+        headers = _browser_headers(self._api_token)
         merged: list = []
         url = NAVAREA_URL
         query = dict(params)
         pages = 0
 
-        async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=headers, follow_redirects=True) as client:
             while url and pages < self._MAX_PAGES:
                 resp = await client.get(url, params=query)
                 resp.raise_for_status()
@@ -207,8 +297,8 @@ class SealagomCoastalSource:
         if self._cache is not None and (now - self._cache_at) < self._cache_seconds:
             return self._cache
 
-        headers = {"X-API-Token": self._api_token}
-        async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
+        headers = _browser_headers(self._api_token)
+        async with httpx.AsyncClient(timeout=self._timeout, headers=headers, follow_redirects=True) as client:
             resp = await client.get(COASTAL_URL, params=_NAVAREA_PARAMS)
             resp.raise_for_status()
             data = resp.json()

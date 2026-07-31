@@ -64,11 +64,16 @@ def google_maps_url(coords: list[tuple[float, float]]) -> str:
 _POLYGON_HINTS = (
     "BOUND BY", "BOUNDED BY", "BOUNDARY", "IN AREA", "IN AREAS", "AREA BOUND",
     "DELIMITED BY", "DELIMITADA POR", "DELIMITADO POR", "ZONA", "AREA WITHIN",
-    "AREA DELIMITED", "LIMITED BY", "AREA:", "AREAS:",
+    "AREA DELIMITED", "LIMITED BY", "AREA:", "AREAS:", "WITHIN THE AREA",
+    "AREA ENCLOSED", "ENCLOSED BY", "AREA FORMED", "POLYGON", "PERIMETER",
+    "OPERATIONS IN", "EXERCISES IN", "FIRINGS IN", "SURVEY IN", "OPERATIONS AREA",
+    "HAZARDOUS OPERATIONS", "SEISMIC SURVEY", "PROHIBITED IN", "AREA COMPRISED",
+    "COMPRENDIDA", "COMPRISED BY", "AREA LIMITED", "AVOID AREA", "DANGER AREA",
 )
 _LINE_HINTS = (
     "TRACKLINE", "LINE JOINING", "JOINING", "ALONG TRACK", "ALONG THE LINE",
-    "TRACK JOINING", "LINEA", "LINE FROM",
+    "TRACK JOINING", "LINEA", "LINE FROM", "ALONG A LINE", "ROUTE", "LANE",
+    "PIPELINE", "CABLE OPERATIONS", "CABLE ROUTE", "ALONG THE TRACK",
 )
 
 # Разделители, которые НЕ разрывают группу координат (перечисление внутри одной фигуры)
@@ -142,7 +147,10 @@ def extract_shapes(text: str, max_shapes: int = 40) -> list[dict]:
         if not pts:
             continue
 
-        kind = _classify(text[max(0, group[0].start() - 140):group[0].start()])
+        # Окно поиска подсказки широкое: в реальных сообщениях между словами
+        # "IN AREA BOUND BY" и первой координатой нередко вклинивается название
+        # судна, даты и прочее на 200+ символов.
+        kind = _classify(text[max(0, group[0].start() - 320):group[0].start()])
 
         if len(pts) == 1:
             shapes.append({"type": "point", "points": pts})
@@ -152,6 +160,12 @@ def extract_shapes(text: str, max_shapes: int = 40) -> list[dict]:
             shapes.append({"type": "polygon", "points": pts})
         elif kind == "line":
             shapes.append({"type": "line", "points": pts})
+        elif len(pts) >= 4:
+            # Четыре и больше координат подряд, перечисленных через запятую --
+            # это практически всегда обход контура района, даже если ключевого
+            # слова рядом не нашлось. Отдельные объекты (буровые, огни) так
+            # подряд не перечисляют, у них между координатами идут названия.
+            shapes.append({"type": "polygon", "points": pts})
         else:
             # перечисление отдельных позиций (буровые, огни) -- каждая сама по себе
             for p in pts:

@@ -8,7 +8,7 @@ from telegram.ext import ContextTypes
 from ..config import config
 from ..scheduler import fetch_and_store_area, format_warning_message
 from ..services.access import is_effectively_premium
-from ..services.sources.registry import AREAS, POLLABLE_AREAS
+from ..services.sources.registry import AREAS, POLLABLE_AREAS, area_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,8 @@ def _build_keyboard(subscribed: list[str]) -> InlineKeyboardMarkup:
     for code in POLLABLE_AREAS:
         mark = "✅" if code in subscribed else "▫️"
         info = AREAS[code]
-        rows.append([InlineKeyboardButton(f"{mark} {code} — {info.name}", callback_data=f"{CALLBACK_PREFIX}{code}")])
+        label = f"{mark} {code.replace('COASTAL:', 'Берег ')} — {area_display_name(code)}"
+        rows.append([InlineKeyboardButton(label[:62], callback_data=f"{CALLBACK_PREFIX}{code}")])
     rows.append([InlineKeyboardButton("Готово", callback_data=f"{CALLBACK_PREFIX}done")])
     return InlineKeyboardMarkup(rows)
 

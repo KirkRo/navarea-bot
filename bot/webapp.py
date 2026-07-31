@@ -106,12 +106,22 @@ def _row_to_dict(row, with_coords: bool = True) -> dict:
     }
     if with_coords:
         data["coords"] = extract_coordinates(row["raw_text"])[:40]
-        data["shapes"] = extract_shapes(row["raw_text"])
+        # Готовая геометрия от источника (Sealagom) точнее нашего разбора текста --
+        # берём её, если есть, и только иначе разбираем текст сами.
+        stored = None
+        try:
+            raw_shapes = row["shapes_json"]
+            if raw_shapes:
+                stored = json.loads(raw_shapes)
+        except (KeyError, TypeError, ValueError):
+            stored = None
+        data["shapes"] = stored or extract_shapes(row["raw_text"])
+        data["geo_source"] = "source" if stored else "parsed"
     return data
 
 
 def _build_stats() -> dict:
-    from .services.sources.registry import AREAS, POLLABLE_AREAS
+    from .services.sources.registry import AREAS, POLLABLE_AREAS, area_display_name
 
     db = _state["db"]
     per_area = db.area_stats()
@@ -122,7 +132,8 @@ def _build_stats() -> dict:
         s = per_area.get(code, {})
         areas.append({
             "code": code,
-            "name": info.name if info else code,
+            "name": area_display_name(code) if info else code,
+            "is_coastal": code.startswith("COASTAL:"),
             "coordinator": info.coordinator if info else "",
             "in_force": s.get("in_force", 0),
             "archived": s.get("archived", 0),
@@ -180,7 +191,7 @@ def _api_warnings(query: dict) -> dict:
     q = (query.get("q") or [""])[0].strip()
     areas = [a for a in (query.get("area") or []) if a]
     include_archived = (query.get("archived") or ["0"])[0] == "1"
-    limit = min(int((query.get("limit") or ["200"])[0]), 500)
+    limit = min(int((query.get("limit") or ["500"])[0]), 4000)
 
     rows = db.search_warnings(query=q, areas=areas or None,
                               include_archived=include_archived, limit=limit)

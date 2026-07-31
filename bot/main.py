@@ -35,6 +35,21 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.exception("Ошибка при обработке апдейта %s", update, exc_info=context.error)
 
 
+async def on_startup(application: Application) -> None:
+    """Всё, что нужно сделать один раз при запуске: кнопка Mini App и
+    подтягивание списка береговых регионов (их состав знает только
+    Sealagom, заранее в таблицу не пропишешь)."""
+    await setup_menu_button(application)
+    try:
+        from .services.sources.registry import register_coastal_areas
+
+        added = await register_coastal_areas()
+        if added:
+            logger.info("Береговые предупреждения доступны: %d регионов", added)
+    except Exception:
+        logger.exception("Не удалось зарегистрировать береговые регионы")
+
+
 async def setup_menu_button(application: Application) -> None:
     """Ставит постоянную кнопку слева от поля ввода, которая открывает Mini App.
     Вызывается сама при каждом запуске бота -- руками в BotFather настраивать
@@ -73,7 +88,7 @@ def build_application() -> Application:
         "Postgres" if config.database_url else "SQLite",
     )
 
-    application = Application.builder().token(config.bot_token).post_init(setup_menu_button).build()
+    application = Application.builder().token(config.bot_token).post_init(on_startup).build()
 
     db = build_database(config.database_url, config.db_path)
     qa_client = ClaudeQA(config.anthropic_api_key, config.claude_model, config.claude_max_tokens)

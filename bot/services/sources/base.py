@@ -21,6 +21,9 @@ class ParsedWarning:
     region: Optional[str]          # например "NORTH PACIFIC"
     raw_text: str                  # полный текст сообщения целиком
     cancels: list[str]             # номера сообщений, которые это сообщение отменяет
+    # Готовая геометрия от источника (Sealagom отдаёт размеченные полигоны и
+    # полосы). None -- источник геометрию не даёт, разбираем текст сами.
+    shapes: list[dict] | None = None
 
 
 class WarningSource(Protocol):

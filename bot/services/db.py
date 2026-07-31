@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 import sqlite3
@@ -47,7 +48,8 @@ CREATE TABLE IF NOT EXISTS warnings (
     raw_text TEXT NOT NULL,
     text_hash TEXT NOT NULL UNIQUE,
     first_seen_at TEXT NOT NULL,
-    is_cancelled INTEGER NOT NULL DEFAULT 0
+    is_cancelled INTEGER NOT NULL DEFAULT 0,
+    shapes_json TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sent_notifications (
@@ -257,8 +259,10 @@ class Database:
         issued_at: Optional[str],
         region: Optional[str],
         raw_text: str,
+        shapes: Optional[list] = None,
     ) -> Optional[int]:
         h = text_hash(raw_text)
+        shapes_json = json.dumps(shapes, ensure_ascii=False) if shapes else None
         with self._conn() as conn:
             # Если у сообщения есть номер и для этого района уже есть запись с таким
             # же номером -- обновляем её, а не плодим дубль (актуально когда источник
@@ -276,20 +280,21 @@ class Database:
                         """
                         UPDATE warnings
                         SET source = ?, category = ?, issued_at = ?, region = ?,
-                            raw_text = ?, text_hash = ?, first_seen_at = ?, is_cancelled = 0
+                            raw_text = ?, text_hash = ?, first_seen_at = ?, is_cancelled = 0,
+                            shapes_json = ?
                         WHERE id = ?
                         """,
-                        (source, category, issued_at, region, raw_text, h, _now(), existing["id"]),
+                        (source, category, issued_at, region, raw_text, h, _now(), shapes_json, existing["id"]),
                     )
                     return existing["id"]
 
             cur = conn.execute(
                 """
                 INSERT OR IGNORE INTO warnings
-                    (source, area_code, msg_number, category, issued_at, region, raw_text, text_hash, first_seen_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (source, area_code, msg_number, category, issued_at, region, raw_text, text_hash, first_seen_at, shapes_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (source, area_code, msg_number, category, issued_at, region, raw_text, h, _now()),
+                (source, area_code, msg_number, category, issued_at, region, raw_text, h, _now(), shapes_json),
             )
             return cur.lastrowid if cur.rowcount else None
 
@@ -418,7 +423,7 @@ class Database:
         return result
 
     def search_warnings(self, query: str = "", areas: Optional[list[str]] = None,
-                        include_archived: bool = False, limit: int = 200) -> list[sqlite3.Row]:
+                        include_archived: bool = False, limit: int = 2000) -> list[sqlite3.Row]:
         sql = "SELECT * FROM warnings WHERE 1=1"
         params: list = []
         if not include_archived:
