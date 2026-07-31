@@ -358,6 +358,68 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
 
+/* ---- Радиостанции ---- */
+.rcard{
+  background:var(--surf);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:13px 14px;margin-bottom:10px;position:relative;overflow:hidden;
+  backdrop-filter:blur(16px);cursor:pointer;
+  transition:transform .2s cubic-bezier(.34,1.4,.5,1),border-color .2s;
+}
+.rcard:active{transform:scale(.98);border-color:rgba(240,160,60,.4)}
+.rcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--muted);opacity:.5}
+.rcard.auto::before{background:linear-gradient(180deg,#3fc97f,#2fa864);opacity:1}
+.rcard.reliable::before{background:linear-gradient(180deg,var(--amber),var(--amber2));opacity:1}
+.rtop{display:flex;align-items:center;gap:10px}
+.rwave{
+  width:42px;height:42px;flex:none;border-radius:13px;position:relative;
+  background:var(--amber-soft);border:1px solid rgba(240,160,60,.24);
+  display:flex;align-items:center;justify-content:center;color:var(--amber);overflow:hidden;
+}
+.rcard.auto .rwave{background:rgba(63,201,127,.14);border-color:rgba(63,201,127,.3);color:var(--ok)}
+.rwave i{
+  position:absolute;inset:0;border-radius:50%;border:1.5px solid currentColor;
+  opacity:0;animation:rping 2.8s ease-out infinite;
+}
+.rwave i:nth-child(2){animation-delay:.9s}
+.rwave i:nth-child(3){animation-delay:1.8s}
+@keyframes rping{0%{transform:scale(.2);opacity:.75}75%{transform:scale(1.1);opacity:0}100%{opacity:0}}
+.rwave .ico{position:relative;z-index:2;width:19px;height:19px;margin:0}
+.rmid{flex:1;min-width:0}
+.rname{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmmsi{font-size:13px;color:var(--amber);font-weight:700;letter-spacing:.4px;margin-top:1px}
+.rcov{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+.rtags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.rtag{
+  font-size:10px;font-weight:700;border-radius:7px;padding:3px 8px;
+  background:var(--surf2);border:1px solid var(--line);color:var(--muted);
+}
+.rtag.ok{background:rgba(63,201,127,.14);border-color:rgba(63,201,127,.34);color:var(--ok)}
+.rtag.am{background:var(--amber-soft);border-color:rgba(240,160,60,.3);color:var(--amber)}
+.rcopy{
+  width:34px;height:34px;flex:none;border-radius:11px;border:1px solid var(--line);
+  background:var(--surf2);color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .22s cubic-bezier(.34,1.6,.5,1),color .2s;
+}
+.rcopy:active{transform:scale(.85);color:var(--amber)}
+.rcopy.done{color:var(--ok);border-color:rgba(63,201,127,.4)}
+.rmapwrap{position:relative;border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--line);box-shadow:var(--sh);margin-bottom:13px}
+#rmap{height:46vh}
+.rlegend{display:flex;gap:13px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:0 0 15px}
+.rlegend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.rpop{min-width:190px}
+.rpop .pn{font-size:14px;font-weight:750;margin-bottom:3px}
+.rpop .pm{font-size:15px;font-weight:800;color:#f0a03c;letter-spacing:.5px;margin-bottom:6px}
+.rpop .pr{font-size:11px;line-height:1.4;color:#b9cadb}
+.rpop .pb{
+  display:inline-block;margin-top:7px;font-size:10px;font-weight:750;border-radius:7px;padding:3px 8px;
+}
+.rpop .pb.ok{background:rgba(63,201,127,.2);color:#6fe3a6}
+.rpop .pb.am{background:rgba(240,160,60,.2);color:#ffc372}
+.rpop .pb.no{background:rgba(127,150,172,.18);color:#a8bccf}
+.station-dot{border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+
 /* ---- График и тепловая карта ---- */
 .chart{background:var(--surf);border:1px solid var(--line);border-radius:var(--r-lg);
   padding:13px 14px 9px;backdrop-filter:blur(14px)}
@@ -687,6 +749,20 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <div id="toollist"></div>
   </section>
 
+  <!-- РАДИО -->
+  <section id="v-radio" class="hidden">
+    <div class="sech"><h3>Тест MF/HF DSC</h3></div>
+    <div class="hint" id="radioHint"></div>
+    <div class="chips" id="rchips"></div>
+    <div class="rmapwrap"><div id="rmap"></div></div>
+    <div class="rlegend">
+      <span><i style="background:#3fc97f"></i>Автоподтверждение</span>
+      <span><i style="background:#f0a03c"></i>Отвечает стабильно</span>
+      <span><i style="background:#7f96ac"></i>Отвечает не всегда</span>
+    </div>
+    <div id="radiolist"><div class="sk card"></div><div class="sk card"></div></div>
+  </section>
+
   <!-- РЕЙС -->
   <section id="v-voy" class="hidden">
     <div class="sech"><h3>Планирование перехода</h3></div>
@@ -757,6 +833,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <button class="tab" data-v="areas" data-i="globe">Районы</button>
   <button class="tab" data-v="map" data-i="map">Карта</button>
   <button class="tab" data-v="tools" data-i="sliders">Мостик</button>
+  <button class="tab" data-v="radio" data-i="radar">Радио</button>
   <button class="tab" data-v="voy" data-i="ship">Рейс</button>
 </nav>
 
@@ -2010,7 +2087,7 @@ function drawVoy(r){
 /* --- навигация --- */
 function switchView(v){
   S.view=v;
-  ['dash','areas','map','tools','voy'].forEach(x=>{
+  ['dash','areas','map','tools','radio','voy'].forEach(x=>{
     const el=$('#v-'+x);
     if(x===v){el.classList.remove('hidden');el.style.animation='none';void el.offsetWidth;el.style.animation=''}
     else el.classList.add('hidden');
@@ -2443,6 +2520,131 @@ function renderRefs(){
   document.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>{
     const r=REFS.find(x=>x.id===el.dataset.ref); if(r) r.open();
   });
+}
+
+
+/* ---- Радиостанции MF/HF DSC ---- */
+let RADIO=null, rmap=null, rLayers=[], rRegion='all';
+
+async function loadRadio(){
+  if(RADIO) return RADIO;
+  try{
+    RADIO=await api('/api/stations');
+    localStorage.setItem('navarea_radio',JSON.stringify(RADIO));
+  }catch(e){
+    try{ RADIO=JSON.parse(localStorage.getItem('navarea_radio')||'null'); }catch(e2){}
+  }
+  return RADIO;
+}
+const replyClass=r=>r==='auto'?'ok':(r==='reliable'?'am':'no');
+
+async function renderRadio(){
+  const d=await loadRadio();
+  if(!d){ $('#radiolist').innerHTML=`<div class="empty">${ico('radar')}Не удалось загрузить справочник станций. Попробуй позже.</div>`; return; }
+
+  const counts={all:d.stations.length};
+  Object.keys(d.regions).forEach(k=>counts[k]=d.stations.filter(s=>s.r===k).length);
+  $('#rchips').innerHTML=
+    `<div class="cat ${rRegion==='all'?'on':''}" data-rr="all">${ico('globe')}
+       <span class="cn">Все</span><span class="cb">${counts.all}</span></div>`+
+    Object.keys(d.regions).map(k=>
+      `<div class="cat ${rRegion===k?'on':''}" data-rr="${k}">${ico('radar')}
+         <span class="cn">${esc(d.regions[k].split(' ')[0])}</span>
+         <span class="cb">${counts[k]}</span></div>`).join('');
+  document.querySelectorAll('[data-rr]').forEach(c=>c.onclick=()=>{
+    rRegion=c.dataset.rr;hap();renderRadio();drawStations();
+  });
+
+  const list=d.stations.filter(s=>rRegion==='all'||s.r===rRegion);
+  const best=list.filter(s=>s.reply!=='normal');
+  const rest=list.filter(s=>s.reply==='normal');
+
+  let h='';
+  if(best.length){
+    h+=`<div class="sech"><h3>Отвечают надёжнее всего</h3></div>`+best.map(stCard).join('');
+  }
+  if(rest.length){
+    h+=`<div class="sech" style="margin-top:16px"><h3>Остальные станции</h3></div>`+rest.map(stCard).join('');
+  }
+  $('#radiolist').innerHTML=h||`<div class="empty">${ico('radar')}В этом регионе станций нет.</div>`;
+
+  document.querySelectorAll('[data-mmsi]').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation();
+    const m=b.dataset.mmsi;
+    try{
+      navigator.clipboard.writeText(m);
+      b.classList.add('done'); b.innerHTML=ico('anchor','sm');
+      setTimeout(()=>{b.classList.remove('done');b.innerHTML=ico('flag','sm')},1400);
+    }catch(e){}
+    hap('medium');
+  });
+  document.querySelectorAll('[data-st]').forEach(c=>c.onclick=ev=>{
+    if(ev.target.closest('button')) return;
+    const s=d.stations.find(x=>x.m===c.dataset.st);
+    if(s){ switchView('radio'); focusStation(s); }
+  });
+}
+
+function stCard(s,i){
+  const cls=s.reply==='auto'?'auto':(s.reply==='reliable'?'reliable':'');
+  const lbl=(RADIO.reply_labels||{})[s.reply]||{t:'',d:''};
+  const tagCls=s.reply==='auto'?'ok':(s.reply==='reliable'?'am':'');
+  return `<div class="rcard ${cls} up" style="animation-delay:${Math.min((i||0)*40,300)}ms" data-st="${s.m}">
+    <div class="rtop">
+      <div class="rwave"><i></i><i></i><i></i>${ico('radar')}</div>
+      <div class="rmid">
+        <div class="rname">${esc(s.n)}</div>
+        <div class="rmmsi mono">${esc(s.m)}</div>
+      </div>
+      <button class="rcopy" data-mmsi="${s.m}">${ico('flag','sm')}</button>
+    </div>
+    <div class="rcov">${esc(s.c)}</div>
+    <div class="rtags">
+      <span class="rtag ${tagCls}">${esc(lbl.t)}</span>
+      ${s.f&&s.f!=='—'?`<span class="rtag">${esc(s.f)}</span>`:''}
+    </div>
+  </div>`;
+}
+
+function initRmap(){
+  if(rmap) return;
+  rmap=L.map('rmap',{worldCopyJump:true}).setView([25,20],2);
+  L.tileLayer(BASES.dark.url,{maxZoom:18,subdomains:'abcd',attribution:BASES.dark.attr}).addTo(rmap);
+  drawStations();
+}
+function drawStations(){
+  if(!rmap||!RADIO) return;
+  rLayers.forEach(l=>rmap.removeLayer(l)); rLayers=[];
+  const colors={auto:'#3fc97f',reliable:'#f0a03c',normal:'#7f96ac'};
+  RADIO.stations.filter(s=>rRegion==='all'||s.r===rRegion).forEach(s=>{
+    const c=colors[s.reply]||colors.normal;
+    const lbl=(RADIO.reply_labels||{})[s.reply]||{t:'',d:''};
+    const badge=s.reply==='auto'?'ok':(s.reply==='reliable'?'am':'no');
+    const m=L.circleMarker([s.lat,s.lon],{
+      radius:s.reply==='normal'?6:9, color:'#fff', weight:2,
+      fillColor:c, fillOpacity:.92, className:'station-dot'
+    }).bindPopup(
+      `<div class="rpop">
+         <div class="pn">${esc(s.n)}</div>
+         <div class="pm">${esc(s.m)}</div>
+         <div class="pr">${esc(s.c)}${s.f&&s.f!=='—'?'<br>Частота: '+esc(s.f):''}</div>
+         <span class="pb ${badge}">${esc(lbl.t)}</span>
+         <div class="pr" style="margin-top:6px">${esc(lbl.d)}</div>
+       </div>`,{maxWidth:250});
+    m.addTo(rmap); rLayers.push(m);
+  });
+}
+function focusStation(s){
+  initRmap();
+  setTimeout(()=>{
+    rmap.invalidateSize();
+    rmap.setView([s.lat,s.lon],5,{animate:true});
+    const t=rLayers.find(l=>{
+      const ll=l.getLatLng();
+      return Math.abs(ll.lat-s.lat)<0.01&&Math.abs(ll.lng-s.lon)<0.01;
+    });
+    if(t) setTimeout(()=>t.openPopup(),420);
+  },80);
 }
 
 /* ---- Экран инструментов ---- */

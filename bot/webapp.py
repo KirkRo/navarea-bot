@@ -248,6 +248,11 @@ def _api_voyage(query: dict) -> dict:
     }
 
 
+def _api_stations(query: dict) -> dict:
+    from .services.radio import stations_payload
+    return stations_payload()
+
+
 def _api_zones(query: dict) -> dict:
     from .services.zones import zones_payload
     return zones_payload()
@@ -339,6 +344,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/stations": _api_stations,
     "/api/history": _api_history,
     "/api/bridge": _api_bridge,
     "/api/zones": _api_zones,
