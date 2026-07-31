@@ -358,6 +358,52 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
 
+/* ---- График и тепловая карта ---- */
+.chart{background:var(--surf);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:13px 14px 9px;backdrop-filter:blur(14px)}
+.chart svg{width:100%;height:110px;display:block;overflow:visible}
+.chartAx{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:7px}
+.heat{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--surf);
+  border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:7px;cursor:pointer;
+  transition:border-color .2s}
+.heat:active{border-color:rgba(240,160,60,.42)}
+.heat .hc{font-size:11.5px;font-weight:800;color:var(--amber);width:56px;flex:none}
+.heat .hb{flex:1;height:9px;background:rgba(127,150,172,.14);border-radius:5px;overflow:hidden}
+.heat .hb i{display:block;height:100%;border-radius:5px;
+  background:linear-gradient(90deg,var(--amber),var(--amber2));animation:grow .7s cubic-bezier(.25,1,.4,1)}
+@keyframes grow{from{width:0!important}}
+.heat .hn{font-size:13.5px;font-weight:750;width:38px;text-align:right;flex:none}
+
+/* ---- Инструменты ---- */
+.tinput{
+  width:100%;background:var(--surf);border:1px solid var(--line);color:var(--text);
+  border-radius:var(--r-sm);padding:12px 13px;font-size:15px;font-family:inherit;outline:none;
+  transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none;
+}
+.tinput:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
+  linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:36px}
+.tres{
+  display:flex;align-items:center;justify-content:space-between;gap:11px;
+  padding:12px 14px;border-radius:var(--r-sm);background:var(--surf2);
+  border:1px solid var(--line);margin-bottom:8px;
+}
+.tres.hi{background:linear-gradient(120deg,rgba(240,160,60,.17),rgba(255,139,61,.05));
+  border-color:rgba(240,160,60,.36)}
+.tres.warn{background:rgba(255,107,74,.13);border-color:rgba(255,107,74,.4)}
+.tres .tl{font-size:12.5px;color:var(--muted);flex:1;min-width:0}
+.tres .tv{font-size:15px;font-weight:750;text-align:right}
+.tres.hi .tv{color:var(--amber);font-size:18px}
+.tres.warn .tv{color:var(--hot)}
+.thead{display:flex;align-items:center;gap:13px;margin-bottom:5px}
+.thead .ti{
+  width:50px;height:50px;flex:none;border-radius:16px;color:var(--amber);
+  background:var(--amber-soft);border:1px solid rgba(240,160,60,.28);
+  display:flex;align-items:center;justify-content:center;
+}
+
 /* ---- Иконки ---- */
 .ico{width:20px;height:20px;flex:none;display:block;margin:0 auto}
 .ico.sm{width:16px;height:16px}
@@ -509,7 +555,7 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
             <stop offset="0%" stop-color="#186091"/><stop offset="100%" stop-color="#0a2540"/>
           </linearGradient>
           <radialGradient id="beam" cx="0" cy="0.5" r="1">
-            <stop offset="0%" stop-color="#f0a03c" stop-opacity=".62"/>
+            <stop offset="0%" stop-color="#ffd08a" stop-opacity=".72"/>
             <stop offset="100%" stop-color="#f0a03c" stop-opacity="0"/>
           </radialGradient>
           <radialGradient id="moon" cx="0.5" cy="0.5" r="0.5">
@@ -526,10 +572,30 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
           <path d="M138 50 q3 -3 6 0 q3 -3 6 0" stroke="#dbe9f6" stroke-width="1.1" fill="none"/>
         </g>
         <g class="lh">
-          <polygon points="352,132 361,132 359,86 354,86" fill="#0f2b45"/>
-          <rect x="352.5" y="78" width="8" height="8" rx="2" fill="#f0a03c" class="lamp"/>
-          <polygon points="356,82 400,54 400,110" fill="url(#beam)" class="beamRay"/>
-          <rect x="348" y="130" width="17" height="6" rx="2" fill="#0b2138"/>
+          <!-- скалы у основания -->
+          <path d="M336 136 l7-11 5 6 6-9 7 10 6-7 8 11z" fill="#0a1e33"/>
+          <path d="M341 136 l5-7 4 4 5-6 5 7 4-4 5 6z" fill="#102b46"/>
+          <!-- фундамент -->
+          <path d="M345 128 h22 l-2 8 h-18z" fill="#16344f"/>
+          <!-- башня: конус с сужением кверху -->
+          <path d="M350.5 126 L353 84 h6 l2.5 42 z" fill="#e6ecf2"/>
+          <path d="M356 126 L356 84 h3 l2.5 42 z" fill="#c2ced9"/>
+          <!-- красные полосы -->
+          <path d="M351.6 117 h13.2 l.5 8 h-14.2z" fill="#c9463a"/>
+          <path d="M352.9 101 h10.5 l.4 8 h-11.3z" fill="#c9463a"/>
+          <path d="M354.2 86 h7.8 l.4 7 h-8.6z" fill="#c9463a"/>
+          <!-- галерея -->
+          <path d="M350 84 h13 v3 h-13z" fill="#22415e"/>
+          <path d="M351 79 h11 v5 h-11z" fill="#16344f" opacity=".9"/>
+          <!-- фонарный отсек: стекло + свет -->
+          <rect x="352.5" y="70" width="8" height="10" rx="1.5" fill="#3d5f80"/>
+          <rect x="353.5" y="71" width="6" height="8" rx="1" fill="#ffd894" class="lamp"/>
+          <circle cx="356.5" cy="75" r="5.5" fill="#ffca7a" opacity=".3" class="lamp"/>
+          <!-- купол -->
+          <path d="M351.5 70 l5-5 5 5z" fill="#22415e"/>
+          <rect x="355.8" y="62" width="1.4" height="4" fill="#22415e"/>
+          <!-- луч -->
+          <polygon points="357,75 400,42 400,108" fill="url(#beam)" class="beamRay"/>
         </g>
         <g class="ship">
           <path d="M0 124 h96 l-9 17 h-78 z" fill="#0c2540"/>
@@ -571,7 +637,8 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
       </div>
     </div>
 
-    <div class="sech"><h3>Избранные районы</h3><a id="toAreas">Все →</a></div>
+    <div id="histBox"></div>
+    <div class="sech" style="margin-top:17px"><h3>Избранные районы</h3><a id="toAreas">Все →</a></div>
     <div id="favlist"></div>
   </section>
 
@@ -610,6 +677,16 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
     <div id="zonelist"></div>
   </section>
 
+  <!-- ИНСТРУМЕНТЫ -->
+  <section id="v-tools" class="hidden">
+    <div class="sech"><h3>Мостик</h3></div>
+    <div class="hint" id="toolsHint"></div>
+    <div id="bridgeBox"></div>
+    <div id="refBox" style="margin-top:19px"></div>
+    <div class="sech" style="margin-top:19px"><h3>Расчёты</h3></div>
+    <div id="toollist"></div>
+  </section>
+
   <!-- РЕЙС -->
   <section id="v-voy" class="hidden">
     <div class="sech"><h3>Планирование перехода</h3></div>
@@ -626,10 +703,10 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
     <div class="fld">
       <label>Ширина коридора</label>
       <div class="cats" id="corr">
-        <div class="cat" data-c="50">${ico('gauge')}<span class="cn">50 миль</span></div>
-        <div class="cat on" data-c="150">${ico('gauge')}<span class="cn">150 миль</span></div>
-        <div class="cat" data-c="300">${ico('wave')}<span class="cn">300 миль</span></div>
-        <div class="cat" data-c="500">${ico('compass')}<span class="cn">500 миль</span></div>
+        <div class="cat" data-c="50"><span class="cn">50 миль</span></div>
+        <div class="cat on" data-c="150"><span class="cn">150 миль</span></div>
+        <div class="cat" data-c="300"><span class="cn">300 миль</span></div>
+        <div class="cat" data-c="500"><span class="cn">500 миль</span></div>
       </div>
     </div>
     <button class="btn wide" id="govoy">Проложить и проверить</button>
@@ -659,10 +736,27 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   </div>
 </div>
 
+<div class="detail" id="tool">
+  <div class="dbody" style="margin-top:calc(18px + env(safe-area-inset-top))">
+    <div class="thead">
+      <div class="ti" id="tIcon"></div>
+      <div style="min-width:0">
+        <div class="dtitle" id="tName" style="font-size:20px;margin:0"></div>
+        <div class="gsub" id="tDesc" style="display:block;margin-top:3px"></div>
+      </div>
+    </div>
+    <div class="dpanel" style="margin-top:15px"><h4>Исходные данные</h4><div id="tFields"></div></div>
+    <div class="dpanel"><h4>Результат</h4><div id="tResults"></div></div>
+    <div class="hint">Расчёт справочный. Решение принимает судоводитель по официальным пособиям и данным судна.</div>
+  </div>
+  <div class="dbar"><button class="btn wide" id="tBack">Назад к инструментам</button></div>
+</div>
+
 <nav class="tabs">
   <button class="tab on" data-v="dash" data-i="gauge">Панель</button>
   <button class="tab" data-v="areas" data-i="globe">Районы</button>
   <button class="tab" data-v="map" data-i="map">Карта</button>
+  <button class="tab" data-v="tools" data-i="sliders">Мостик</button>
   <button class="tab" data-v="voy" data-i="ship">Рейс</button>
 </nav>
 
@@ -704,6 +798,836 @@ const AREA_ICON={
   HYDROLANT:'globe',HYDROPAC:'globe'
 };
 const areaIcon=c=>c.startsWith('COASTAL:')?'lighthouse':(AREA_ICON[c]||'flag');
+
+/* ================= Морские расчёты =================
+   Всё считается прямо в приложении, без обращения к серверу --
+   в рейсе связь пропадает, а калькулятор должен работать всегда. */
+const R_NM=3440.065, D2R=Math.PI/180, R2D=180/Math.PI;
+const norm360=d=>((d%360)+360)%360;
+
+/* -- расстояния и курсы -- */
+function gcDistance(la1,lo1,la2,lo2){
+  const p1=la1*D2R,p2=la2*D2R,dp=(la2-la1)*D2R,dl=(lo2-lo1)*D2R;
+  const a=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+  return 2*R_NM*Math.asin(Math.min(1,Math.sqrt(a)));
+}
+function initialBearing(la1,lo1,la2,lo2){
+  const p1=la1*D2R,p2=la2*D2R,dl=(lo2-lo1)*D2R;
+  const y=Math.sin(dl)*Math.cos(p2);
+  const x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+  return norm360(Math.atan2(y,x)*R2D);
+}
+function finalBearing(la1,lo1,la2,lo2){
+  return norm360(initialBearing(la2,lo2,la1,lo1)+180);
+}
+function rhumbDistance(la1,lo1,la2,lo2){
+  const p1=la1*D2R,p2=la2*D2R,dp=p2-p1;
+  let dl=Math.abs(lo2-lo1)*D2R;
+  if(dl>Math.PI) dl=2*Math.PI-dl;
+  const dPsi=Math.log(Math.tan(Math.PI/4+p2/2)/Math.tan(Math.PI/4+p1/2));
+  const q=Math.abs(dPsi)>1e-11?dp/dPsi:Math.cos(p1);
+  return Math.sqrt(dp*dp+q*q*dl*dl)*R_NM;
+}
+function rhumbBearing(la1,lo1,la2,lo2){
+  const p1=la1*D2R,p2=la2*D2R;
+  let dl=(lo2-lo1)*D2R;
+  if(Math.abs(dl)>Math.PI) dl=dl>0?-(2*Math.PI-dl):(2*Math.PI+dl);
+  const dPsi=Math.log(Math.tan(Math.PI/4+p2/2)/Math.tan(Math.PI/4+p1/2));
+  return norm360(Math.atan2(dl,dPsi)*R2D);
+}
+
+/* -- координаты -- */
+function parseCoord(txt){
+  if(!txt) return null;
+  const t=String(txt).trim().toUpperCase().replace(/,/g,'.');
+  let m=t.match(/^(\d{1,3})[°\s-](\d{1,2}(?:\.\d+)?)['\s-]*(\d{1,2}(?:\.\d+)?)?["\s]*([NSEW])?$/);
+  if(m){
+    let v=+m[1]+(+m[2])/60+(m[3]?(+m[3])/3600:0);
+    if(m[4]==='S'||m[4]==='W') v=-v;
+    return v;
+  }
+  m=t.match(/^(-?\d+(?:\.\d+)?)°?\s*([NSEW])?$/);
+  if(m){ let v=+m[1]; if(m[2]==='S'||m[2]==='W') v=-Math.abs(v); return v; }
+  return null;
+}
+function toDDM(v,isLat){
+  const h=v>=0?(isLat?'N':'E'):(isLat?'S':'W'),a=Math.abs(v);
+  const d=Math.floor(a),m=(a-d)*60;
+  return `${String(d).padStart(isLat?2:3,'0')}°${m.toFixed(3).padStart(6,'0')}'${h}`;
+}
+function toDMS(v,isLat){
+  const h=v>=0?(isLat?'N':'E'):(isLat?'S':'W'),a=Math.abs(v);
+  const d=Math.floor(a),mf=(a-d)*60,m=Math.floor(mf),s=(mf-m)*60;
+  return `${String(d).padStart(isLat?2:3,'0')}°${String(m).padStart(2,'0')}'${s.toFixed(1).padStart(4,'0')}"${h}`;
+}
+
+/* -- проседание (Barrass, упрощённая) -- */
+function squat(cb,v,confined){
+  return confined ? (cb*v*v)/50 : (cb*v*v)/100;
+}
+
+/* -- запас воды под килём -- */
+function ukc(chartedDepth,tide,draft,sq,heelAllow,waveAllow){
+  const avail=chartedDepth+tide;
+  const need=draft+sq+(heelAllow||0)+(waveAllow||0);
+  return {available:avail, required:need, ukc:avail-need};
+}
+
+/* -- якорная стоянка -- */
+function anchorSwing(chainLen,depth,hawseHeight,loa){
+  const vert=depth+(hawseHeight||0);
+  const horiz=chainLen>vert?Math.sqrt(chainLen*chainLen-vert*vert):0;
+  return {horizontal:horiz, radius:horiz+(loa||0), scope:depth>0?chainLen/vert:0};
+}
+
+/* -- надводный габарит -- */
+function airDraft(chartedClearance,hat,tideNow,shipAirDraft){
+  const actual=chartedClearance+(hat-tideNow);
+  return {actual:actual, margin:actual-shipAirDraft};
+}
+
+/* -- CPA / TCPA -- */
+function cpaTcpa(ownCrs,ownSpd,tgtBrg,tgtRng,tgtCrs,tgtSpd){
+  const rx=tgtRng*Math.sin(tgtBrg*D2R), ry=tgtRng*Math.cos(tgtBrg*D2R);
+  const ovx=ownSpd*Math.sin(ownCrs*D2R), ovy=ownSpd*Math.cos(ownCrs*D2R);
+  const tvx=tgtSpd*Math.sin(tgtCrs*D2R), tvy=tgtSpd*Math.cos(tgtCrs*D2R);
+  const vx=tvx-ovx, vy=tvy-ovy;
+  const v2=vx*vx+vy*vy;
+  if(v2<1e-9) return {cpa:tgtRng, tcpa:0, relCourse:0, relSpeed:0, opening:true};
+  const tcpa=-(rx*vx+ry*vy)/v2;
+  const cx=rx+vx*tcpa, cy=ry+vy*tcpa;
+  return {
+    cpa:Math.sqrt(cx*cx+cy*cy),
+    tcpa:tcpa,
+    relCourse:norm360(Math.atan2(vx,vy)*R2D),
+    relSpeed:Math.sqrt(v2),
+    opening:tcpa<0
+  };
+}
+
+/* -- точка перекладки руля -- */
+function wheelOver(radius,courseChange){
+  const a=Math.abs(courseChange)*D2R;
+  return {
+    distance:radius*Math.tan(a/2),
+    advance:radius*Math.sin(a),
+    transfer:radius*(1-Math.cos(a))
+  };
+}
+
+/* -- рейс и топливо -- */
+function voyage(distance,speed,consPerDay){
+  const hours=speed>0?distance/speed:0;
+  const days=hours/24;
+  return {hours:hours, days:days, total:days*(consPerDay||0)};
+}
+function requiredSpeed(distance,hoursAvailable){
+  return hoursAvailable>0?distance/hoursAvailable:0;
+}
+
+/* -- шкала Бофорта -- */
+const BEAUFORT=[
+ [0,0,0.9,'Штиль','Зеркально гладкое море',0],
+ [1,1,3,'Тихий','Рябь',0.1],
+ [2,4,6,'Лёгкий','Небольшие волны',0.2],
+ [3,7,10,'Слабый','Гребни начинают опрокидываться',0.6],
+ [4,11,16,'Умеренный','Небольшие волны, барашки',1],
+ [5,17,21,'Свежий','Умеренные волны',2],
+ [6,22,27,'Сильный','Крупные волны, пена',3],
+ [7,28,33,'Крепкий','Море вздымается, пена полосами',4],
+ [8,34,40,'Очень крепкий','Умеренно высокие волны',5.5],
+ [9,41,47,'Шторм','Высокие волны, видимость снижена',7],
+ [10,48,55,'Сильный шторм','Очень высокие волны, море белое',9],
+ [11,56,63,'Жестокий шторм','Исключительно высокие волны',11.5],
+ [12,64,99,'Ураган','Воздух наполнен пеной и брызгами',14]
+];
+function beaufort(knots){
+  for(const b of BEAUFORT) if(knots<=b[2]) return b;
+  return BEAUFORT[BEAUFORT.length-1];
+}
+
+/* -- солнце и сумерки (алгоритм NOAA) -- */
+function sunTimes(lat,lon,date){
+  const rad=D2R;
+  const dayMs=86400000, J1970=2440588, J2000=2451545;
+  const toJulian=d=>d.valueOf()/dayMs-0.5+J1970;
+  const fromJulian=j=>new Date((j+0.5-J1970)*dayMs);
+  const d=toJulian(date)-J2000;
+  const M=rad*(357.5291+0.98560028*d);
+  const C=rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M));
+  const P=rad*102.9372;
+  const L=M+C+P+Math.PI;
+  const dec=Math.asin(Math.sin(rad*23.4397)*Math.sin(L));
+  const n=Math.round(d-0.0009-(-lon*rad)/(2*Math.PI));
+  const ds=0.0009+(-lon*rad)/(2*Math.PI)+n;
+  const Ms=rad*(357.5291+0.98560028*ds);
+  const Ls=Ms+rad*(1.9148*Math.sin(Ms)+0.02*Math.sin(2*Ms)+0.0003*Math.sin(3*Ms))+P+Math.PI;
+  const Jtransit=J2000+ds+0.0053*Math.sin(Ms)-0.0069*Math.sin(2*Ls);
+  const decs=Math.asin(Math.sin(rad*23.4397)*Math.sin(Ls));
+  function hourAngle(h){
+    const co=(Math.sin(h*rad)-Math.sin(lat*rad)*Math.sin(decs))/(Math.cos(lat*rad)*Math.cos(decs));
+    if(co>1) return null;   /* не восходит */
+    if(co<-1) return NaN;   /* не заходит */
+    return Math.acos(co);
+  }
+  function times(h){
+    const w=hourAngle(h);
+    if(w===null) return {rise:null,set:null,polar:'ночь'};
+    if(Number.isNaN(w)) return {rise:null,set:null,polar:'день'};
+    const a=0.0009+(w+(-lon*rad))/(2*Math.PI)+n;
+    const Jset=J2000+a+0.0053*Math.sin(Ms)-0.0069*Math.sin(2*Ls);
+    const Jrise=Jtransit-(Jset-Jtransit);
+    return {rise:fromJulian(Jrise), set:fromJulian(Jset), polar:null};
+  }
+  return {
+    sun:times(-0.833),
+    civil:times(-6),
+    nautical:times(-12),
+    astro:times(-18),
+    noon:fromJulian(Jtransit)
+  };
+}
+
+/* -- конвертер единиц -- */
+const UNITS={
+  length:{title:'Длина',base:'м',u:{'м':1,'фут':0.3048,'сажень':1.8288,'кабельтов':185.2,'миля':1852,'км':1000}},
+  speed:{title:'Скорость',base:'уз',u:{'уз':1,'км/ч':0.539957,'м/с':1.94384,'миль/ч':0.868976}},
+  mass:{title:'Масса',base:'т',u:{'т':1,'кг':0.001,'фунт':0.000453592,'длинная т':1.01605}},
+  volume:{title:'Объём',base:'м³',u:{'м³':1,'литр':0.001,'баррель':0.158987,'галлон US':0.00378541}},
+  temp:{title:'Температура',base:'°C',u:{}}
+};
+function convert(cat,from,to,val){
+  if(cat==='temp'){
+    let c = from==='°F' ? (val-32)*5/9 : (from==='K' ? val-273.15 : val);
+    return to==='°F' ? c*9/5+32 : (to==='K' ? c+273.15 : c);
+  }
+  const u=UNITS[cat].u;
+  return val*u[from]/u[to];
+}
+
+/* ================= Инструменты ================= */
+const F=(v,n)=>Number.isFinite(v)?v.toFixed(n===undefined?2:n):'—';
+const hm=h=>{
+  if(!Number.isFinite(h))return '—';
+  const neg=h<0; h=Math.abs(h);
+  const d=Math.floor(h/24), hh=Math.floor(h%24), mm=Math.round((h%1)*60);
+  return (neg?'−':'')+(d?d+' сут ':'')+hh+' ч '+String(mm).padStart(2,'0')+' мин';
+};
+const utc=d=>d?String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0'):'—';
+
+const TOOLS=[
+ {id:'dist',cat:'nav',icon:'route',name:'Расстояние и курс',
+  desc:'Ортодромия, локсодромия, начальный и конечный курс',
+  fields:[
+   {k:'la1',l:'Широта отхода',t:'coord',def:'41-25.4N'},
+   {k:'lo1',l:'Долгота отхода',t:'coord',def:'002-10.0E'},
+   {k:'la2',l:'Широта прихода',t:'coord',def:'36-08.0N'},
+   {k:'lo2',l:'Долгота прихода',t:'coord',def:'005-21.0W'}],
+  calc:v=>{
+   const a=parseCoord(v.la1),b=parseCoord(v.lo1),c=parseCoord(v.la2),d=parseCoord(v.lo2);
+   if([a,b,c,d].some(x=>x===null)) return [{l:'Ошибка',v:'Проверь формат координат'}];
+   return [
+    {l:'Ортодромия',v:F(gcDistance(a,b,c,d),1)+' миль',hi:1},
+    {l:'Локсодромия',v:F(rhumbDistance(a,b,c,d),1)+' миль'},
+    {l:'Начальный курс',v:F(initialBearing(a,b,c,d),1)+'°'},
+    {l:'Конечный курс',v:F(finalBearing(a,b,c,d),1)+'°'},
+    {l:'Курс по локсодромии',v:F(rhumbBearing(a,b,c,d),1)+'°'},
+    {l:'Обратный курс',v:F(norm360(initialBearing(a,b,c,d)+180),1)+'°'}];
+  }},
+
+ {id:'eta',cat:'nav',icon:'clock',name:'ETA и скорость',
+  desc:'Время в пути, требуемая скорость, время прибытия',
+  fields:[
+   {k:'d',l:'Расстояние',t:'num',u:'миль',def:'2921'},
+   {k:'s',l:'Скорость',t:'num',u:'узлов',def:'14'},
+   {k:'ha',l:'Времени в запасе (для требуемой скорости)',t:'num',u:'часов',def:'200'}],
+  calc:v=>{
+   const r=voyage(+v.d,+v.s,0);
+   const now=new Date(), eta=new Date(now.getTime()+r.hours*3600000);
+   return [
+    {l:'Время в пути',v:hm(r.hours),hi:1},
+    {l:'В сутках',v:F(r.days,2)+' сут'},
+    {l:'ETA (UTC от сейчас)',v:eta.toISOString().slice(0,16).replace('T',' ')},
+    {l:'Требуемая скорость',v:F(requiredSpeed(+v.d,+v.ha),2)+' узлов'}];
+  }},
+
+ {id:'coord',cat:'nav',icon:'compass',name:'Конвертер координат',
+  desc:'Градусы, минуты, секунды и десятичные',
+  fields:[
+   {k:'la',l:'Широта',t:'coord',def:'41-25.40N'},
+   {k:'lo',l:'Долгота',t:'coord',def:'077-09.96W'}],
+  calc:v=>{
+   const a=parseCoord(v.la),b=parseCoord(v.lo);
+   if(a===null||b===null) return [{l:'Ошибка',v:'Проверь формат'}];
+   return [
+    {l:'Десятичные',v:a.toFixed(6)+', '+b.toFixed(6),hi:1},
+    {l:'Градусы и минуты',v:toDDM(a,true)+' '+toDDM(b,false)},
+    {l:'Градусы, минуты, секунды',v:toDMS(a,true)+' '+toDMS(b,false)}];
+  }},
+
+ {id:'ukc',cat:'depth',icon:'buoy',name:'Запас воды под килём',
+  desc:'UKC с учётом прилива, проседания, крена и волнения',
+  fields:[
+   {k:'cd',l:'Глубина по карте',t:'num',u:'м',def:'15.0'},
+   {k:'td',l:'Высота прилива',t:'num',u:'м',def:'1.8'},
+   {k:'dr',l:'Осадка',t:'num',u:'м',def:'12.5'},
+   {k:'sq',l:'Проседание (squat)',t:'num',u:'м',def:'1.15'},
+   {k:'hl',l:'Поправка на крен',t:'num',u:'м',def:'0.2'},
+   {k:'wv',l:'Поправка на волнение',t:'num',u:'м',def:'0.3'}],
+  calc:v=>{
+   const r=ukc(+v.cd,+v.td,+v.dr,+v.sq,+v.hl,+v.wv);
+   const pct=(+v.dr)>0?(r.ukc/(+v.dr)*100):0;
+   return [
+    {l:'Доступная глубина',v:F(r.available)+' м'},
+    {l:'Требуется',v:F(r.required)+' м'},
+    {l:'Запас под килём',v:F(r.ukc)+' м',hi:1,warn:r.ukc<1},
+    {l:'В процентах от осадки',v:F(pct,1)+' %'}];
+  }},
+
+ {id:'squat',cat:'depth',icon:'wave',name:'Проседание на ходу',
+  desc:'Squat по упрощённой формуле Барраса',
+  fields:[
+   {k:'cb',l:'Коэффициент общей полноты Cb',t:'num',def:'0.80'},
+   {k:'v',l:'Скорость',t:'num',u:'узлов',def:'12'},
+   {k:'w',l:'Акватория',t:'sel',opts:['Открытая вода','Стеснённая / канал'],def:'Открытая вода'}],
+  calc:v=>{
+   const conf=v.w!=='Открытая вода';
+   const s=squat(+v.cb,+v.v,conf);
+   const half=squat(+v.cb,(+v.v)/2,conf);
+   return [
+    {l:'Проседание',v:F(s)+' м',hi:1},
+    {l:'При половинной скорости',v:F(half)+' м'},
+    {l:'Формула',v:conf?'Cb × V² / 50':'Cb × V² / 100'}];
+  }},
+
+ {id:'air',cat:'depth',icon:'lighthouse',name:'Проход под мостом',
+  desc:'Надводный габарит и запас по высоте',
+  fields:[
+   {k:'cc',l:'Габарит по карте (над HAT)',t:'num',u:'м',def:'52.0'},
+   {k:'hat',l:'HAT',t:'num',u:'м',def:'2.4'},
+   {k:'tn',l:'Текущий прилив',t:'num',u:'м',def:'1.1'},
+   {k:'ad',l:'Надводный габарит судна',t:'num',u:'м',def:'48.5'}],
+  calc:v=>{
+   const r=airDraft(+v.cc,+v.hat,+v.tn,+v.ad);
+   return [
+    {l:'Фактический просвет',v:F(r.actual)+' м'},
+    {l:'Запас по высоте',v:F(r.margin)+' м',hi:1,warn:r.margin<1}];
+  }},
+
+ {id:'anchor',cat:'anchor',icon:'anchor',name:'Якорная стоянка',
+  desc:'Радиус циркуляции на якоре и длина скопа',
+  fields:[
+   {k:'ch',l:'Вытравлено цепи',t:'num',u:'м',def:'165'},
+   {k:'dp',l:'Глубина',t:'num',u:'м',def:'30'},
+   {k:'hh',l:'Высота клюза над водой',t:'num',u:'м',def:'10'},
+   {k:'loa',l:'Длина судна',t:'num',u:'м',def:'180'}],
+  calc:v=>{
+   const r=anchorSwing(+v.ch,+v.dp,+v.hh,+v.loa);
+   const shackles=(+v.ch)/27.5;
+   return [
+    {l:'Радиус циркуляции',v:F(r.radius,1)+' м',hi:1},
+    {l:'Горизонтальная проекция цепи',v:F(r.horizontal,1)+' м'},
+    {l:'Скоп (цепь / глубина)',v:F(r.scope,2)+' : 1',warn:r.scope<3},
+    {l:'Вытравлено смычек',v:F(shackles,1)}];
+  }},
+
+ {id:'cpa',cat:'radar',icon:'radar',name:'CPA и TCPA',
+  desc:'Расхождение с целью по данным радара',
+  fields:[
+   {k:'oc',l:'Свой курс',t:'num',u:'°',def:'0'},
+   {k:'os',l:'Своя скорость',t:'num',u:'узлов',def:'20'},
+   {k:'tb',l:'Пеленг на цель',t:'num',u:'°',def:'30'},
+   {k:'tr',l:'Дистанция до цели',t:'num',u:'миль',def:'8'},
+   {k:'tc',l:'Курс цели',t:'num',u:'°',def:'240'},
+   {k:'ts',l:'Скорость цели',t:'num',u:'узлов',def:'15'}],
+  calc:v=>{
+   const r=cpaTcpa(+v.oc,+v.os,+v.tb,+v.tr,+v.tc,+v.ts);
+   return [
+    {l:'CPA',v:F(r.cpa,2)+' миль',hi:1,warn:r.cpa<1&&!r.opening},
+    {l:'TCPA',v:r.opening?'цель расходится':hm(r.tcpa)},
+    {l:'Курс относительного движения',v:F(r.relCourse,1)+'°'},
+    {l:'Скорость сближения',v:F(r.relSpeed,1)+' узлов'}];
+  }},
+
+ {id:'wop',cat:'radar',icon:'compass',name:'Точка перекладки руля',
+  desc:'Wheel Over Point, advance и transfer',
+  fields:[
+   {k:'r',l:'Радиус циркуляции',t:'num',u:'миль',def:'0.5'},
+   {k:'cc',l:'Изменение курса',t:'num',u:'°',def:'60'},
+   {k:'sp',l:'Скорость (для времени)',t:'num',u:'узлов',def:'14'}],
+  calc:v=>{
+   const r=wheelOver(+v.r,+v.cc);
+   const t=(+v.sp)>0?r.distance/(+v.sp):0;
+   return [
+    {l:'Перекладка за',v:F(r.distance,3)+' миль',hi:1},
+    {l:'В кабельтовых',v:F(r.distance*10,1)},
+    {l:'Времени до точки',v:hm(t)},
+    {l:'Advance',v:F(r.advance,3)+' миль'},
+    {l:'Transfer',v:F(r.transfer,3)+' миль'}];
+  }},
+
+ {id:'fuel',cat:'voyage',icon:'ship',name:'Топливо на переход',
+  desc:'Расход, остаток и запас',
+  fields:[
+   {k:'d',l:'Расстояние',t:'num',u:'миль',def:'2921'},
+   {k:'s',l:'Скорость',t:'num',u:'узлов',def:'14'},
+   {k:'c',l:'Расход в сутки',t:'num',u:'т',def:'32'},
+   {k:'rob',l:'Топлива на борту',t:'num',u:'т',def:'420'},
+   {k:'res',l:'Неснижаемый запас',t:'num',u:'%',def:'10'}],
+  calc:v=>{
+   const r=voyage(+v.d,+v.s,+v.c);
+   const reserve=(+v.rob)*(+v.res)/100;
+   const left=(+v.rob)-r.total;
+   return [
+    {l:'Время в пути',v:hm(r.hours)},
+    {l:'Потребуется топлива',v:F(r.total,1)+' т',hi:1},
+    {l:'Останется',v:F(left,1)+' т',warn:left<reserve},
+    {l:'Неснижаемый запас',v:F(reserve,1)+' т'},
+    {l:'Хватает',v:left>=reserve?'да, с запасом '+F(left-reserve,1)+' т':'НЕТ, не хватает '+F(reserve-left,1)+' т',warn:left<reserve}];
+  }},
+
+ {id:'sun',cat:'weather',icon:'sun',name:'Восход, заход, сумерки',
+  desc:'Для планирования вахт и смены режима наблюдения',
+  fields:[
+   {k:'la',l:'Широта',t:'coord',def:'41-25.4N'},
+   {k:'lo',l:'Долгота',t:'coord',def:'002-10.0E'},
+   {k:'dt',l:'Дата (ГГГГ-ММ-ДД, пусто = сегодня)',t:'text',def:''}],
+  calc:v=>{
+   const a=parseCoord(v.la),b=parseCoord(v.lo);
+   if(a===null||b===null) return [{l:'Ошибка',v:'Проверь координаты'}];
+   const d=v.dt?new Date(v.dt+'T12:00:00Z'):new Date();
+   if(isNaN(d)) return [{l:'Ошибка',v:'Проверь дату'}];
+   const t=sunTimes(a,b,d);
+   const row=(n,x)=>({l:n,v:x.polar?('круглые сутки '+x.polar):(utc(x.rise)+' — '+utc(x.set))});
+   return [
+    {l:'Дата (UTC)',v:d.toISOString().slice(0,10)},
+    Object.assign(row('Восход — заход',t.sun),{hi:1}),
+    row('Гражданские сумерки',t.civil),
+    row('Навигационные сумерки',t.nautical),
+    row('Астрономические сумерки',t.astro),
+    {l:'Полдень (UTC)',v:utc(t.noon)}];
+  }},
+
+ {id:'bft',cat:'weather',icon:'wave',name:'Шкала Бофорта',
+  desc:'Ветер, состояние моря и высота волны',
+  fields:[{k:'w',l:'Скорость ветра',t:'num',u:'узлов',def:'22'}],
+  calc:v=>{
+   const b=beaufort(+v.w);
+   return [
+    {l:'Балл',v:b[0]+' — '+b[3],hi:1},
+    {l:'Диапазон',v:b[1]+'–'+b[2]+' узлов'},
+    {l:'Состояние моря',v:b[4]},
+    {l:'Характерная высота волны',v:b[5]+' м'},
+    {l:'В м/с',v:F(convert('speed','уз','м/с',+v.w),1)}];
+  }},
+
+ {id:'units',cat:'weather',icon:'sliders',name:'Конвертер единиц',
+  desc:'Длина, скорость, масса, объём, температура',
+  fields:[
+   {k:'cat',l:'Величина',t:'sel',opts:['Длина','Скорость','Масса','Объём','Температура'],def:'Длина'},
+   {k:'val',l:'Значение',t:'num',def:'1'}],
+  calc:v=>{
+   const map={'Длина':'length','Скорость':'speed','Масса':'mass','Объём':'volume','Температура':'temp'};
+   const c=map[v.cat]||'length';
+   if(c==='temp'){
+     const val=+v.val;
+     return [
+      {l:'°C',v:F(val,2),hi:1},
+      {l:'°F',v:F(convert('temp','°C','°F',val),2)},
+      {l:'K',v:F(convert('temp','°C','K',val),2)}];
+   }
+   const base=Object.keys(UNITS[c].u)[0];
+   return Object.keys(UNITS[c].u).map((u,i)=>
+     ({l:u,v:F(convert(c,base,u,+v.val),u==='км'||u==='миля'?3:2),hi:i===0}));
+  }}
+];
+
+/* ---- Дополнительные инструменты ---- */
+TOOLS.push(
+ {id:'trim',cat:'stab',icon:'ship',name:'Дифферент и осадки',
+  desc:'Дифферент, средняя осадка, прогиб и перегиб',
+  fields:[
+   {k:'f',l:'Осадка носом',t:'num',u:'м',def:'8.20'},
+   {k:'a',l:'Осадка кормой',t:'num',u:'м',def:'9.40'},
+   {k:'m',l:'Осадка на миделе',t:'num',u:'м',def:'8.90'},
+   {k:'lbp',l:'Длина между перпендикулярами',t:'num',u:'м',def:'180'}],
+  calc:v=>{
+   const t=trimCalc(+v.f,+v.a,+v.lbp), h=hogSag(+v.f,+v.a,+v.m);
+   return [
+    {l:'Дифферент',v:F(Math.abs(t.trim))+' м на '+(t.byStern?'корму':'нос'),hi:1},
+    {l:'Средняя осадка (нос+корма)/2',v:F(t.mean,3)+' м'},
+    {l:'Отклонение миделя',v:F(h.deviation,3)+' м ('+(h.sag?'прогиб':'перегиб')+')'},
+    {l:'Mean of means',v:F(h.meanOfMean,3)+' м'},
+    {l:'Quarter mean (для водоизмещения)',v:F(h.quarterMean,3)+' м'},
+    {l:'Дифферент от длины',v:F(t.trimPct,2)+' %'}];
+  }},
+
+ {id:'fwa',cat:'stab',icon:'wave',name:'FWA и поправка на плотность',
+  desc:'Пресноводная поправка и поправка на плотность порта',
+  fields:[
+   {k:'w',l:'Водоизмещение',t:'num',u:'т',def:'20000'},
+   {k:'tpc',l:'TPC',t:'num',u:'т/см',def:'30'},
+   {k:'d',l:'Плотность воды в порту',t:'num',u:'кг/м³',def:'1015'}],
+  calc:v=>{
+   const r=fwaCalc(+v.w,+v.tpc,+v.d);
+   return [
+    {l:'FWA (пресная вода)',v:F(r.fwa,1)+' мм',hi:1},
+    {l:'DWA (док-вода)',v:F(r.dwa,1)+' мм'},
+    {l:'В сантиметрах',v:F(r.dwa/10,2)+' см'},
+    {l:'Формула',v:'FWA = W / (4 × TPC)'}];
+  }},
+
+ {id:'tpc',cat:'stab',icon:'buoy',name:'TPC и изменение осадки',
+  desc:'Тонны на сантиметр и осадка от груза',
+  fields:[
+   {k:'a',l:'Площадь ватерлинии',t:'num',u:'м²',def:'3000'},
+   {k:'d',l:'Плотность',t:'num',u:'т/м³',def:'1.025'},
+   {k:'w',l:'Принимаемый груз',t:'num',u:'т',def:'300'}],
+  calc:v=>{
+   const tpc=tpcCalc(+v.a,+v.d);
+   return [
+    {l:'TPC',v:F(tpc,2)+' т/см',hi:1},
+    {l:'Изменение осадки',v:F(draftChange(+v.w,tpc),1)+' см'},
+    {l:'В метрах',v:F(draftChange(+v.w,tpc)/100,3)+' м'}];
+  }},
+
+ {id:'dwt',cat:'stab',icon:'archive',name:'Дедвейт',
+  desc:'Сколько дедвейта занято и сколько осталось',
+  fields:[
+   {k:'t',l:'Дедвейт судна',t:'num',u:'т',def:'50000'},
+   {k:'c',l:'Груз',t:'num',u:'т',def:'32000'},
+   {k:'b',l:'Балласт',t:'num',u:'т',def:'4000'},
+   {k:'f',l:'Топливо',t:'num',u:'т',def:'2500'},
+   {k:'w',l:'Пресная вода',t:'num',u:'т',def:'300'},
+   {k:'s',l:'Запасы',t:'num',u:'т',def:'200'}],
+  calc:v=>{
+   const r=dwtCalc(+v.t,+v.c,+v.b,+v.f,+v.w,+v.s);
+   return [
+    {l:'Занято',v:F(r.used,0)+' т'},
+    {l:'Остаётся',v:F(r.remaining,0)+' т',hi:1,warn:r.remaining<0},
+    {l:'Использовано',v:F(r.pct,1)+' %'}];
+  }},
+
+ {id:'sail',cat:'nav',icon:'route',name:'Плавания',
+  desc:'Плоское, параллельное, средней широты, Меркатора',
+  fields:[
+   {k:'la1',l:'Широта отхода',t:'coord',def:'40-00.0N'},
+   {k:'lo1',l:'Долгота отхода',t:'coord',def:'074-00.0W'},
+   {k:'la2',l:'Широта прихода',t:'coord',def:'38-42.0N'},
+   {k:'lo2',l:'Долгота прихода',t:'coord',def:'009-09.0W'}],
+  calc:v=>{
+   const a=parseCoord(v.la1),b=parseCoord(v.lo1),c=parseCoord(v.la2),d=parseCoord(v.lo2);
+   if([a,b,c,d].some(x=>x===null)) return [{l:'Ошибка',v:'Проверь координаты'}];
+   const ml=midLatSailing(a,b,c,d), mc=mercatorSailing(a,b,c,d);
+   return [
+    {l:'Меркатор: курс',v:F(mc.course,1)+'°',hi:1},
+    {l:'Меркатор: расстояние',v:F(mc.distance,1)+' миль'},
+    {l:'Меридиональная разность (DMP)',v:F(mc.dmp,1)},
+    {l:'Средняя широта: курс',v:F(ml.course,1)+'°'},
+    {l:'Средняя широта: расстояние',v:F(ml.distance,1)+' миль'},
+    {l:'Разность широт',v:F(ml.dLat,1)+' миль'},
+    {l:'Отшествие',v:F(ml.departure,1)+' миль'},
+    {l:'Ортодромия для сравнения',v:F(gcDistance(a,b,c,d),1)+' миль'}];
+  }},
+
+ {id:'compass',cat:'nav',icon:'compass',name:'Поправка компаса',
+  desc:'Гирокомпас, склонение, девиация, курсовой угол',
+  fields:[
+   {k:'g',l:'Пеленг по гирокомпасу',t:'num',u:'°',def:'087.5'},
+   {k:'t',l:'Истинный пеленг',t:'num',u:'°',def:'089.0'},
+   {k:'tc',l:'Истинный курс',t:'num',u:'°',def:'045'},
+   {k:'var',l:'Склонение (E плюс, W минус)',t:'num',u:'°',def:'-5'},
+   {k:'dev',l:'Девиация (E плюс, W минус)',t:'num',u:'°',def:'2'},
+   {k:'hd',l:'Свой курс (для курсового угла)',t:'num',u:'°',def:'090'},
+   {k:'tb',l:'Пеленг на объект',t:'num',u:'°',def:'135'}],
+  calc:v=>{
+   const ce=compassError(+v.g,+v.t);
+   const mc=magneticChain(+v.tc,+v['var'],+v.dev);
+   const rb=relativeBearing(+v.hd,+v.tb);
+   return [
+    {l:'Поправка гирокомпаса',v:F(ce.error,1)+'° '+ce.side,hi:1},
+    {l:'Истинный курс',v:F(mc.true,1)+'°'},
+    {l:'Магнитный курс',v:F(mc.magnetic,1)+'°'},
+    {l:'Компасный курс',v:F(mc.compass,1)+'°'},
+    {l:'Общая поправка',v:F(mc.totalError,1)+'°'},
+    {l:'Курсовой угол',v:F(rb.relative,1)+'° '+rb.side}];
+  }},
+
+ {id:'setdrift',cat:'nav',icon:'wave',name:'Течение: направление и снос',
+  desc:'По разнице между курсом через воду и путём по грунту',
+  fields:[
+   {k:'cw',l:'Курс через воду',t:'num',u:'°',def:'000'},
+   {k:'sw',l:'Скорость через воду',t:'num',u:'узлов',def:'10'},
+   {k:'cg',l:'Путь по грунту',t:'num',u:'°',def:'015'},
+   {k:'sg',l:'Скорость по грунту',t:'num',u:'узлов',def:'10.5'},
+   {k:'h',l:'За сколько часов',t:'num',u:'ч',def:'4'}],
+  calc:v=>{
+   const r=setDrift(+v.cw,+v.sw,+v.cg,+v.sg,+v.h);
+   return [
+    {l:'Направление течения',v:F(r.set,1)+'°',hi:1},
+    {l:'Скорость течения',v:F(r.rate,2)+' узлов'},
+    {l:'Снос за период',v:F(r.drift,2)+' миль'}];
+  }},
+
+ {id:'ecdis',cat:'depth',icon:'radar',name:'Параметры ECDIS',
+  desc:'Safety depth, safety contour, XTD',
+  fields:[
+   {k:'dr',l:'Осадка',t:'num',u:'м',def:'12.5'},
+   {k:'uk',l:'Требуемый UKC по политике компании',t:'num',u:'м',def:'1.5'},
+   {k:'sq',l:'Проседание',t:'num',u:'м',def:'1.2'},
+   {k:'td',l:'Минимальный прилив на переходе',t:'num',u:'м',def:'0.5'},
+   {k:'cw',l:'Ширина фарватера (для XTD)',t:'num',u:'м',def:'300'},
+   {k:'bm',l:'Ширина судна',t:'num',u:'м',def:'32'},
+   {k:'mg',l:'Запас до бровки',t:'num',u:'м',def:'40'}],
+  calc:v=>{
+   const e=ecdisParams(+v.dr,+v.uk,+v.sq,+v.td);
+   const x=xtdCalc(+v.cw,+v.bm,+v.mg);
+   return [
+    {l:'Safety depth',v:F(e.safetyDepth,2)+' м',hi:1},
+    {l:'Safety contour (ближайшая изобата)',v:e.safetyContour+' м'},
+    {l:'Shallow contour',v:e.shallowContour+' м'},
+    {l:'Deep contour',v:e.deepContour+' м'},
+    {l:'XTD',v:F(x.xtd,1)+' м',warn:!x.safe},
+    {l:'XTD в кабельтовых',v:F(x.xtdCables,3)}];
+  }},
+
+ {id:'moon',cat:'weather',icon:'sun',name:'Луна',
+  desc:'Восход, заход, фаза и освещённость',
+  fields:[
+   {k:'la',l:'Широта',t:'coord',def:'41-25.4N'},
+   {k:'lo',l:'Долгота',t:'coord',def:'002-10.0E'},
+   {k:'dt',l:'Дата (пусто = сегодня)',t:'text',def:''}],
+  calc:v=>{
+   const a=parseCoord(v.la),b=parseCoord(v.lo);
+   if(a===null||b===null) return [{l:'Ошибка',v:'Проверь координаты'}];
+   const d=v.dt?new Date(v.dt+'T12:00:00Z'):new Date();
+   if(isNaN(d)) return [{l:'Ошибка',v:'Проверь дату'}];
+   const m=moonTimes(a,b,d);
+   return [
+    {l:'Фаза',v:m.phaseName,hi:1},
+    {l:'Освещённость диска',v:m.illum+' %'},
+    {l:'Восход Луны (UTC)',v:utc(m.rise)},
+    {l:'Заход Луны (UTC)',v:utc(m.set)}];
+  }}
+);
+
+const TOOL_CATS={
+  nav:{t:'Навигация',i:'compass'},
+  depth:{t:'Глубина и осадка',i:'buoy'},
+  stab:{t:'Осадка и остойчивость',i:'ship'},
+  anchor:{t:'Якорь',i:'anchor'},
+  radar:{t:'Радар и манёвр',i:'radar'},
+  voyage:{t:'Рейс',i:'ship'},
+  weather:{t:'Погода и единицы',i:'wave'}
+};
+
+/* ---- Остойчивость и осадка ---- */
+function trimCalc(fwd,aft,lbp){
+  const trim=aft-fwd, mean=(fwd+aft)/2;
+  return {trim:trim, mean:mean, byStern:trim>0,
+          trimPct:lbp>0?trim/lbp*100:0};
+}
+function hogSag(fwd,aft,mid){
+  const meanFA=(fwd+aft)/2;
+  const dev=mid-meanFA;                      /* + прогиб (sag), − перегиб (hog) */
+  const meanOfMean=(meanFA+mid)/2;
+  const quarterMean=(meanFA+7*mid)/8;        /* mean of means */
+  return {deviation:dev, sag:dev>0, meanOfMean:meanOfMean, quarterMean:quarterMean};
+}
+function fwaCalc(displacement,tpc,density){
+  /* FWA = W / (4 * TPC) в мм; DWA пропорционально плотности */
+  const fwa=tpc>0?displacement/(4*tpc):0;    /* мм */
+  const dwa=fwa*(1025-density)/25;
+  return {fwa:fwa, dwa:dwa};
+}
+function tpcCalc(areaWaterplane,density){
+  /* TPC = A × ρ / 100, где A в м², ρ в т/м³ (морская вода 1.025) */
+  return areaWaterplane*density/100;         /* т на см */
+}
+function dwtCalc(dwtTotal,cargo,ballast,fuel,fw,stores){
+  const used=cargo+ballast+fuel+fw+stores;
+  return {used:used, remaining:dwtTotal-used, pct:dwtTotal>0?used/dwtTotal*100:0};
+}
+function draftChange(weight,tpc){
+  return tpc>0?weight/tpc:0;                 /* см */
+}
+
+/* ---- Плавания ---- */
+function planeSailing(dLatMin,course){
+  const c=course*D2R;
+  const dist=Math.abs(Math.cos(c))>1e-9?dLatMin/Math.cos(c):0;
+  return {distance:dist, departure:dist*Math.sin(c)};
+}
+function parallelSailing(dLonMin,lat){
+  return {departure:dLonMin*Math.cos(lat*D2R)};
+}
+function midLatSailing(la1,lo1,la2,lo2){
+  const dLat=(la2-la1)*60, dLon=(lo2-lo1)*60;
+  const mLat=(la1+la2)/2;
+  const dep=dLon*Math.cos(mLat*D2R);
+  const course=norm360(Math.atan2(dep,dLat)*R2D);
+  return {dLat:dLat, dLon:dLon, departure:dep, midLat:mLat,
+          course:course, distance:Math.hypot(dLat,dep)};
+}
+function mercatorSailing(la1,lo1,la2,lo2){
+  const dLat=(la2-la1)*60, dLon=(lo2-lo1)*60;
+  const mp=l=>7915.7045*Math.log10(Math.tan(Math.PI/4+l*D2R/2))
+              -23.2689*Math.sin(l*D2R)-0.0526*Math.pow(Math.sin(l*D2R),3);
+  const dmp=mp(la2)-mp(la1);
+  const course=norm360(Math.atan2(dLon,dmp)*R2D);
+  const dist=Math.abs(Math.cos(course*D2R))>1e-9?Math.abs(dLat/Math.cos(course*D2R)):Math.abs(dLon);
+  return {dLat:dLat, dLon:dLon, dmp:dmp, course:course, distance:dist};
+}
+
+/* ---- Компас ---- */
+function compassError(gyroBrg,trueBrg){
+  let e=trueBrg-gyroBrg;
+  if(e>180)e-=360; if(e<-180)e+=360;
+  return {error:Math.abs(e), side:e>=0?'E':'W', signed:e};
+}
+function magneticChain(trueCrs,variation,deviation){
+  const magnetic=norm360(trueCrs-variation);
+  const compass=norm360(magnetic-deviation);
+  return {true:norm360(trueCrs), magnetic:magnetic, compass:compass,
+          totalError:variation+deviation};
+}
+function relativeBearing(ownHeading,trueBearing){
+  return {relative:norm360(trueBearing-ownHeading),
+          side:norm360(trueBearing-ownHeading)<180?'правый борт':'левый борт'};
+}
+
+/* ---- Течение ---- */
+function setDrift(crsThrough,spdThrough,crsOverGround,spdOverGround,hours){
+  const ax=spdThrough*Math.sin(crsThrough*D2R), ay=spdThrough*Math.cos(crsThrough*D2R);
+  const bx=spdOverGround*Math.sin(crsOverGround*D2R), by=spdOverGround*Math.cos(crsOverGround*D2R);
+  const cx=bx-ax, cy=by-ay;
+  const rate=Math.hypot(cx,cy);
+  return {set:norm360(Math.atan2(cx,cy)*R2D), drift:rate*(hours||1), rate:rate};
+}
+
+/* ---- Параметры ECDIS ---- */
+function ecdisParams(draft,ukcPolicy,squatV,tideMin,contours){
+  const safetyDepth=draft+squatV+ukcPolicy-tideMin;
+  const list=(contours||[5,10,15,20,30,50]).slice().sort((a,b)=>a-b);
+  const safetyContour=list.find(c=>c>=safetyDepth)||list[list.length-1];
+  return {safetyDepth:safetyDepth, safetyContour:safetyContour,
+          shallowContour:Math.max(0,Math.floor(safetyDepth/2)),
+          deepContour:safetyContour*2};
+}
+function xtdCalc(channelWidth,beam,margin){
+  const half=channelWidth/2;
+  const xtd=half-beam/2-margin;
+  return {xtd:xtd, xtdCables:xtd/185.2, safe:xtd>0};
+}
+
+/* ---- Луна ---- */
+function moonTimes(lat,lon,date){
+  /* приближённый расчёт по часовому перебору высоты Луны */
+  const rad=D2R;
+  function moonPos(d){
+    const days=(d-new Date(Date.UTC(2000,0,1,12)))/86400000;
+    const L=rad*(218.316+13.176396*days);
+    const M=rad*(134.963+13.064993*days);
+    const F=rad*(93.272+13.229350*days);
+    const l=L+rad*6.289*Math.sin(M);
+    const b=rad*5.128*Math.sin(F);
+    const e=rad*23.4397;
+    const ra=Math.atan2(Math.sin(l)*Math.cos(e)-Math.tan(b)*Math.sin(e),Math.cos(l));
+    const dec=Math.asin(Math.sin(b)*Math.cos(e)+Math.cos(b)*Math.sin(e)*Math.sin(l));
+    const gmst=rad*(280.16+360.9856235*days);
+    const H=gmst+rad*lon-ra;
+    const alt=Math.asin(Math.sin(rad*lat)*Math.sin(dec)+Math.cos(rad*lat)*Math.cos(dec)*Math.cos(H));
+    return alt;
+  }
+  const start=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()));
+  let rise=null,set=null,prev=moonPos(start);
+  for(let h=1;h<=24;h++){
+    const t=new Date(start.getTime()+h*3600000), cur=moonPos(t);
+    if(prev<0&&cur>=0&&!rise) rise=t;
+    if(prev>=0&&cur<0&&!set) set=t;
+    prev=cur;
+  }
+  /* фаза */
+  const days=(date-new Date(Date.UTC(2000,0,6,18,14)))/86400000;
+  const phase=((days/29.530588853)%1+1)%1;
+  const names=['новолуние','растущий серп','первая четверть','растущая луна',
+               'полнолуние','убывающая луна','последняя четверть','убывающий серп'];
+  return {rise:rise, set:set, phase:phase,
+          phaseName:names[Math.floor(phase*8+0.5)%8],
+          illum:Math.round((1-Math.cos(2*Math.PI*phase))/2*100)};
+}
+
+/* ================= Справочники ================= */
+/* Сигнальные флаги: рисуем SVG, а не картинками -- работает офлайн и не грузит сеть */
+const FLAGS={
+ A:['Alfa','У меня спущен водолаз, держитесь в стороне','<rect width="60" height="40" fill="#fff"/><path d="M60 0 H30 v40 H60 l-12-20z" fill="#0b60b0"/>'],
+ B:['Bravo','Гружу или выгружаю опасный груз','<path d="M0 0 h60 l-14 20 14 20 H0z" fill="#d0342c"/>'],
+ C:['Charlie','Да, утверждение','<rect width="60" height="40" fill="#0b60b0"/><rect y="8" width="60" height="8" fill="#fff"/><rect y="16" width="60" height="8" fill="#d0342c"/><rect y="24" width="60" height="8" fill="#fff"/>'],
+ D:['Delta','Держитесь в стороне, управляюсь с трудом','<rect width="60" height="40" fill="#f0c419"/><rect y="10" width="60" height="20" fill="#0b2f6b"/>'],
+ E:['Echo','Изменяю свой курс вправо','<rect width="60" height="20" fill="#0b60b0"/><rect y="20" width="60" height="20" fill="#d0342c"/>'],
+ F:['Foxtrot','Я не управляюсь, держите связь','<rect width="60" height="40" fill="#fff"/><path d="M30 6 L54 34 H6z" fill="#d0342c"/>'],
+ G:['Golf','Мне нужен лоцман','<rect width="60" height="40" fill="#f0c419"/><rect x="10" width="10" height="40" fill="#0b60b0"/><rect x="30" width="10" height="40" fill="#0b60b0"/><rect x="50" width="10" height="40" fill="#0b60b0"/>'],
+ H:['Hotel','У меня на борту лоцман','<rect width="30" height="40" fill="#fff"/><rect x="30" width="30" height="40" fill="#d0342c"/>'],
+ I:['India','Изменяю свой курс влево','<rect width="60" height="40" fill="#f0c419"/><circle cx="30" cy="20" r="9" fill="#000"/>'],
+ J:['Juliett','У меня пожар, имею опасный груз','<rect width="60" height="40" fill="#0b60b0"/><rect y="13" width="60" height="14" fill="#fff"/>'],
+ K:['Kilo','Желаю установить связь с вами','<rect width="60" height="40" fill="#f0c419"/><path d="M60 0 H30 v40 H60z" fill="#0b60b0"/>'],
+ L:['Lima','Остановите судно немедленно','<rect width="60" height="40" fill="#f0c419"/><rect width="30" height="20" fill="#000"/><rect x="30" y="20" width="30" height="20" fill="#000"/>'],
+ M:['Mike','Моё судно остановлено, хода не имею','<rect width="60" height="40" fill="#0b60b0"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#fff" stroke-width="9"/>'],
+ N:['November','Нет, отрицание','<rect width="60" height="40" fill="#fff"/><rect width="15" height="10" fill="#0b60b0"/><rect x="30" width="15" height="10" fill="#0b60b0"/><rect x="15" y="10" width="15" height="10" fill="#0b60b0"/><rect x="45" y="10" width="15" height="10" fill="#0b60b0"/><rect y="20" width="15" height="10" fill="#0b60b0"/><rect x="30" y="20" width="15" height="10" fill="#0b60b0"/><rect x="15" y="30" width="15" height="10" fill="#0b60b0"/><rect x="45" y="30" width="15" height="10" fill="#0b60b0"/>'],
+ O:['Oscar','Человек за бортом','<path d="M0 0 h60 L0 40z" fill="#d0342c"/><path d="M60 0 v40 H0z" fill="#f0c419"/>'],
+ P:['Papa','Всем прибыть на борт, судно снимается','<rect width="60" height="40" fill="#0b2f6b"/><rect x="18" y="10" width="24" height="20" fill="#fff"/>'],
+ Q:['Quebec','Моё судно незаражённое, прошу свободную практику','<rect width="60" height="40" fill="#f0c419"/>'],
+ R:['Romeo','Принято','<rect width="60" height="40" fill="#d0342c"/><rect x="26" width="8" height="40" fill="#f0c419"/><rect y="16" width="60" height="8" fill="#f0c419"/>'],
+ S:['Sierra','Мои движители работают на задний ход','<rect width="60" height="40" fill="#fff"/><rect x="14" y="9" width="32" height="22" fill="#0b2f6b"/>'],
+ T:['Tango','Держитесь в стороне, произвожу парное траление','<rect width="20" height="40" fill="#d0342c"/><rect x="20" width="20" height="40" fill="#fff"/><rect x="40" width="20" height="40" fill="#0b60b0"/>'],
+ U:['Uniform','Вы идёте к опасности','<rect width="60" height="40" fill="#fff"/><rect width="30" height="20" fill="#d0342c"/><rect x="30" y="20" width="30" height="20" fill="#d0342c"/>'],
+ V:['Victor','Мне требуется помощь','<rect width="60" height="40" fill="#fff"/><path d="M0 0 L60 40 M60 0 L0 40" stroke="#d0342c" stroke-width="9"/>'],
+ W:['Whiskey','Мне требуется медицинская помощь','<rect width="60" height="40" fill="#0b60b0"/><rect x="8" y="6" width="44" height="28" fill="#fff"/><rect x="17" y="12" width="26" height="16" fill="#d0342c"/>'],
+ X:['Xray','Приостановите ваши намерения','<rect width="60" height="40" fill="#fff"/><rect x="26" width="8" height="40" fill="#0b60b0"/><rect y="16" width="60" height="8" fill="#0b60b0"/>'],
+ Y:['Yankee','Меня дрейфует на якоре','<rect width="60" height="40" fill="#f0c419"/><path d="M-10 0 l80 53 M-10 8 l80 53 M-10 16 l80 53 M-10 -8 l80 53 M-10 -16 l80 53" stroke="#d0342c" stroke-width="6"/>'],
+ Z:['Zulu','Мне требуется буксир','<path d="M0 0 L30 20 L0 40z" fill="#f0c419"/><path d="M0 0 L30 20 L60 0z" fill="#000"/><path d="M60 0 L30 20 L60 40z" fill="#0b60b0"/><path d="M0 40 L30 20 L60 40z" fill="#d0342c"/>']
+};
+
+/* МППСС-72: ключевые правила своими словами, не дословный текст конвенции */
+const COLREG=[
+ ['5','Наблюдение','Постоянно вести надлежащее наблюдение зрением, слухом и всеми доступными средствами, чтобы полностью оценить обстановку и риск столкновения.'],
+ ['6','Безопасная скорость','Идти с такой скоростью, чтобы можно было принять эффективные меры и остановиться в пределах расстояния, соответствующего обстоятельствам. Учитывать видимость, плотность движения, маневренность, состояние моря, осадку и ограничения радара.'],
+ ['7','Риск столкновения','Использовать все средства для определения риска. Считать, что риск есть, если пеленг на приближающееся судно заметно не меняется. Не делать выводов по неполной информации, особенно по скудным радарным данным.'],
+ ['8','Действия по предупреждению','Действия должны быть решительными, своевременными и заметными для другого судна. Изменение курса предпочтительнее изменения скорости, если места достаточно. Проверять эффективность до полного расхождения.'],
+ ['9','Плавание в узкостях','Держаться внешней стороны фарватера по правому борту насколько это безопасно. Судно менее 20 м, парусное и занятое ловом рыбы не должны затруднять движение судна, которое может следовать только в пределах узкости.'],
+ ['10','Системы разделения движения','Следовать в полосе в принятом направлении, держаться в стороне от линии разделения, входить и выходить на конечных участках или под малым углом. Пересекать по возможности под прямым углом к направлению потока.'],
+ ['12','Парусные суда','При разных галсах уступает судно на левом галсе. При одинаковых галсах уступает наветренное. Если галс другого не определён, уступать в любом случае.'],
+ ['13','Обгон','Обгоняющий уступает дорогу обгоняемому. Обгон это подход с направления более 22.5° позади траверза. Последующее изменение пеленга не освобождает от обязанности держаться в стороне до полного расхождения.'],
+ ['14','Сближение прямо','При встрече на противоположных курсах оба изменяют курс вправо, чтобы разойтись левыми бортами. При сомнении считать, что такая ситуация есть, и действовать соответственно.'],
+ ['15','Пересечение курсов','Уступает то судно, которое имеет другое справа. Избегать пересечения курса впереди него.'],
+ ['16','Действия уступающего','Предпринять заблаговременные и решительные действия для расхождения на безопасном расстоянии.'],
+ ['17','Действия судна, которому уступают','Сохранять курс и скорость. Может действовать самостоятельно, когда становится ясно, что уступающий не предпринимает должных мер. При невозможности избежать столкновения одними действиями уступающего обязано действовать.'],
+ ['18','Взаимные обязанности','Порядок уступания: судно с механическим двигателем уступает парусному, занятому ловом рыбы, ограниченному в маневре и лишённому возможности управляться.'],
+ ['19','Ограниченная видимость','Идти безопасной скоростью с готовой к немедленному манёвру машиной. Избегать поворота влево на судно впереди траверза, кроме случая обгона, и поворота на судно на траверзе или позади.'],
+ ['35','Звуковые сигналы в тумане','Судно на ходу с механическим двигателем: один продолжительный не реже чем каждые 2 минуты. На ходу без хода: два продолжительных. Ограниченное в маневре, парусное, на буксире: один продолжительный и два коротких.']
+];
+
+/* Частоты и каналы GMDSS */
+const GMDSS=[
+ ['Бедствие и безопасность','VHF канал 16','156.800 МГц','Голосовая связь, слуховая вахта'],
+ ['ЦИВ (DSC)','VHF канал 70','156.525 МГц','Цифровой избирательный вызов'],
+ ['ЦИВ (DSC)','MF','2187.5 кГц','Бедствие и безопасность'],
+ ['Голос MF','MF','2182 кГц','Бедствие, срочность, безопасность'],
+ ['ЦИВ (DSC)','HF 4 МГц','4207.5 кГц','Бедствие и безопасность'],
+ ['ЦИВ (DSC)','HF 6 МГц','6312.0 кГц','Бедствие и безопасность'],
+ ['ЦИВ (DSC)','HF 8 МГц','8414.5 кГц','Бедствие и безопасность'],
+ ['ЦИВ (DSC)','HF 12 МГц','12577.0 кГц','Бедствие и безопасность'],
+ ['ЦИВ (DSC)','HF 16 МГц','16804.5 кГц','Бедствие и безопасность'],
+ ['NAVTEX','Международный','518 кГц','Английский язык, стандартные передачи'],
+ ['NAVTEX','Национальный','490 кГц','Местный язык'],
+ ['NAVTEX','Тропический','4209.5 кГц','Дополнительный диапазон'],
+ ['АРБ (EPIRB)','COSPAS-SARSAT','406.0-406.1 МГц','Спутниковый радиобуй'],
+ ['АРБ (EPIRB)','Приводной','121.5 МГц','Ближний привод'],
+ ['SART','Радар','9.2-9.5 ГГц','Отклик на 3 см радар (X-band)'],
+ ['AIS-SART','AIS','161.975 / 162.025 МГц','AIS каналы 1 и 2'],
+ ['Мостик-мостик','VHF канал 13','156.650 МГц','Безопасность мореплавания'],
+ ['Мостик-мостик','VHF канал 6','156.300 МГц','Связь при поисково-спасательных работах']
+];
 
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (TG) { TG.ready(); TG.expand(); try{ TG.setHeaderColor('#0a1520'); }catch(e){} }
@@ -1086,13 +2010,15 @@ function drawVoy(r){
 /* --- навигация --- */
 function switchView(v){
   S.view=v;
-  ['dash','areas','map','voy'].forEach(x=>{
+  ['dash','areas','map','tools','voy'].forEach(x=>{
     const el=$('#v-'+x);
     if(x===v){el.classList.remove('hidden');el.style.animation='none';void el.offsetWidth;el.style.animation=''}
     else el.classList.add('hidden');
   });
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
   try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}
+  if(v==='tools'){renderTools();loadBridge();renderRefs();}
+  if(v==='dash')loadHistory();
   if(v==='map')setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{hap();switchView(t.dataset.v)});
@@ -1200,6 +2126,425 @@ $('#dFav').onclick=async()=>{
   try{await api('/api/favorites?toggle='+encodeURIComponent(c))}catch(e){}
 };
 $('#dToMap').onclick=()=>{const w=dCur;closeDetail();if(w){switchView('map');setTimeout(()=>focusWarning(w),90)}};
+
+
+/* ================= Чек-листы и сертификаты ================= */
+let BR=null, curCL=null, clState={};
+
+async function loadBridge(){
+  try{ BR=await api('/api/bridge?'); if(BR.error) BR=null; }catch(e){ BR=null; }
+  renderBridge();
+}
+function renderBridge(){
+  if(!BR){ $('#bridgeBox').innerHTML='<div class="sk card"></div>'; return; }
+  const c=BR.certificates||[], soon=c.filter(x=>x.status==='soon'||x.status==='expired').length;
+  const st={expired:'просрочен',soon:'скоро истекает',watch:'под контролем',ok:'в порядке',unknown:'—'};
+
+  let h=`<div class="sech"><h3>Чек-листы</h3></div><div class="grid2">`+
+    Object.keys(BR.templates).map((k,i)=>{
+      const t=BR.templates[k];
+      return `<div class="gcard up" style="animation-delay:${i*45}ms" data-cl="${k}">
+        <div class="gtop" style="height:60px">
+          <svg class="bgw" viewBox="0 0 800 32" preserveAspectRatio="none">
+            <path d="M0 16 q50 -10 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v20 h-800 z" fill="#4d93d6"/>
+          </svg>
+          <div class="gi">${ico(t.icon)}</div>
+        </div>
+        <div class="gbody">
+          <div class="gname" style="min-height:auto">${esc(t.title)}</div>
+          <div class="gsub" style="display:block;margin-top:3px">${t.items.length} пунктов</div>
+        </div></div>`;
+    }).join('')+`</div>`;
+
+  if((BR.history||[]).length){
+    h+=`<div class="sech" style="margin-top:17px"><h3>История</h3></div>`+
+      BR.history.slice(0,6).map(x=>{
+        const t=(BR.templates[x.template]||{}).title||x.template;
+        const pct=x.total?Math.round(x.done/x.total*100):0;
+        return `<div class="tres"><span class="tl">${esc(t)}${x.port?' · '+esc(x.port):''}<br>
+          <span style="font-size:11px;opacity:.7">${esc(String(x.created_at).slice(0,10))}</span></span>
+          <span class="tv" style="font-size:13px">${x.done}/${x.total} · ${pct}%</span></div>`;
+      }).join('');
+  }
+
+  h+=`<div class="sech" style="margin-top:17px"><h3>Сертификаты${soon?` · ${soon} требуют внимания`:''}</h3>
+      <a id="addCert">Добавить +</a></div>`;
+  h+= c.length ? c.map(x=>{
+      const cls=x.status==='expired'?'warn':(x.status==='soon'?'warn':'');
+      const dl=x.days_left;
+      const txt=dl<0?`просрочен на ${-dl} дн`:(dl===0?'истекает сегодня':`осталось ${dl} дн`);
+      return `<div class="tres ${cls}">
+        <span class="tl"><b style="color:var(--text)">${esc(x.name)}</b>
+          ${x.number?`<br><span style="font-size:11px;opacity:.7">№ ${esc(x.number)}</span>`:''}
+          <br><span style="font-size:11px;opacity:.7">до ${esc(x.expires)} · ${st[x.status]}</span></span>
+        <span style="display:flex;align-items:center;gap:9px">
+          <span class="tv" style="font-size:12.5px">${txt}</span>
+          <button class="heart" style="width:28px;height:28px;font-size:15px" data-delcert="${x.id}">×</button>
+        </span></div>`;
+    }).join('')
+    : `<div class="empty">${ico('clock')}Сертификатов пока нет. Добавь — и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.</div>`;
+
+  $('#bridgeBox').innerHTML=h;
+
+  document.querySelectorAll('[data-cl]').forEach(el=>el.onclick=()=>openChecklist(el.dataset.cl));
+  const ac=$('#addCert'); if(ac) ac.onclick=openCertForm;
+  document.querySelectorAll('[data-delcert]').forEach(b=>b.onclick=async()=>{
+    hap('medium');
+    try{ await api('/api/bridge?action=del_cert&id='+b.dataset.delcert); }catch(e){}
+    loadBridge();
+  });
+}
+
+function openChecklist(key){
+  const t=BR.templates[key]; if(!t) return;
+  curCL=key; hap('medium');
+  clState={port:'',items:t.items.map(x=>({t:x,done:false}))};
+  $('#tName').textContent=t.title;
+  $('#tDesc').textContent='Отмечай по ходу дела. Сохранится в историю.';
+  $('#tIcon').innerHTML=ico(t.icon,'lg');
+  $('#tFields').innerHTML=`<div class="fld"><label>Порт</label>
+    <input class="tinput" id="clPort" placeholder="Например Rotterdam"></div>`;
+  $('#clPort').oninput=e=>{clState.port=e.target.value};
+  drawCL();
+  $('#tBack').textContent='Сохранить и закрыть';
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function drawCL(){
+  const done=clState.items.filter(i=>i.done).length, tot=clState.items.length;
+  $('#tResults').innerHTML=
+    `<div class="tres hi"><span class="tl">Выполнено</span>
+       <span class="tv">${done} из ${tot}</span></div>`+
+    clState.items.map((i,n)=>
+      `<div class="tres" data-cli="${n}" style="cursor:pointer">
+         <span class="tl" style="${i.done?'text-decoration:line-through;opacity:.5':''}">${esc(i.t)}</span>
+         <span class="toggle ${i.done?'on':''}" style="width:40px;height:23px"></span>
+       </div>`).join('');
+  document.querySelectorAll('[data-cli]').forEach(el=>el.onclick=()=>{
+    const n=+el.dataset.cli;
+    clState.items[n].done=!clState.items[n].done;
+    hap(); drawCL();
+  });
+}
+async function saveCL(){
+  if(!curCL) return;
+  const done=clState.items.every(i=>i.done);
+  try{
+    await api('/api/bridge?action=save_checklist&template='+encodeURIComponent(curCL)+
+      '&port='+encodeURIComponent(clState.port||'')+
+      '&items='+encodeURIComponent(JSON.stringify(clState.items))+
+      '&completed='+(done?'1':'0'));
+  }catch(e){}
+  curCL=null; loadBridge();
+}
+
+function openCertForm(){
+  hap('medium'); curCL=null;
+  $('#tName').textContent='Новый сертификат';
+  $('#tDesc').textContent='Бот напомнит заранее, когда подойдёт срок';
+  $('#tIcon').innerHTML=ico('clock','lg');
+  const opts=(BR.common_certs||[]).map(c=>`<option value="${esc(c)}">`).join('');
+  $('#tFields').innerHTML=`
+    <div class="fld"><label>Название</label>
+      <input class="tinput" id="cName" list="certList" placeholder="Например SSCEC">
+      <datalist id="certList">${opts}</datalist></div>
+    <div class="fld"><label>Номер (необязательно)</label>
+      <input class="tinput" id="cNum" placeholder="№"></div>
+    <div class="fld"><label>Действует до</label>
+      <input class="tinput" id="cExp" type="date"></div>
+    <div class="fld"><label>Заметка (необязательно)</label>
+      <input class="tinput" id="cNote" placeholder="Где выдан, что нужно для продления"></div>`;
+  $('#tResults').innerHTML=
+    `<button class="btn wide" id="cSave">Сохранить сертификат</button>`;
+  $('#cSave').onclick=async()=>{
+    const n=$('#cName').value.trim(), e=$('#cExp').value;
+    if(!n||!e){ $('#tResults').insertAdjacentHTML('beforeend',
+      '<div class="tres warn" style="margin-top:9px"><span class="tl">Заполни название и дату</span></div>'); return; }
+    hap('medium');
+    try{
+      await api('/api/bridge?action=add_cert&name='+encodeURIComponent(n)+
+        '&number='+encodeURIComponent($('#cNum').value.trim())+
+        '&expires='+encodeURIComponent(e)+
+        '&notes='+encodeURIComponent($('#cNote').value.trim()));
+    }catch(err){}
+    closeTool(); loadBridge();
+  };
+  $('#tBack').textContent='Отмена';
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+
+/* ---- Справочники и графики ---- */
+let HIST=null;
+
+async function loadHistory(){
+  try{ HIST=await api('/api/history?days=30'); }catch(e){ HIST=null; }
+  renderHistory();
+}
+function renderHistory(){
+  const box=$('#histBox'); if(!box) return;
+  if(!HIST){ box.innerHTML='<div class="sk card"></div>'; return; }
+  const h=HIST.history||[], heat=HIST.heat||[];
+
+  let g='';
+  if(h.length>1){
+    const max=Math.max(...h.map(x=>x.in_force),1);
+    const w=100/h.length;
+    const pts=h.map((x,i)=>`${(i*w+w/2).toFixed(2)},${(100-x.in_force/max*88).toFixed(2)}`).join(' ');
+    g=`<div class="chart">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f0a03c" stop-opacity=".45"/>
+            <stop offset="100%" stop-color="#f0a03c" stop-opacity="0"/></linearGradient></defs>
+          <polygon points="0,100 ${pts} 100,100" fill="url(#cg)"/>
+          <polyline points="${pts}" fill="none" stroke="#f0a03c" stroke-width="1.4"
+            vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+        </svg>
+        <div class="chartAx"><span>${esc(h[0].day.slice(5))}</span>
+          <span>максимум ${max}</span><span>${esc(h[h.length-1].day.slice(5))}</span></div>
+       </div>`;
+  } else {
+    g=`<div class="hint">График появится, когда накопятся данные за несколько дней. Снимок делается раз в сутки.</div>`;
+  }
+
+  const mx=HIST.max_area||1;
+  const bars=heat.slice(0,12).map(a=>
+    `<div class="heat" data-heat="${esc(a.code)}">
+       <span class="hc">${esc(a.code.replace('COASTAL:','Б'))}</span>
+       <span class="hb"><i style="width:${Math.max(3,a.in_force/mx*100)}%"></i></span>
+       <span class="hn mono">${a.in_force}</span>
+     </div>`).join('');
+
+  box.innerHTML=`<div class="sech"><h3>Динамика за 30 дней</h3></div>${g}
+    <div class="sech" style="margin-top:15px"><h3>Где сейчас горячо</h3></div>${bars}`;
+  document.querySelectorAll('[data-heat]').forEach(el=>el.onclick=()=>{
+    S.cat=el.dataset.heat; hap(); renderCats(); switchView('areas'); renderAreas();
+  });
+}
+
+function openFlags(){
+  hap('medium'); curCL=null;
+  $('#tName').textContent='Сигнальные флаги';
+  $('#tDesc').textContent='Международный свод сигналов, однофлажные значения';
+  $('#tIcon').innerHTML=ico('flag','lg');
+  $('#tFields').innerHTML=`<div class="fld"><label>Поиск по букве или значению</label>
+    <input class="tinput" id="flagQ" placeholder="Например O или водолаз"></div>`;
+  const draw=q=>{
+    const k=Object.keys(FLAGS).filter(x=>!q||x.toLowerCase().includes(q)||
+      FLAGS[x][0].toLowerCase().includes(q)||FLAGS[x][1].toLowerCase().includes(q));
+    $('#tResults').innerHTML=k.length?k.map(x=>`
+      <div class="tres" style="align-items:flex-start">
+        <span style="display:flex;gap:11px;align-items:center;flex:1;min-width:0">
+          <svg viewBox="0 0 60 40" style="width:52px;height:35px;flex:none;border-radius:4px;border:1px solid var(--line)">${FLAGS[x][2]}</svg>
+          <span class="tl" style="flex:1"><b style="color:var(--text);font-size:14px">${x} · ${esc(FLAGS[x][0])}</b>
+            <br>${esc(FLAGS[x][1])}</span>
+        </span>
+      </div>`).join('') : `<div class="empty">${ico('search')}Ничего не нашлось.</div>`;
+  };
+  draw('');
+  $('#flagQ').oninput=e=>draw(e.target.value.trim().toLowerCase());
+  $('#tBack').textContent='Назад';
+  $('#tool').classList.add('on'); document.body.style.overflow='hidden';
+}
+
+function openColreg(){
+  hap('medium'); curCL=null;
+  $('#tName').textContent='МППСС-72';
+  $('#tDesc').textContent='Ключевые правила расхождения, кратко своими словами';
+  $('#tIcon').innerHTML=ico('alert','lg');
+  $('#tFields').innerHTML=`<div class="fld"><label>Поиск по номеру или теме</label>
+    <input class="tinput" id="crQ" placeholder="Например 15 или обгон"></div>`;
+  const draw=q=>{
+    const list=COLREG.filter(r=>!q||r[0].includes(q)||r[1].toLowerCase().includes(q)||r[2].toLowerCase().includes(q));
+    $('#tResults').innerHTML=list.length?list.map(r=>`
+      <div class="tres" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <span class="wtag">Правило ${esc(r[0])}</span>
+        <b style="font-size:14px">${esc(r[1])}</b>
+        <span class="tl" style="text-align:left">${esc(r[2])}</span>
+      </div>`).join('')+
+      `<div class="hint" style="margin-top:11px">Это краткий пересказ для быстрого напоминания. Юридическую силу имеет официальный текст конвенции.</div>`
+      : `<div class="empty">${ico('search')}Ничего не нашлось.</div>`;
+  };
+  draw('');
+  $('#crQ').oninput=e=>draw(e.target.value.trim().toLowerCase());
+  $('#tBack').textContent='Назад';
+  $('#tool').classList.add('on'); document.body.style.overflow='hidden';
+}
+
+function openGmdss(){
+  hap('medium'); curCL=null;
+  $('#tName').textContent='Частоты GMDSS';
+  $('#tDesc').textContent='Бедствие, безопасность, NAVTEX, буи';
+  $('#tIcon').innerHTML=ico('radar','lg');
+  $('#tFields').innerHTML=`<div class="fld"><label>Поиск</label>
+    <input class="tinput" id="gQ" placeholder="Например NAVTEX или 2182"></div>`;
+  const draw=q=>{
+    const list=GMDSS.filter(r=>!q||r.join(' ').toLowerCase().includes(q));
+    $('#tResults').innerHTML=list.length?list.map(r=>`
+      <div class="tres">
+        <span class="tl"><b style="color:var(--text)">${esc(r[0])}</b> · ${esc(r[1])}
+          <br><span style="font-size:11px;opacity:.75">${esc(r[3])}</span></span>
+        <span class="tv" style="font-size:13px">${esc(r[2])}</span>
+      </div>`).join('') : `<div class="empty">${ico('search')}Ничего не нашлось.</div>`;
+  };
+  draw('');
+  $('#gQ').oninput=e=>draw(e.target.value.trim().toLowerCase());
+  $('#tBack').textContent='Назад';
+  $('#tool').classList.add('on'); document.body.style.overflow='hidden';
+}
+
+function openArchive(){
+  hap('medium'); curCL=null;
+  $('#tName').textContent='Архив предупреждений';
+  $('#tDesc').textContent='Отменённые и снятые с силы, поиск за всё время';
+  $('#tIcon').innerHTML=ico('archive','lg');
+  $('#tFields').innerHTML=`<div class="fld"><label>Поиск по номеру, тексту или координатам</label>
+    <input class="tinput" id="arQ" placeholder="Например 700 или BUOY"></div>`;
+  $('#tResults').innerHTML=`<div class="hint">Введи запрос, чтобы искать по архиву.</div>`;
+  let t=null;
+  $('#arQ').oninput=e=>{
+    clearTimeout(t); const q=e.target.value.trim();
+    if(q.length<2){ $('#tResults').innerHTML=`<div class="hint">Введи хотя бы два символа.</div>`; return; }
+    $('#tResults').innerHTML='<div class="sk card"></div>';
+    t=setTimeout(async()=>{
+      try{
+        const r=await api('/api/warnings?archived=1&limit=60&q='+encodeURIComponent(q));
+        $('#tResults').innerHTML=(r.results||[]).length
+          ? r.results.map(w=>`<div class="tres" style="flex-direction:column;align-items:flex-start;gap:5px">
+              <span class="wtag">${esc(w.area_code)} №${esc(w.msg_number||'—')}${w.is_cancelled?' · отменено':''}</span>
+              <span class="tl" style="text-align:left">${esc((w.text||'').slice(0,200))}…</span></div>`).join('')
+          : `<div class="empty">${ico('search')}В архиве ничего не нашлось.</div>`;
+      }catch(err){ $('#tResults').innerHTML=`<div class="empty">${ico('radar')}Нет связи.</div>`; }
+    },260);
+  };
+  $('#tBack').textContent='Назад';
+  $('#tool').classList.add('on'); document.body.style.overflow='hidden';
+}
+
+const REFS=[
+ {id:'flags',icon:'flag',name:'Сигнальные флаги',desc:'Весь международный свод с расшифровкой',open:openFlags},
+ {id:'colreg',icon:'alert',name:'МППСС-72',desc:'Ключевые правила расхождения',open:openColreg},
+ {id:'gmdss',icon:'radar',name:'Частоты GMDSS',desc:'Бедствие, NAVTEX, буи, каналы',open:openGmdss},
+ {id:'archive',icon:'archive',name:'Архив наварий',desc:'Поиск по отменённым за всё время',open:openArchive}
+];
+function renderRefs(){
+  const box=$('#refBox'); if(!box) return;
+  box.innerHTML=`<div class="sech"><h3>Справочники</h3></div><div class="grid2">`+
+    REFS.map((r,i)=>`<div class="gcard up" style="animation-delay:${i*40}ms" data-ref="${r.id}">
+      <div class="gtop" style="height:60px">
+        <svg class="bgw" viewBox="0 0 800 32" preserveAspectRatio="none">
+          <path d="M0 16 q50 -10 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v20 h-800 z" fill="#4d93d6"/>
+        </svg>
+        <div class="gi">${ico(r.icon)}</div>
+      </div>
+      <div class="gbody"><div class="gname" style="min-height:auto">${esc(r.name)}</div>
+        <div class="gsub" style="display:block;margin-top:3px">${esc(r.desc)}</div></div>
+    </div>`).join('')+`</div>`;
+  document.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>{
+    const r=REFS.find(x=>x.id===el.dataset.ref); if(r) r.open();
+  });
+}
+
+/* ---- Экран инструментов ---- */
+let curTool=null, toolVals={};
+
+function renderTools(){
+  const favT=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
+  let h='';
+  if(favT.length){
+    h+=`<div class="sech"><h3>Избранные инструменты</h3></div><div class="grid2">`+
+       TOOLS.filter(t=>favT.includes(t.id)).map(toolCard).join('')+`</div>`;
+  }
+  Object.keys(TOOL_CATS).forEach(ck=>{
+    const list=TOOLS.filter(t=>t.cat===ck);
+    if(!list.length) return;
+    h+=`<div class="sech" style="margin-top:17px"><h3>${TOOL_CATS[ck].t}</h3></div>
+        <div class="grid2">${list.map(toolCard).join('')}</div>`;
+  });
+  $('#toollist').innerHTML=h;
+  document.querySelectorAll('[data-tool]').forEach(c=>c.onclick=ev=>{
+    if(ev.target.closest('.gstar')) return;
+    openTool(TOOLS.find(t=>t.id===c.dataset.tool));
+  });
+  document.querySelectorAll('[data-ftool]').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation();hap('medium');
+    const id=b.dataset.ftool;
+    let f=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
+    f=f.includes(id)?f.filter(x=>x!==id):f.concat([id]);
+    localStorage.setItem('navarea_favtools',JSON.stringify(f));
+    renderTools();
+  });
+}
+function toolCard(t,i){
+  const favT=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
+  const f=favT.includes(t.id);
+  return `<div class="gcard up" style="animation-delay:${Math.min((i||0)*40,300)}ms" data-tool="${t.id}">
+    <div class="gtop" style="height:64px">
+      <svg class="bgw" viewBox="0 0 800 32" preserveAspectRatio="none">
+        <path d="M0 16 q50 -10 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v20 h-800 z" fill="#4d93d6"/>
+      </svg>
+      <div class="gi">${ico(t.icon)}</div>
+      <button class="gstar ${f?'on':''}" data-ftool="${t.id}">${ico('star')}</button>
+    </div>
+    <div class="gbody">
+      <div class="gname" style="min-height:auto">${esc(t.name)}</div>
+      <div class="gsub" style="margin-top:4px;display:block;line-height:1.35">${esc(t.desc)}</div>
+    </div>
+  </div>`;
+}
+
+function openTool(t){
+  if(!t) return;
+  curTool=t; hap('medium');
+  toolVals={};
+  t.fields.forEach(f=>{ toolVals[f.k]=(f.def!==undefined?f.def:''); });
+
+  $('#tName').textContent=t.name;
+  $('#tDesc').textContent=t.desc;
+  $('#tIcon').innerHTML=ico(t.icon,'lg');
+  $('#tFields').innerHTML=t.fields.map(f=>{
+    if(f.t==='sel'){
+      return `<div class="fld"><label>${esc(f.l)}</label>
+        <select class="tinput" data-k="${f.k}">
+          ${f.opts.map(o=>`<option ${o===f.def?'selected':''}>${esc(o)}</option>`).join('')}
+        </select></div>`;
+    }
+    const im=f.t==='num'?'decimal':'text';
+    return `<div class="fld"><label>${esc(f.l)}${f.u?` · ${esc(f.u)}`:''}</label>
+      <input class="tinput" data-k="${f.k}" inputmode="${im}" value="${esc(String(f.def||''))}"></div>`;
+  }).join('');
+
+  document.querySelectorAll('.tinput').forEach(el=>{
+    const ev=el.tagName==='SELECT'?'onchange':'oninput';
+    el[ev]=()=>{ toolVals[el.dataset.k]=el.value; runTool(); };
+  });
+  runTool();
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function runTool(){
+  if(!curTool) return;
+  let rows;
+  try{ rows=curTool.calc(toolVals)||[]; }
+  catch(e){ rows=[{l:'Ошибка',v:'Проверь введённые данные'}]; }
+  $('#tResults').innerHTML=rows.map(r=>
+    `<div class="tres ${r.hi?'hi':''} ${r.warn?'warn':''}">
+       <span class="tl">${esc(r.l)}</span>
+       <span class="tv mono">${esc(String(r.v))}</span>
+     </div>`).join('');
+}
+function closeTool(){
+  $('#tool').classList.remove('on');
+  document.body.style.overflow='';
+  curTool=null; hap();
+}
+
+$('#tBack').onclick=()=>{ if(curCL) saveCL(); closeTool(); $('#tBack').textContent='Назад к инструментам'; };
+$('#toolsHint').innerHTML=ico('alert','xs')+' Все расчёты выполняются прямо в приложении и работают без связи.';
+renderTools();
+loadBridge();
+renderRefs();
+loadHistory();
 
 /* статичные иконки в разметке */
 $('#themeBtn').insertAdjacentHTML('afterbegin', ico('compass','lg'));

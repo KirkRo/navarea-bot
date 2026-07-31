@@ -184,3 +184,55 @@ def format_warning_message(area_code: str, row, is_new: bool = True) -> str:
     body = html_lib.escape(body_raw)
 
     return f"{header}\n\n{body}{footer}"
+
+
+async def daily_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Раз в сутки: снимок статистики для графика истории и напоминания
+    о сертификатах."""
+    db = context.bot_data["db"]
+    try:
+        db.snapshot_today()
+    except Exception:
+        logger.exception("Не удалось сохранить дневной снимок статистики")
+    await certificates_job(context)
+
+
+async def certificates_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Раз в сутки: напомнить владельцам об истекающих сертификатах.
+
+    Каждый порог (60/30/14/7/3/1/0 дней) отправляется один раз -- отметка
+    хранится в самой записи, поэтому перезапуск бота не приводит к
+    повторной рассылке."""
+    db = context.bot_data["db"]
+    from .services.bridge import cert_status, days_left, due_threshold
+
+    try:
+        rows = db.certificates_expiring(within_days=60)
+    except Exception:
+        logger.exception("Не удалось получить список истекающих сертификатов")
+        return
+
+    sent = 0
+    for c in rows:
+        th = due_threshold(c["expires"], c.get("notified") or "")
+        if not th:
+            continue
+        days, label = th
+        left = days_left(c["expires"])
+        head = "‼️ Истекает сегодня" if left == 0 else f"⏳ Осталось: {label}"
+        text = (
+            f"{head}\n\n"
+            f"<b>{c['name']}</b>\n"
+            + (f"№ {c['number']}\n" if c.get("number") else "")
+            + f"Действует до {str(c['expires'])[:10]}"
+            + (f"\n\n{c['notes']}" if c.get("notes") else "")
+        )
+        try:
+            await context.bot.send_message(c["user_id"], text, parse_mode="HTML")
+            db.mark_cert_notified(c["id"], str(days))
+            sent += 1
+        except Exception:
+            logger.exception("Не удалось отправить напоминание по сертификату %s", c["id"])
+
+    if sent:
+        logger.info("Отправлено напоминаний по сертификатам: %d", sent)

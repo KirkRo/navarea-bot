@@ -78,6 +78,35 @@ CREATE TABLE IF NOT EXISTS favorites (
     created_at TEXT NOT NULL,
     PRIMARY KEY (user_id, area_code)
 );
+
+CREATE TABLE IF NOT EXISTS checklists (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    template TEXT NOT NULL,
+    port TEXT,
+    items_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS certificates (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name TEXT NOT NULL,
+    number TEXT,
+    expires TEXT NOT NULL,
+    notes TEXT,
+    notified TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS daily_stats (
+    day TEXT NOT NULL,
+    area_code TEXT NOT NULL,
+    in_force INTEGER NOT NULL,
+    added INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, area_code)
+);
 """
 
 
@@ -484,3 +513,102 @@ class PostgresDatabase:
                 (user_id, area_code, _now()),
             )
             return True
+
+    # ------------------------------------------------------------------ #
+    # Чек-листы и сертификаты
+    # ------------------------------------------------------------------ #
+
+    def save_checklist(self, user_id: int, template: str, port: str,
+                       items: list, completed: bool) -> int:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO checklists (user_id, template, port, items_json, created_at, completed_at)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+                """,
+                (user_id, template, port, json.dumps(items, ensure_ascii=False),
+                 _now(), _now() if completed else None),
+            )
+            return cur.fetchone()["id"]
+
+    def get_checklists(self, user_id: int, limit: int = 30) -> list[dict]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM checklists WHERE user_id = %s ORDER BY id DESC LIMIT %s",
+                        (user_id, limit))
+            return [dict(r) for r in cur.fetchall()]
+
+    def add_certificate(self, user_id: int, name: str, number: str,
+                        expires: str, notes: str) -> int:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO certificates (user_id, name, number, expires, notes, notified, created_at)
+                VALUES (%s, %s, %s, %s, %s, '', %s) RETURNING id
+                """,
+                (user_id, name, number, expires, notes, _now()),
+            )
+            return cur.fetchone()["id"]
+
+    def delete_certificate(self, user_id: int, cert_id: int) -> None:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM certificates WHERE id = %s AND user_id = %s", (cert_id, user_id))
+
+    def get_certificates(self, user_id: int) -> list[dict]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM certificates WHERE user_id = %s ORDER BY expires", (user_id,))
+            return [dict(r) for r in cur.fetchall()]
+
+    def certificates_expiring(self, within_days: int = 30) -> list[dict]:
+        limit = (datetime.now(timezone.utc) + timedelta(days=within_days)).date().isoformat()
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM certificates WHERE expires <= %s ORDER BY expires", (limit,))
+            return [dict(r) for r in cur.fetchall()]
+
+    def mark_cert_notified(self, cert_id: int, tag: str) -> None:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT notified FROM certificates WHERE id = %s", (cert_id,))
+            row = cur.fetchone()
+            done = set((row["notified"] or "").split(",")) if row else set()
+            done.discard("")
+            done.add(tag)
+            cur.execute("UPDATE certificates SET notified = %s WHERE id = %s",
+                        (",".join(sorted(done)), cert_id))
+
+    # ------------------------------------------------------------------ #
+    # Ежедневные снимки для графика истории
+    # ------------------------------------------------------------------ #
+
+    def snapshot_today(self) -> None:
+        today = datetime.now(timezone.utc).date().isoformat()
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT area_code,
+                       SUM(CASE WHEN is_cancelled = 0 THEN 1 ELSE 0 END) AS inf,
+                       SUM(CASE WHEN first_seen_at >= %s THEN 1 ELSE 0 END) AS add_
+                FROM warnings GROUP BY area_code
+                """,
+                (today,),
+            )
+            for r in cur.fetchall():
+                cur.execute(
+                    """
+                    INSERT INTO daily_stats (day, area_code, in_force, added) VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (day, area_code) DO UPDATE
+                    SET in_force = EXCLUDED.in_force, added = EXCLUDED.added
+                    """,
+                    (today, r["area_code"], int(r["inf"] or 0), int(r["add_"] or 0)),
+                )
+
+    def history(self, days: int = 30) -> list[dict]:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT day, SUM(in_force) AS inf, SUM(added) AS add_
+                FROM daily_stats WHERE day >= %s GROUP BY day ORDER BY day
+                """,
+                (since,),
+            )
+            return [{"day": r["day"], "in_force": int(r["inf"] or 0), "added": int(r["add_"] or 0)}
+                    for r in cur.fetchall()]

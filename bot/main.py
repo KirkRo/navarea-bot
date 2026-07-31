@@ -19,7 +19,7 @@ from telegram.ext import (
 
 from .config import config
 from .handlers import admin, areas, billing, qa, start, warnings
-from .scheduler import poll_sources_job
+from .scheduler import daily_job, poll_sources_job
 from .services.claude_qa import ClaudeQA
 from .services.db_factory import build_database
 from .webapp import start_web_server
@@ -131,6 +131,9 @@ def build_application() -> Application:
             interval=config.poll_interval_minutes * 60,
             first=10,
         )
+        # Напоминания о сертификатах -- раз в сутки, первый прогон через минуту
+        # после старта, чтобы не задерживать запуск.
+        application.job_queue.run_repeating(daily_job, interval=86400, first=60)
     else:
         logger.warning(
             "JobQueue недоступен -- поставь пакет с extra 'job-queue': "

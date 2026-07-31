@@ -253,7 +253,94 @@ def _api_zones(query: dict) -> dict:
     return zones_payload()
 
 
+
+def _api_bridge(query: dict) -> dict:
+    """Чек-листы и сертификаты пользователя. Всё привязано к человеку,
+    поэтому только с проверенной подписью Telegram."""
+    from .services.bridge import (CERT_THRESHOLDS, CHECKLIST_TEMPLATES,
+                                  COMMON_CERTS, cert_status, days_left)
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"error": "unauthorized"}
+
+    action = (query.get("action") or [""])[0]
+
+    if action == "save_checklist":
+        try:
+            items = json.loads((query.get("items") or ["[]"])[0])
+        except ValueError:
+            items = []
+        db.save_checklist(
+            user_id,
+            (query.get("template") or [""])[0],
+            (query.get("port") or [""])[0],
+            items,
+            (query.get("completed") or ["0"])[0] == "1",
+        )
+    elif action == "add_cert":
+        db.add_certificate(
+            user_id,
+            (query.get("name") or [""])[0].strip(),
+            (query.get("number") or [""])[0].strip(),
+            (query.get("expires") or [""])[0].strip(),
+            (query.get("notes") or [""])[0].strip(),
+        )
+    elif action == "del_cert":
+        try:
+            db.delete_certificate(user_id, int((query.get("id") or ["0"])[0]))
+        except ValueError:
+            pass
+
+    certs = []
+    for c in db.get_certificates(user_id):
+        certs.append({
+            "id": c["id"], "name": c["name"], "number": c.get("number"),
+            "expires": str(c["expires"])[:10], "notes": c.get("notes"),
+            "days_left": days_left(c["expires"]), "status": cert_status(c["expires"]),
+        })
+
+    history = []
+    for h in db.get_checklists(user_id, limit=20):
+        try:
+            items = json.loads(h["items_json"])
+        except (ValueError, TypeError):
+            items = []
+        done = sum(1 for i in items if i.get("done"))
+        history.append({
+            "id": h["id"], "template": h["template"], "port": h.get("port"),
+            "created_at": h["created_at"], "completed": bool(h.get("completed_at")),
+            "done": done, "total": len(items),
+        })
+
+    return {
+        "templates": CHECKLIST_TEMPLATES,
+        "common_certs": COMMON_CERTS,
+        "certificates": certs,
+        "history": history,
+    }
+
+
+def _api_history(query: dict) -> dict:
+    """График за 30 дней плюс раскладка по районам для тепловой карты."""
+    db = _state["db"]
+    days = min(int((query.get("days") or ["30"])[0]), 365)
+    hist = db.history(days)
+    stats = _cached_stats()
+    heat = sorted(
+        [{"code": a["code"], "name": a["name"], "in_force": a["in_force"], "added_today": a["added_today"]}
+         for a in stats["areas"] if a["in_force"] > 0],
+        key=lambda x: -x["in_force"],
+    )
+    peak = max((h["in_force"] for h in hist), default=0)
+    return {"history": hist, "heat": heat, "peak": peak,
+            "max_area": heat[0]["in_force"] if heat else 0}
+
+
 API_ROUTES = {
+    "/api/history": _api_history,
+    "/api/bridge": _api_bridge,
     "/api/zones": _api_zones,
     "/api/stats": _api_stats,
     "/api/warnings": _api_warnings,
