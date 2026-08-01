@@ -358,6 +358,34 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
 
+/* ---- Моё судно ---- */
+.vhero{
+  position:relative;border-radius:var(--r-lg);overflow:hidden;
+  background:linear-gradient(150deg,#153c60,#0c2138);border:1px solid var(--line);
+  padding:17px 16px 26px;box-shadow:var(--sh);
+}
+.vwave{position:absolute;left:0;right:0;bottom:-4px;width:200%;height:40px;opacity:.32;
+  animation:drift 12s linear infinite}
+.vin{position:relative;z-index:2}
+.vin .ico{color:var(--amber);margin:0 0 9px}
+.vt{font-size:16px;font-weight:750}
+.vs{font-size:12.5px;color:#b9cadb;margin-top:5px;line-height:1.45}
+.vname{font-size:22px;font-weight:800;letter-spacing:-.6px;line-height:1.15}
+.vmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.vinput{
+  width:100%;background:var(--surf);border:1px solid var(--line);color:var(--text);
+  border-radius:var(--r-sm);padding:12px 13px;font-size:15px;font-family:inherit;outline:none;
+  transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;
+}
+.vinput:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+.langbtn{
+  width:44px;height:44px;flex:none;border-radius:15px;cursor:pointer;
+  background:var(--surf);border:1px solid var(--line);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;
+  letter-spacing:.5px;transition:transform .22s cubic-bezier(.34,1.6,.5,1),color .2s;
+}
+.langbtn:active{transform:scale(.9);color:var(--amber)}
+
 /* ---- Радиостанции ---- */
 .rcard{
   background:var(--surf);border:1px solid var(--line);border-radius:var(--r-lg);
@@ -590,10 +618,11 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
       <div class="hello" id="hello">Спокойной вахты</div>
       <div class="h1">Watch<span>keeper</span></div>
     </div>
-    <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
+    <button class="langbtn" id="langBtn">RU</button>
+      <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
   </div>
 
-  <div class="srow">
+  <div class="srow" id="topSearch">
     <div class="sbox">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="q" placeholder="Номер, координаты, текст…">
@@ -712,6 +741,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- КАРТА -->
   <section id="v-map" class="hidden">
+    <div class="chips" id="mapchips"></div>
     <div class="mapwrap">
       <div id="map"></div>
       <div class="mapctl">
@@ -761,6 +791,12 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
       <span><i style="background:#7f96ac"></i>Отвечает не всегда</span>
     </div>
     <div id="radiolist"><div class="sk card"></div><div class="sk card"></div></div>
+  </section>
+
+  <!-- МОЁ СУДНО -->
+  <section id="v-ship" class="hidden">
+    <div class="sech"><h3>Моё судно</h3></div>
+    <div id="vesselBox"><div class="sk card"></div><div class="sk card"></div></div>
   </section>
 
   <!-- РЕЙС -->
@@ -834,6 +870,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <button class="tab" data-v="map" data-i="map">Карта</button>
   <button class="tab" data-v="tools" data-i="sliders">Мостик</button>
   <button class="tab" data-v="radio" data-i="radar">Радио</button>
+  <button class="tab" data-v="ship" data-i="ship">Судно</button>
   <button class="tab" data-v="voy" data-i="ship">Рейс</button>
 </nav>
 
@@ -1706,6 +1743,83 @@ const GMDSS=[
  ['Мостик-мостик','VHF канал 6','156.300 МГц','Связь при поисково-спасательных работах']
 ];
 
+
+/* ================= Язык интерфейса =================
+   Перевод делается проходом по готовой разметке после отрисовки, а не
+   подстановкой в каждой строке кода. Так переводится и то, что рисуется
+   динамически, без правки сотни мест. Значения полей ввода не трогаем --
+   там данные пользователя. */
+const DICT={
+ 'Панель':'Dashboard','Районы':'Areas','Карта':'Chart','Мостик':'Bridge','Расчёты':'Tools',
+ 'Радио':'Radio','Судно':'Ship','Рейс':'Voyage',
+ 'Спокойной вахты':'Have a good watch','Инструменты вахтенного помощника':'Bridge officer toolkit',
+ 'Данные из кэша':'Cached data','В эфире':'Live','на связи':'online','офлайн':'offline',
+ 'действующих предупреждений по твоим районам':'warnings in force in your areas',
+ 'Открыть карту →':'Open chart →','Действует':'In force','Сегодня':'Today',
+ 'За 7 дней':'Last 7 days','В архиве':'Archived','Все':'All','Все районы':'All areas',
+ 'Избранные районы':'Favourite areas','Все →':'All →','Найдено':'Found',
+ 'Поиск: номер, координаты, текст…':'Search: number, position, text…',
+ 'По количеству ⇅':'By count ⇅','По новизне ⇅':'By newest ⇅','По номеру ⇅':'By code ⇅',
+ 'Целиком':'Full text','Подробнее':'Details','Свернуть':'Collapse','На карте':'On chart',
+ 'На общую карту':'Open on main chart','Назад к инструментам':'Back to tools',
+ 'Текст предупреждения':'Warning text','Координаты':'Positions','Позиция курсора':'Cursor position',
+ 'Подложка':'Base map','Тёмная':'Dark','Океан':'Ocean','Слои':'Layers',
+ 'Районы и полосы':'Areas and lanes','Точечные объекты':'Point objects','Подписи номеров':'Number labels',
+ 'Предупреждения':'Warnings','Судовые сообщения':'Ship reporting','Справочные зоны':'Reference zones',
+ 'Инструменты мостика':'Bridge tools','Исходные данные':'Input','Результат':'Result',
+ 'Навигация':'Navigation','Глубина и осадка':'Depth and draught','Якорь':'Anchoring',
+ 'Радар и манёвр':'Radar and manoeuvring','Погода и единицы':'Weather and units',
+ 'Остойчивость':'Stability','Избранные инструменты':'Favourite tools',
+ 'Расстояние и курс':'Distance and course','ETA и скорость':'ETA and speed',
+ 'Конвертер координат':'Position converter','Запас воды под килём':'Under keel clearance',
+ 'Проседание на ходу':'Squat','Проход под мостом':'Air draught','Якорная стоянка':'Anchor swing',
+ 'CPA и TCPA':'CPA and TCPA','Точка перекладки руля':'Wheel over point',
+ 'Топливо на переход':'Bunkers for passage','Восход, заход, сумерки':'Sunrise, sunset, twilight',
+ 'Шкала Бофорта':'Beaufort scale','Конвертер единиц':'Unit converter',
+ 'Тест MF/HF DSC':'MF/HF DSC test','Отвечают надёжнее всего':'Most reliable to answer',
+ 'Остальные станции':'Other stations','Автоподтверждение':'Auto-acknowledgment',
+ 'Отвечает стабильно':'Answers reliably','Отвечает не всегда':'Does not always answer',
+ 'Моё судно':'My ship','Судно не заведено':'No ship saved','Заполнить карточку':'Fill in details',
+ 'Изменить данные':'Edit details','Карточка судна':'Ship particulars','Сохранить':'Save',
+ 'Опознавание':'Identification','Размерения':'Dimensions','Эксплуатация':'Operation',
+ 'Планирование перехода':'Passage planning','Порт отправления':'Port of departure',
+ 'Порт прибытия':'Port of arrival','Ширина коридора':'Corridor width',
+ 'Проложить и проверить':'Plot and check','миль':'NM','узлов':'kn','часов':'hours',
+ 'История':'History','Очистить всё':'Clear all','Сертификаты':'Certificates','Добавить +':'Add +',
+ 'Укажи оба порта.':'Enter both ports.','Нет связи с сервером. Попробуй позже.':'No connection. Try later.',
+ 'Ничего не нашлось. Попробуй номер, часть текста или координаты.':'Nothing found. Try a number, part of the text or a position.',
+ 'По этому району сейчас нет действующих предупреждений.':'No warnings in force for this area.',
+ 'По этому маршруту действующих предупреждений с координатами нет.':'No warnings with positions along this route.',
+ 'Нет связи. Показаны последние сохранённые данные.':'No connection. Showing last saved data.'
+};
+const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
+let LANG=localStorage.getItem('navarea_lang')||'ru';
+
+function applyLang(){
+  const map=LANG==='en'?DICT:DICT_REV;
+  const walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{
+    acceptNode:n=>{
+      const p=n.parentElement;
+      if(!p) return NodeFilter.FILTER_REJECT;
+      const tag=p.tagName;
+      if(tag==='SCRIPT'||tag==='STYLE'||tag==='INPUT'||tag==='TEXTAREA') return NodeFilter.FILTER_REJECT;
+      return n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nodes=[];
+  while(walk.nextNode()) nodes.push(walk.currentNode);
+  nodes.forEach(n=>{
+    const t=n.nodeValue.trim();
+    if(map[t]) n.nodeValue=n.nodeValue.replace(t,map[t]);
+  });
+  document.querySelectorAll('input[placeholder]').forEach(el=>{
+    const p=el.getAttribute('placeholder');
+    if(map[p]) el.setAttribute('placeholder',map[p]);
+  });
+  const lb=$('#langBtn'); if(lb) lb.textContent=LANG==='en'?'EN':'RU';
+  try{ document.documentElement.lang=LANG; }catch(e){}
+}
+
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (TG) { TG.ready(); TG.expand(); try{ TG.setHeaderColor('#0a1520'); }catch(e){} }
 const INIT = TG ? (TG.initData || '') : '';
@@ -1784,7 +1898,7 @@ async function load(spin){
   render();
 }
 
-function render(){renderCats();renderDash();renderAreas();renderZones()}
+function render(){renderCats();renderDash();renderAreas();renderZones();applyLang()}
 
 /* --- плитки районов --- */
 function renderCats(){
@@ -1965,8 +2079,19 @@ function shapeLayer(pts,type,popup,color,radiusNm){
   else l=L.circleMarker(pts[0],{radius:6,color:color,fillColor:color,fillOpacity:.85,weight:2});
   return l.bindPopup(popup);
 }
+function renderMapChips(){
+  if(!S.stats)return;
+  const el=$('#mapchips'); if(!el) return;
+  const codes=(S.stats.areas||[]).filter(a=>a.in_force>0).map(a=>a.code);
+  el.innerHTML=['all'].concat(codes).map(c=>
+    `<button class="chip ${S.cat===c?'on':''}" data-mc="${c}">${c==='all'?'Все районы':esc(c.replace('COASTAL:','Берег '))}</button>`).join('');
+  document.querySelectorAll('[data-mc]').forEach(b=>b.onclick=()=>{
+    S.cat=b.dataset.mc;hap();renderMapChips();renderCats();drawMap();
+  });
+}
 function drawMap(){
   if(!map)return;
+  renderMapChips();
   wLayers.forEach(l=>map.removeLayer(l));wLayers=[];
   const list=S.warnings.filter(w=>w.shapes&&w.shapes.length&&(S.cat==='all'||w.area_code===S.cat));
   let nA=0,nP=0,nS=0;
@@ -2087,14 +2212,19 @@ function drawVoy(r){
 /* --- навигация --- */
 function switchView(v){
   S.view=v;
-  ['dash','areas','map','tools','radio','voy'].forEach(x=>{
+  ['dash','areas','map','tools','radio','ship','voy'].forEach(x=>{
     const el=$('#v-'+x);
     if(x===v){el.classList.remove('hidden');el.style.animation='none';void el.offsetWidth;el.style.animation=''}
     else el.classList.add('hidden');
   });
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
+  const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='dash');
+  const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='dash'&&v!=='areas');
   try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}
   if(v==='tools'){renderTools();loadBridge();renderRefs();}
+  if(v==='ship')loadVessel();
+  setTimeout(applyLang,30);
+  if(v==='radio')setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
   if(v==='dash')loadHistory();
   if(v==='map')setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
 }
@@ -2212,6 +2342,18 @@ async function loadBridge(){
   try{ BR=await api('/api/bridge?'); if(BR.error) BR=null; }catch(e){ BR=null; }
   renderBridge();
 }
+function bindHistory(){
+  document.querySelectorAll('[data-delch]').forEach(b=>b.onclick=async ev=>{
+    ev.stopPropagation();hap('medium');
+    try{ BR=await api('/api/bridge?action=del_checklist&id='+b.dataset.delch); renderBridge(); }catch(e){}
+  });
+  const cb=$('#clearHist');
+  if(cb) cb.onclick=async()=>{
+    hap('medium');
+    if(!confirm('Удалить всю историю чек-листов? Отменить будет нельзя.')) return;
+    try{ BR=await api('/api/bridge?action=clear_checklists'); renderBridge(); }catch(e){}
+  };
+}
 function renderBridge(){
   if(!BR){ $('#bridgeBox').innerHTML='<div class="sk card"></div>'; return; }
   const c=BR.certificates||[], soon=c.filter(x=>x.status==='soon'||x.status==='expired').length;
@@ -2234,13 +2376,15 @@ function renderBridge(){
     }).join('')+`</div>`;
 
   if((BR.history||[]).length){
-    h+=`<div class="sech" style="margin-top:17px"><h3>История</h3></div>`+
-      BR.history.slice(0,6).map(x=>{
+    h+=`<div class="sech" style="margin-top:17px"><h3>История · ${BR.history.length}</h3>
+        <a id="clearHist">Очистить всё</a></div>`+
+      BR.history.slice(0,12).map(x=>{
         const t=(BR.templates[x.template]||{}).title||x.template;
         const pct=x.total?Math.round(x.done/x.total*100):0;
         return `<div class="tres"><span class="tl">${esc(t)}${x.port?' · '+esc(x.port):''}<br>
           <span style="font-size:11px;opacity:.7">${esc(String(x.created_at).slice(0,10))}</span></span>
-          <span class="tv" style="font-size:13px">${x.done}/${x.total} · ${pct}%</span></div>`;
+          <span class="tv" style="font-size:13px">${x.done}/${x.total} · ${pct}%</span>
+          <button class="rcopy" data-delch="${x.id}" style="margin-left:9px">${ico('archive','sm')}</button></div>`;
       }).join('');
   }
 
@@ -2264,6 +2408,7 @@ function renderBridge(){
   $('#bridgeBox').innerHTML=h;
 
   document.querySelectorAll('[data-cl]').forEach(el=>el.onclick=()=>openChecklist(el.dataset.cl));
+  bindHistory();
   const ac=$('#addCert'); if(ac) ac.onclick=openCertForm;
   document.querySelectorAll('[data-delcert]').forEach(b=>b.onclick=async()=>{
     hap('medium');
@@ -2647,6 +2792,114 @@ function focusStation(s){
   },80);
 }
 
+
+/* ---- Моё судно ---- */
+let VES=null;
+
+async function loadVessel(){
+  try{ VES=await api('/api/vessel'); localStorage.setItem('navarea_vessel',JSON.stringify(VES)); }
+  catch(e){ try{ VES=JSON.parse(localStorage.getItem('navarea_vessel')||'null'); }catch(e2){} }
+  renderVessel();
+  return VES;
+}
+
+/* размерения судна подставляются в расчёты по умолчанию */
+function vesselDefault(key){
+  const v=(VES&&VES.vessel)||{};
+  const map={dr:'draft',ad:'air_draft',cb:'cb',loa:'loa',hh:'hawse',s:'speed',c:'cons'};
+  const src=map[key];
+  return src&&v[src]?v[src]:null;
+}
+
+function renderVessel(){
+  const box=$('#vesselBox'); if(!box) return;
+  if(!VES){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
+  if(VES.error){
+    box.innerHTML=`<div class="empty">${ico('ship')}Открой приложение из чата с ботом, чтобы карточка судна привязалась к тебе.</div>`;
+    return;
+  }
+  const v=VES.vessel||{};
+  const filled=Object.keys(v).length;
+
+  if(!filled){
+    box.innerHTML=`
+      <div class="vhero">
+        <svg class="vwave" viewBox="0 0 800 40" preserveAspectRatio="none">
+          <path d="M0 20 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v24 h-800 z" fill="#4d93d6"/>
+        </svg>
+        <div class="vin">${ico('ship','lg')}
+          <div class="vt">Судно не заведено</div>
+          <div class="vs">Заполни один раз — размерения сами подставятся в расчёты запаса под килём, проседания, якорной стоянки и прохода под мостом.</div>
+        </div>
+      </div>
+      <button class="btn wide" id="editVessel" style="margin-top:13px">Заполнить карточку</button>
+      <div class="hint" style="margin-top:13px">${ico('alert','xs')} ${esc(VES.note||'')}</div>`;
+  } else {
+    const row=(l,val,u)=>val?`<div class="tres"><span class="tl">${esc(l)}</span><span class="tv mono">${esc(val)}${u?' '+u:''}</span></div>`:'';
+    box.innerHTML=`
+      <div class="vhero">
+        <svg class="vwave" viewBox="0 0 800 40" preserveAspectRatio="none">
+          <path d="M0 20 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v24 h-800 z" fill="#4d93d6"/>
+        </svg>
+        <div class="vin">
+          <div class="vname">${esc(v.name||'Без названия')}</div>
+          <div class="vmeta">
+            ${v.type?`<span class="dchip">${ico('ship','xs')}${esc(v.type)}</span>`:''}
+            ${VES.flag?`<span class="dchip">${ico('flag','xs')}${esc(VES.flag)}</span>`:''}
+            ${v.imo?`<span class="dchip">IMO ${esc(v.imo)}</span>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="dpanel" style="margin-top:13px"><h4>Опознавание</h4>
+        ${row('MMSI',v.mmsi)}${row('Позывной',v.callsign)}${row('Флаг по MMSI',VES.flag)}
+      </div>
+      <div class="dpanel"><h4>Размерения</h4>
+        ${row('Длина наибольшая',v.loa,'м')}${row('Ширина',v.beam,'м')}
+        ${row('Осадка в грузу',v.draft,'м')}${row('Надводный габарит',v.air_draft,'м')}
+        ${row('Коэффициент полноты',v.cb)}${row('Высота клюза',v.hawse,'м')}
+      </div>
+      <div class="dpanel"><h4>Эксплуатация</h4>
+        ${row('Дедвейт',v.dwt,'т')}${row('Валовая вместимость',v.gt)}
+        ${row('Скорость в грузу',v.speed,'узлов')}${row('Расход на ходу',v.cons,'т/сут')}
+      </div>
+      <button class="btn wide" id="editVessel">Изменить данные</button>
+      <div class="hint" style="margin-top:13px">${ico('alert','xs')} Эти значения подставляются в расчёты как исходные — можно менять на месте, карточка от этого не изменится.</div>`;
+  }
+  const eb=$('#editVessel'); if(eb) eb.onclick=openVesselForm;
+}
+
+function openVesselForm(){
+  if(!VES) return;
+  hap('medium');
+  const v=VES.vessel||{};
+  $('#tName').textContent='Карточка судна';
+  $('#tDesc').textContent='Заполняется один раз, подставляется во все расчёты';
+  $('#tIcon').innerHTML=ico('ship','lg');
+  $('#tFields').innerHTML=(VES.fields||[]).map(f=>
+    `<div class="fld"><label>${esc(f.l)}${f.u?' · '+esc(f.u):''}</label>
+     <input class="vinput" data-k="${f.k}" inputmode="${f.t==='num'?'decimal':'text'}"
+            value="${esc(v[f.k]||'')}"></div>`).join('');
+  $('#tResults').innerHTML=`<button class="btn wide" id="saveVessel">Сохранить</button>`;
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+  curTool=null;
+
+  $('#saveVessel').onclick=async()=>{
+    const q=[];
+    document.querySelectorAll('.vinput').forEach(el=>{
+      if(el.value.trim()) q.push(encodeURIComponent(el.dataset.k)+'='+encodeURIComponent(el.value.trim()));
+    });
+    hap('medium');
+    try{
+      VES=await api('/api/vessel?action=save&'+q.join('&'));
+      localStorage.setItem('navarea_vessel',JSON.stringify(VES));
+      renderVessel(); closeTool();
+    }catch(e){
+      $('#tResults').innerHTML=`<div class="tres warn"><span class="tl">Не удалось сохранить</span><span class="tv">нет связи</span></div>`;
+    }
+  };
+}
+
 /* ---- Экран инструментов ---- */
 let curTool=null, toolVals={};
 
@@ -2765,6 +3018,7 @@ const wantTab=(location.hash||'').replace('#','');
 if(['dash','areas','map','tools','radio','voy'].includes(wantTab)) switchView(wantTab);
 
 if(loadCache())render();
+setTimeout(applyLang,60);
 load(false);
 setInterval(()=>{if(S.view==='dash'||S.view==='areas')load(false)},120000);
 </script>

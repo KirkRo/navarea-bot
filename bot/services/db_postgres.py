@@ -72,6 +72,12 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS vessels (
+    user_id BIGINT PRIMARY KEY,
+    data_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS favorites (
     user_id BIGINT NOT NULL,
     area_code TEXT NOT NULL,
@@ -612,3 +618,32 @@ class PostgresDatabase:
             )
             return [{"day": r["day"], "in_force": int(r["inf"] or 0), "added": int(r["add_"] or 0)}
                     for r in cur.fetchall()]
+
+    def delete_checklist(self, user_id: int, checklist_id: int) -> None:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM checklists WHERE user_id = %s AND id = %s", (user_id, checklist_id))
+
+    def clear_checklists(self, user_id: int) -> int:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM checklists WHERE user_id = %s", (user_id,))
+            return cur.rowcount or 0
+
+    def get_vessel(self, user_id: int) -> dict:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT data_json FROM vessels WHERE user_id = %s", (user_id,))
+            row = cur.fetchone()
+        if not row:
+            return {}
+        try:
+            return json.loads(row["data_json"])
+        except (ValueError, TypeError):
+            return {}
+
+    def save_vessel(self, user_id: int, data: dict) -> None:
+        payload = json.dumps(data, ensure_ascii=False)
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO vessels (user_id, data_json, updated_at) VALUES (%s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET data_json = EXCLUDED.data_json,
+                                                    updated_at = EXCLUDED.updated_at
+            """, (user_id, payload, _now()))

@@ -248,6 +248,26 @@ def _api_voyage(query: dict) -> dict:
     }
 
 
+def _api_vessel(query: dict) -> dict:
+    """Карточка судна пользователя. Привязана к человеку -- только с подписью."""
+    from .services.vessel import VESSEL_FIELDS, vessel_payload
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"error": "unauthorized"}
+
+    if (query.get("action") or [""])[0] == "save":
+        data = {}
+        for f in VESSEL_FIELDS:
+            v = (query.get(f["k"]) or [""])[0].strip()
+            if v:
+                data[f["k"]] = v
+        db.save_vessel(user_id, data)
+
+    return vessel_payload(db.get_vessel(user_id))
+
+
 def _api_stations(query: dict) -> dict:
     from .services.radio import stations_payload
     return stations_payload()
@@ -292,6 +312,13 @@ def _api_bridge(query: dict) -> dict:
             (query.get("expires") or [""])[0].strip(),
             (query.get("notes") or [""])[0].strip(),
         )
+    elif action == "del_checklist":
+        try:
+            db.delete_checklist(user_id, int((query.get("id") or ["0"])[0]))
+        except ValueError:
+            pass
+    elif action == "clear_checklists":
+        db.clear_checklists(user_id)
     elif action == "del_cert":
         try:
             db.delete_certificate(user_id, int((query.get("id") or ["0"])[0]))
@@ -344,6 +371,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/vessel": _api_vessel,
     "/api/stations": _api_stations,
     "/api/history": _api_history,
     "/api/bridge": _api_bridge,
