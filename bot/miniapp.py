@@ -1431,6 +1431,8 @@ const TOOLS=[
    const rows=[
     {l:'Осталось ресурса',v:F(left,2)+' %',hi:1,warn:left<20},
     {l:'Выработано',v:F(used,2)+' %'},
+    // подстановка чисел, чтобы можно было сверить с расчётом на калькуляторе
+    {l:'Проверка',v:F(rx,1)+' × 100 ÷ '+F(life,0)+' = '+F(used,3)},
     {l:'Отработано часов',v:F(rx,1)+' ч'},
     {l:'Осталось часов',v:F(hoursLeft,1)+' ч',warn:hoursLeft<500}];
    const day=+v.day;
@@ -2174,7 +2176,7 @@ Object.assign(DICT,{
  'Пора заказывать замену':'Time to order a replacement',
  'Планируй замену заранее':'Plan the replacement ahead',
  'Ресурс должен быть больше нуля':'Rated life must be greater than zero',
- 'Внимание':'Attention','сут':'d','мес':'mo'
+ 'Внимание':'Attention','Проверка':'Check','сут':'d','мес':'mo'
 });
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
