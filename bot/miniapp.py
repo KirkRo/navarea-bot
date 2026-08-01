@@ -1416,6 +1416,33 @@ const TOOLS=[
     {l:'Скорость сближения',v:F(r.relSpeed,1)+' узлов'}];
   }},
 
+ {id:'magnetron',cat:'radar',icon:'radar',name:'Ресурс магнетрона',
+  desc:'Сколько процентов ресурса радара выработано и что осталось',
+  fields:[
+   {k:'rx',l:'RX time (наработка по счётчику)',t:'num',u:'часов',def:'1424.7'},
+   {k:'life',l:'Номинальный ресурс магнетрона',t:'num',u:'часов',def:'5000'},
+   {k:'day',l:'Наработка в сутки (0 = без прогноза)',t:'num',u:'часов',def:'0'}],
+  calc:v=>{
+   const rx=+v.rx, life=+v.life;
+   if(!(life>0)) return [{l:'Ошибка',v:'Ресурс должен быть больше нуля'}];
+   const used=rx*100/life;          // (RX time × 100) / ресурс
+   const left=100-used;             // остаток ресурса
+   const hoursLeft=life-rx;
+   const rows=[
+    {l:'Осталось ресурса',v:F(left,2)+' %',hi:1,warn:left<20},
+    {l:'Выработано',v:F(used,2)+' %'},
+    {l:'Отработано часов',v:F(rx,1)+' ч'},
+    {l:'Осталось часов',v:F(hoursLeft,1)+' ч',warn:hoursLeft<500}];
+   const day=+v.day;
+   if(day>0&&hoursLeft>0){
+     const days=hoursLeft/day;
+     rows.push({l:'Хватит примерно на',v:F(days,0)+' сут ('+F(days/30.4,1)+' мес)'});
+   }
+   if(left<20) rows.push({l:'Внимание',v:'Пора заказывать замену',warn:1});
+   else if(left<40) rows.push({l:'Внимание',v:'Планируй замену заранее',warn:1});
+   return rows;
+  }},
+
  {id:'wop',cat:'radar',icon:'compass',name:'Точка перекладки руля',
   desc:'Wheel Over Point, advance и transfer',
   fields:[
@@ -2134,6 +2161,20 @@ Object.assign(DICT,{
  'Расстояние, курс, ETA, координаты, единицы, Бофорт, светила':'Distance, course, ETA, positions, units, Beaufort, celestial',
  'Своё название (если выбрано «Другой»)':'Custom name (if "Other" selected)',
  'Станции MF/HF DSC и справочные зоны':'MF/HF DSC stations and reference zones'
+});
+Object.assign(DICT,{
+ 'Ресурс магнетрона':'Magnetron life',
+ 'Сколько процентов ресурса радара выработано и что осталось':'How much of the radar magnetron life is used and left',
+ 'RX time (наработка по счётчику)':'RX time (hours run)',
+ 'Номинальный ресурс магнетрона':'Rated magnetron life',
+ 'Наработка в сутки (0 = без прогноза)':'Hours per day (0 = no forecast)',
+ 'Осталось ресурса':'Life remaining','Выработано':'Life used',
+ 'Отработано часов':'Hours run','Осталось часов':'Hours remaining',
+ 'Хватит примерно на':'Approximately lasts',
+ 'Пора заказывать замену':'Time to order a replacement',
+ 'Планируй замену заранее':'Plan the replacement ahead',
+ 'Ресурс должен быть больше нуля':'Rated life must be greater than zero',
+ 'Внимание':'Attention','сут':'d','мес':'mo'
 });
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
