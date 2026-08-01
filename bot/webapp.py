@@ -225,7 +225,7 @@ def _api_voyage(query: dict) -> dict:
                                   resolve_point, warnings_on_route)
 
     db = _state["db"]
-    _uid, denied = _require("voyage", query)
+    _uid, denied = _require("voyage", query, personal=False)
     if denied:
         return denied
     src = (query.get("from") or [""])[0]
@@ -237,13 +237,17 @@ def _api_voyage(query: dict) -> dict:
         missing = "отправления" if not a else "прибытия"
         return {"error": f"Не удалось определить порт {missing}. Попробуй другое название или введи координаты."}
 
-    route = great_circle_points(a, b)
+    from .services.voyage import planned_route
+    plan = planned_route(a, b)
+    route = plan["points"]
     found = warnings_on_route(route, db.all_active_warnings(), corridor_nm=corridor)
 
     return {
         "from": {"label": a.label, "lat": a.lat, "lon": a.lon},
         "to": {"label": b.label, "lat": b.lat, "lon": b.lon},
-        "distance_nm": round(haversine_nm(a.lat, a.lon, b.lat, b.lon)),
+        "legs": plan["legs"],
+        "direct_nm": round(haversine_nm(a.lat, a.lon, b.lat, b.lon)),
+        "distance_nm": round(plan["distance_nm"]),
         "corridor_nm": corridor,
         "route": [[round(la, 3), round(lo, 3)] for la, lo in route],
         "count": len(found),
@@ -252,14 +256,23 @@ def _api_voyage(query: dict) -> dict:
 
 
 
-def _require(feature: str, query: dict):
-    """Возвращает user_id или словарь с отказом, если раздел платный."""
+def _require(feature: str, query: dict, personal: bool = True):
+    """Возвращает user_id или словарь с отказом.
+
+    personal=False -- раздел не хранит ничего личного (например, расчёт
+    маршрута), поэтому при выключенных тарифах подпись не обязательна:
+    иначе страница просто не открывалась вне Telegram."""
+    from .config import config
     from .services.access import can
 
     db = _state["db"]
     user_id = _user_id_from_query(query)
+
     if user_id is None:
+        if not personal and not config.paywall_enabled:
+            return 0, None
         return None, {"error": "unauthorized"}
+
     if not can(db, user_id, feature):
         return None, {"error": "premium_required", "feature": feature}
     return user_id, None

@@ -100,8 +100,8 @@ body::before{
 .fbtn:active{transform:scale(.9)}
 
 /* ---- Плитки-категории ---- */
-.cats{display:flex;gap:9px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none;scroll-snap-type:x proximity}
-.cats::-webkit-scrollbar{display:none}
+.cats,.chips{display:flex;gap:9px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none;scroll-snap-type:x proximity}
+.cats::-webkit-scrollbar,.chips::-webkit-scrollbar{display:none}
 .cat{
   flex:none;width:74px;padding:11px 6px 9px;border-radius:var(--r-md);cursor:pointer;
   background:var(--surf);border:1px solid var(--line);text-align:center;scroll-snap-align:start;
@@ -356,7 +356,24 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-radius:var(--r-md);padding:12px 14px;font-size:12.5px;margin-bottom:14px;display:none;
 }
 .offline.on{display:block;animation:up .34s}
-.hidden{display:none!important}
+".hidden{display:none!important}
+.legs{display:flex;align-items:flex-start;gap:7px;margin-top:9px;padding-top:9px;
+  border-top:1px solid rgba(240,160,60,.22);font-size:11.5px;color:var(--muted);line-height:1.45}
+.legs .ico{color:var(--amber);margin-top:2px}
+.topback{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:9px;
+  padding:calc(11px + env(safe-area-inset-top)) 15px 11px;margin:0 -16px 4px;
+  background:linear-gradient(180deg,var(--bg) 72%,transparent);
+}
+.topback button{
+  width:40px;height:40px;flex:none;border-radius:13px;cursor:pointer;
+  background:var(--surf);border:1px solid var(--line);color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s cubic-bezier(.34,1.6,.5,1);
+}
+.topback button:active{transform:scale(.88)}
+.topback .tb{font-size:14.5px;font-weight:700;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
 
 /* ---- Тариф и платные разделы ---- */
 .trialbar{
@@ -450,7 +467,10 @@ function gate(sectionId, feature){
   const el=$(sectionId); if(!el) return true;
   const old=el.querySelector('.lockover'); if(old) old.remove();
   el.classList.remove('locked');
-  if(ACC&&ACC.paywall===false) return true;
+  // Пока сведения о доступе не пришли -- ничего не закрываем: иначе
+  // раздел блокируется на ровном месте при медленной сети.
+  if(!ACC) return true;
+  if(ACC.paywall===false) return true;
   if(isPaid()) return true;
 
   el.classList.add('lockwrap','locked');
@@ -471,6 +491,7 @@ function openPlans(){
   const price=ACC?ACC.price_stars:100;
   const paid=(ACC&&ACC.paid_features)||{};
   $('#tName').textContent='Тарифы';
+  { const b=$('#tBackTitle'); if(b) b.textContent='Тарифы'; }
   $('#tDesc').textContent='Что открыто сейчас и что даёт Premium';
   $('#tIcon').innerHTML=ico('star','lg');
   $('#tFields').innerHTML=`
@@ -1000,7 +1021,11 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 </div>
 
 <div class="detail" id="tool">
-  <div class="dbody" style="margin-top:calc(18px + env(safe-area-inset-top))">
+  <div class="dbody">
+    <div class="topback">
+      <button id="tBackTop"></button>
+      <span class="tb" id="tBackTitle"></span>
+    </div>
     <div class="thead">
       <div class="ti" id="tIcon"></div>
       <div style="min-width:0">
@@ -2151,8 +2176,15 @@ function countUp(el,to){
 
 async function load(spin){
   try{
-    const [st,wr]=await Promise.all([api('/api/stats'),api('/api/warnings?limit=3000')]);
-    S.stats=st;S.warnings=wr.results||[];S.offline=false;
+    // Раздельно и через allSettled: раньше падение одного запроса обнуляло
+    // весь экран (районы и карта оставались пустыми). Лимит снижен -- три
+    // тысячи предупреждений с разбором геометрии сервер отдавал слишком долго.
+    const [stR,wrR]=await Promise.allSettled([
+      api('/api/stats'), api('/api/warnings?limit=800')
+    ]);
+    if(stR.status==='fulfilled') S.stats=stR.value;
+    if(wrR.status==='fulfilled') S.warnings=wrR.value.results||[];
+    S.offline=(stR.status!=='fulfilled'&&wrR.status!=='fulfilled');
     try{const f=await api('/api/favorites');if(!f.error)S.favs=f.favorites||[]}catch(e){}
     if(!S.zones){
       try{
@@ -2453,10 +2485,12 @@ async function runVoyage(){
     const r=await api(`/api/voyage?from=${encodeURIComponent(f)}&to=${encodeURIComponent(to)}&corridor=${S.corridor}`);
     if(r.error){$('#voyout').innerHTML=`<div class="empty">${ico('alert')}${esc(r.error)}</div>`;return}
     const w=r.count===1?'предупреждение':(r.count>=2&&r.count<=4?'предупреждения':'предупреждений');
+    const legs=(r.legs||[]).map(l=>esc(l.title)).join(' → ');
     $('#voyout').innerHTML=`
       <div class="voyhead up">
         <div class="big">На маршруте найдено ${r.count} активных ${w}</div>
-        <div class="sm">${esc(r.from.label)} → ${esc(r.to.label)} · <span class="mono">${r.distance_nm}</span> миль · коридор ±<span class="mono">${r.corridor_nm}</span></div>
+        <div class="sm">${esc(r.from.label)} → ${esc(r.to.label)} · <span class="mono">${r.distance_nm}</span> миль по маршруту · коридор ±<span class="mono">${r.corridor_nm}</span></div>
+        ${legs?`<div class="legs">${ico('route','xs')}<span>${legs}</span></div>`:''}
       </div>
       <div id="vmap"></div>
       ${r.results.length?r.results.map(warnCard).join('')
@@ -2473,6 +2507,10 @@ function drawVoy(r){
   const line=L.polyline(r.route,{color:'#4d93d6',weight:3,dashArray:'8 7'}).addTo(vmap);
   L.marker([r.from.lat,r.from.lon]).bindPopup(esc(r.from.label)).addTo(vmap);
   L.marker([r.to.lat,r.to.lon]).bindPopup(esc(r.to.label)).addTo(vmap);
+  (r.legs||[]).forEach(l=>{
+    L.circleMarker([l.lat,l.lon],{radius:5,color:'#6fb3f0',fillColor:'#0b1e30',
+      fillOpacity:1,weight:2}).bindPopup(`<b>${esc(l.title)}</b><br>точка поворота`).addTo(vmap);
+  });
   r.results.forEach(w=>(w.shapes||[]).forEach(s=>
     shapeLayer(s.points,s.type,`<b>${esc(w.area_code)} №${esc(w.msg_number||'—')}</b><br>${w.distance_nm} миль от курса`,'#f0a03c',s.radius_nm).addTo(vmap)));
   vmap.fitBounds(line.getBounds(),{padding:[28,28]});
@@ -3145,6 +3183,7 @@ function openVesselForm(){
   hap('medium');
   const v=VES.vessel||{};
   $('#tName').textContent='Карточка судна';
+  { const b=$('#tBackTitle'); if(b) b.textContent='Карточка судна'; }
   $('#tDesc').textContent='Заполняется один раз, подставляется во все расчёты';
   $('#tIcon').innerHTML=ico('ship','lg');
   $('#tFields').innerHTML=(VES.fields||[]).map(f=>
@@ -3228,6 +3267,7 @@ function openTool(t){
   t.fields.forEach(f=>{ toolVals[f.k]=(f.def!==undefined?f.def:''); });
 
   $('#tName').textContent=t.name;
+  { const b=$('#tBackTitle'); if(b) b.textContent=t.name; }
   $('#tDesc').textContent=t.desc;
   $('#tIcon').innerHTML=ico(t.icon,'lg');
   $('#tFields').innerHTML=t.fields.map(f=>{
@@ -3271,6 +3311,14 @@ function closeTool(){
 }
 
 $('#tBack').onclick=()=>{ if(curCL) saveCL(); closeTool(); $('#tBack').textContent='Назад к инструментам'; };
+$('#tBackTop').innerHTML=ico('back');
+$('#tBackTop').onclick=()=>{ if(typeof curCL!=='undefined'&&curCL) saveCL(); closeTool(); };
+$('#langBtn').onclick=()=>{
+  LANG=(LANG==='en')?'ru':'en';
+  localStorage.setItem('navarea_lang',LANG);
+  hap('medium');
+  applyLang();
+};
 $('#toolsHint').innerHTML=ico('alert','xs')+' Все расчёты выполняются прямо в приложении и работают без связи.';
 renderTools();
 loadBridge();

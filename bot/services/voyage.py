@@ -341,6 +341,25 @@ def haversine_nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * EARTH_RADIUS_NM * math.asin(min(1.0, math.sqrt(a)))
 
 
+def planned_route(a: Port, b: Port) -> dict:
+    """Маршрут через проливы и каналы вместо прямой через сушу."""
+    from .routing import NODE_TITLES, densify, plan_route
+
+    r = plan_route((a.lat, a.lon), (b.lat, b.lon))
+    pts = densify(r["points"])
+    legs = [{"key": w, "title": NODE_TITLES.get(w), "lat": None, "lon": None}
+            for w in r["waypoints"] if w in NODE_TITLES]
+    from .routing import NODES
+    for leg in legs:
+        leg["lat"], leg["lon"] = NODES[leg["key"]]
+    return {
+        "points": pts,
+        "distance_nm": r["distance_nm"],
+        "legs": legs,
+        "direct": r.get("direct", False),
+    }
+
+
 def great_circle_points(a: Port, b: Port, step_nm: float = 60.0) -> list[tuple[float, float]]:
     """Точки вдоль ортодромии между двумя портами."""
     total = haversine_nm(a.lat, a.lon, b.lat, b.lon)
