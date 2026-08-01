@@ -358,6 +358,156 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
 
+/* ---- Тариф и платные разделы ---- */
+.trialbar{
+  display:flex;align-items:center;gap:11px;padding:12px 14px;margin-bottom:14px;
+  border-radius:var(--r-md);background:linear-gradient(120deg,rgba(240,160,60,.16),rgba(255,139,61,.04));
+  border:1px solid rgba(240,160,60,.3);cursor:pointer;
+}
+.trialbar.free{background:rgba(127,150,172,.08);border-color:var(--line)}
+.trialbar .ti{width:34px;height:34px;flex:none;border-radius:11px;display:flex;
+  align-items:center;justify-content:center;background:var(--amber-soft);color:var(--amber)}
+.trialbar .tt{flex:1;min-width:0}
+.trialbar .t1{font-size:13.5px;font-weight:700}
+.trialbar .t2{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.trialbar .tg{font-size:11px;font-weight:750;color:var(--amber);white-space:nowrap}
+
+.lockwrap{position:relative}
+.lockwrap.locked>*:not(.lockover){filter:blur(3px);opacity:.4;pointer-events:none;user-select:none}
+.lockover{
+  position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:24px;gap:11px;
+}
+.lockover .li{
+  width:56px;height:56px;border-radius:19px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,var(--amber),var(--amber2));color:#16232f;box-shadow:var(--glow);
+}
+.lockover .lt{font-size:16px;font-weight:750}
+.lockover .ls{font-size:12.5px;color:var(--muted);max-width:280px;line-height:1.45}
+.premtag{
+  display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;
+  background:var(--amber-soft);color:var(--amber);border:1px solid rgba(240,160,60,.3);
+  border-radius:7px;padding:2px 6px;margin-left:6px;vertical-align:1px;letter-spacing:.4px;
+}
+.plans{display:grid;gap:11px;margin-bottom:13px}
+.plan{
+  background:var(--surf);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:15px;backdrop-filter:blur(16px);
+}
+.plan.on{border-color:rgba(240,160,60,.45);
+  background:linear-gradient(150deg,rgba(240,160,60,.1),var(--surf))}
+.plan .pt{font-size:15px;font-weight:750;display:flex;align-items:center;justify-content:space-between}
+.plan .pp{font-size:22px;font-weight:800;color:var(--amber);letter-spacing:-.5px}
+.plan ul{margin:11px 0 0;padding:0;list-style:none}
+.plan li{font-size:12.5px;color:var(--muted);padding:4px 0 4px 20px;position:relative;line-height:1.4}
+.plan li::before{content:'';position:absolute;left:2px;top:11px;width:7px;height:7px;
+  border-radius:50%;background:var(--amber);opacity:.75}
+.plan.gray li::before{background:var(--muted);opacity:.5}
+
+
+/* ---- Тариф, пробный период, платные разделы ---- */
+let ACC=null;
+
+async function loadAccess(){
+  try{ ACC=await api('/api/access'); localStorage.setItem('navarea_access',JSON.stringify(ACC)); }
+  catch(e){ try{ ACC=JSON.parse(localStorage.getItem('navarea_access')||'null'); }catch(e2){} }
+  renderTrialBar();
+  return ACC;
+}
+const isPaid=()=>!!(ACC&&ACC.premium);
+const featureName=k=>((ACC&&ACC.paid_features)||{})[k]||'';
+
+function renderTrialBar(){
+  const el=$('#trialbar'); if(!el||!ACC) return;
+  // тарифы выключены на время отладки либо это владелец -- баннер не нужен
+  if(ACC.paywall===false||ACC.tier==='open'||ACC.tier==='owner'){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+
+  if(ACC.tier==='trial'){
+    const d=(ACC.trial&&ACC.trial.days_left)||0;
+    el.className='trialbar';
+    el.innerHTML=`<div class="ti">${ico('star')}</div>
+      <div class="tt"><div class="t1">Пробный период · осталось ${d} дн.</div>
+        <div class="t2">Открыты все разделы. Дальше ${ACC.price_stars} ⭐ в месяц, это примерно 2 доллара.</div></div>
+      <span class="tg">Подробнее →</span>`;
+  } else if(ACC.tier==='premium'){
+    el.className='trialbar';
+    el.innerHTML=`<div class="ti">${ico('star')}</div>
+      <div class="tt"><div class="t1">Premium активен</div>
+        <div class="t2">Открыты все разделы. Спасибо, что поддерживаешь проект.</div></div>`;
+  } else {
+    el.className='trialbar free';
+    el.innerHTML=`<div class="ti">${ico('lighthouse')}</div>
+      <div class="tt"><div class="t1">Бесплатный тариф</div>
+        <div class="t2">Два района, базовые расчёты и справочники. Остальное — ${ACC.price_stars} ⭐ в месяц.</div></div>
+      <span class="tg">Открыть всё →</span>`;
+  }
+  el.onclick=openPlans;
+}
+
+/* закрывает раздел, если он платный и доступа нет */
+function gate(sectionId, feature){
+  const el=$(sectionId); if(!el) return true;
+  const old=el.querySelector('.lockover'); if(old) old.remove();
+  el.classList.remove('locked');
+  if(ACC&&ACC.paywall===false) return true;
+  if(isPaid()) return true;
+
+  el.classList.add('lockwrap','locked');
+  const ov=document.createElement('div');
+  ov.className='lockover';
+  ov.innerHTML=`<div class="li">${ico('star','lg')}</div>
+    <div class="lt">${esc(featureName(feature))}</div>
+    <div class="ls">Раздел входит в Premium — ${ACC?ACC.price_stars:100} ⭐ в месяц, около 2 долларов.
+      Первые 14 дней после установки всё открыто.</div>
+    <button class="btn" id="lockBtn">Что входит в Premium</button>`;
+  el.appendChild(ov);
+  const b=ov.querySelector('#lockBtn'); if(b) b.onclick=openPlans;
+  return false;
+}
+
+function openPlans(){
+  hap('medium');
+  const price=ACC?ACC.price_stars:100;
+  const paid=(ACC&&ACC.paid_features)||{};
+  $('#tName').textContent='Тарифы';
+  $('#tDesc').textContent='Что открыто сейчас и что даёт Premium';
+  $('#tIcon').innerHTML=ico('star','lg');
+  $('#tFields').innerHTML=`
+    <div class="plans">
+      <div class="plan gray ${!isPaid()?'on':''}">
+        <div class="pt"><span>Бесплатно</span><span class="pp">0</span></div>
+        <ul>
+          <li>Два района NAVAREA с уведомлениями</li>
+          <li>Карта всех действующих предупреждений</li>
+          <li>Расчёты безопасности: запас под килём, проседание, CPA/TCPA, точка перекладки, якорь, габарит под мостом</li>
+          <li>Расстояние, курс, ETA, координаты, единицы, Бофорт, светила</li>
+          <li>Станции MF/HF DSC и справочные зоны</li>
+          <li>Пять вопросов ассистенту в день</li>
+        </ul>
+      </div>
+      <div class="plan ${isPaid()?'on':''}">
+        <div class="pt"><span>Premium</span><span class="pp">${price} ⭐ / мес</span></div>
+        <ul>${Object.keys(paid).map(k=>`<li>${esc(paid[k])}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда — брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
+  $('#tResults').innerHTML = isPaid()
+    ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(ACC?ACC.title:'')}</span></div>`
+    : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>`;
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+  curTool=null;
+  applyLang();
+
+  const bb=$('#buyBtn');
+  if(bb) bb.onclick=()=>{
+    hap('medium');
+    try{ TG.close(); }catch(e){}
+    // оплата идёт в чате: там Telegram сам открывает окно платежа по /subscribe
+  };
+}
+
 /* ---- Моё судно ---- */
 .vhero{
   position:relative;border-radius:var(--r-lg);overflow:hidden;
@@ -632,6 +782,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <div class="cats" id="cats"></div>
 
+  <div class="trialbar hidden" id="trialbar"></div>
   <div class="offline" id="offline"><span id="offIco"></span>Нет связи. Показаны последние сохранённые данные.</div>
 
   <!-- ПАНЕЛЬ -->
@@ -1125,7 +1276,8 @@ const hm=h=>{
   if(!Number.isFinite(h))return '—';
   const neg=h<0; h=Math.abs(h);
   const d=Math.floor(h/24), hh=Math.floor(h%24), mm=Math.round((h%1)*60);
-  return (neg?'−':'')+(d?d+' сут ':'')+hh+' ч '+String(mm).padStart(2,'0')+' мин';
+  const u=(typeof LANG!=='undefined'&&LANG==='en')?['d','h','min']:['сут','ч','мин'];
+  return (neg?'−':'')+(d?d+' '+u[0]+' ':'')+hh+' '+u[1]+' '+String(mm).padStart(2,'0')+' '+u[2];
 };
 const utc=d=>d?String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0'):'—';
 
@@ -1792,11 +1944,113 @@ const DICT={
  'По этому маршруту действующих предупреждений с координатами нет.':'No warnings with positions along this route.',
  'Нет связи. Показаны последние сохранённые данные.':'No connection. Showing last saved data.'
 };
+/* подписи полей и результатов в расчётах */
+Object.assign(DICT,{
+ 'Широта':'Latitude','Долгота':'Longitude','Широта отхода':'Latitude from','Долгота отхода':'Longitude from',
+ 'Широта прихода':'Latitude to','Долгота прихода':'Longitude to','Ортодромия':'Great circle',
+ 'Локсодромия':'Rhumb line','Начальный курс':'Initial course','Конечный курс':'Final course',
+ 'Курс по локсодромии':'Rhumb course','Обратный курс':'Reciprocal course','Расстояние':'Distance',
+ 'Скорость':'Speed','Время в пути':'Time on passage','В сутках':'In days',
+ 'ETA (UTC от сейчас)':'ETA (UTC from now)','Требуемая скорость':'Required speed',
+ 'Времени в запасе (для требуемой скорости)':'Time available (for required speed)',
+ 'За сколько часов':'Hours available','Десятичные':'Decimal','Градусы и минуты':'Degrees and minutes',
+ 'Градусы, минуты, секунды':'Degrees, minutes, seconds','Глубина по карте':'Charted depth',
+ 'Высота прилива':'Height of tide','Осадка':'Draught','Проседание (squat)':'Squat',
+ 'Поправка на крен':'Heel allowance','Поправка на волнение':'Wave allowance',
+ 'Доступная глубина':'Available depth','Требуется':'Required','Запас под килём':'Under keel clearance',
+ 'В процентах от осадки':'Percent of draught','Требуемый UKC по политике компании':'Required UKC by company policy',
+ 'Коэффициент общей полноты Cb':'Block coefficient Cb','Акватория':'Water area',
+ 'Проседание':'Squat','При половинной скорости':'At half speed','Формула':'Formula',
+ 'Габарит по карте (над HAT)':'Charted clearance (above HAT)','Текущий прилив':'Tide now',
+ 'Надводный габарит судна':'Ship air draught','Фактический просвет':'Actual clearance',
+ 'Запас по высоте':'Vertical margin','Вытравлено цепи':'Cable paid out','Глубина':'Depth',
+ 'Высота клюза над водой':'Hawse pipe above water','Длина судна':'Ship length',
+ 'Радиус циркуляции':'Swing radius','Горизонтальная проекция цепи':'Horizontal scope',
+ 'Скоп (цепь / глубина)':'Scope (cable / depth)','Вытравлено смычек':'Shackles paid out',
+ 'Свой курс':'Own course','Своя скорость':'Own speed','Пеленг на цель':'Target bearing',
+ 'Дистанция до цели':'Target range','Курс цели':'Target course','Скорость цели':'Target speed',
+ 'Курс относительного движения':'Relative course','Скорость сближения':'Closing speed',
+ 'Изменение курса':'Course change','Скорость (для времени)':'Speed (for timing)',
+ 'Перекладка за':'Wheel over at','В кабельтовых':'In cables','Времени до точки':'Time to point',
+ 'Расход в сутки':'Consumption per day','Топлива на борту':'Bunkers on board',
+ 'Неснижаемый запас':'Minimum reserve','Потребуется топлива':'Fuel required',
+ 'Останется':'Will remain','Остаётся':'Remaining','Хватает':'Sufficient',
+ 'Дата (UTC)':'Date (UTC)','Дата (пусто = сегодня)':'Date (empty = today)',
+ 'Дата (ГГГГ-ММ-ДД, пусто = сегодня)':'Date (YYYY-MM-DD, empty = today)',
+ 'Полдень (UTC)':'Meridian passage (UTC)','Скорость ветра':'Wind speed','Балл':'Force',
+ 'Диапазон':'Range','Состояние моря':'Sea state','Характерная высота волны':'Typical wave height',
+ 'В м/с':'In m/s','Величина':'Quantity','Значение':'Value','В метрах':'In metres',
+ 'В сантиметрах':'In centimetres','Осадка носом':'Draught forward','Осадка кормой':'Draught aft',
+ 'Осадка на миделе':'Draught midships','Дифферент':'Trim','Средняя осадка (нос+корма)/2':'Mean draught (F+A)/2',
+ 'Mean of means':'Mean of means','Quarter mean (для водоизмещения)':'Quarter mean (for displacement)',
+ 'Отклонение миделя':'Midships deflection','Дифферент от длины':'Trim as fraction of length',
+ 'Длина между перпендикулярами':'Length between perpendiculars','Плотность':'Density',
+ 'Плотность воды в порту':'Dock water density','FWA (пресная вода)':'FWA (fresh water)',
+ 'DWA (док-вода)':'DWA (dock water)','Изменение осадки':'Change of draught',
+ 'Площадь ватерлинии':'Waterplane area','Принимаемый груз':'Cargo to load','TPC':'TPC',
+ 'Водоизмещение':'Displacement','Дедвейт судна':'Ship deadweight','Груз':'Cargo',
+ 'Балласт':'Ballast','Топливо':'Fuel','Пресная вода':'Fresh water','Запасы':'Stores',
+ 'Занято':'Used','Использовано':'Utilised','Ширина судна':'Ship beam',
+ 'Ширина фарватера (для XTD)':'Fairway width (for XTD)','Safety depth':'Safety depth',
+ 'Safety contour (ближайшая изобата)':'Safety contour (nearest available)','Shallow contour':'Shallow contour',
+ 'Deep contour':'Deep contour','XTD':'XTD','XTD в кабельтовых':'XTD in cables',
+ 'Запас до бровки':'Margin to edge','Минимальный прилив на переходе':'Minimum tide on passage',
+ 'Пеленг по гирокомпасу':'Gyro bearing','Истинный пеленг':'True bearing',
+ 'Поправка гирокомпаса':'Gyro error','Компасный курс':'Compass course','Магнитный курс':'Magnetic course',
+ 'Истинный курс':'True course','Склонение (E плюс, W минус)':'Variation (E plus, W minus)',
+ 'Девиация (E плюс, W минус)':'Deviation (E plus, W minus)','Общая поправка':'Total correction',
+ 'Курс через воду':'Course through water','Скорость через воду':'Speed through water',
+ 'Направление течения':'Set','Скорость течения':'Drift','Путь по грунту':'Course over ground',
+ 'Скорость по грунту':'Speed over ground','Снос за период':'Drift over period',
+ 'Разность широт':'Difference of latitude','Отшествие':'Departure',
+ 'Меридиональная разность (DMP)':'Meridional parts difference','Меркатор: курс':'Mercator course',
+ 'Меркатор: расстояние':'Mercator distance','Средняя широта: курс':'Middle latitude course',
+ 'Средняя широта: расстояние':'Middle latitude distance','Ортодромия для сравнения':'Great circle for comparison',
+ 'Фаза':'Phase','Освещённость диска':'Illumination','Восход Луны (UTC)':'Moonrise (UTC)',
+ 'Заход Луны (UTC)':'Moonset (UTC)','Пеленг на объект':'Bearing to object',
+ 'Свой курс (для курсового угла)':'Own course (for relative bearing)','Курсовой угол':'Relative bearing',
+ 'Ошибка':'Error','Advance':'Advance','Transfer':'Transfer','CPA':'CPA','TCPA':'TCPA','HAT':'HAT',
+ /* названия и описания инструментов */
+ 'Дифферент и осадки':'Trim and draughts','FWA и поправка на плотность':'FWA and density correction',
+ 'TPC и изменение осадки':'TPC and draught change','Дедвейт':'Deadweight','Плавания':'Sailings',
+ 'Поправка компаса':'Compass error','Параметры ECDIS':'ECDIS settings','Луна':'Moon',
+ 'Течение и снос':'Set and drift','Курсовой угол и пеленг':'Relative bearing',
+ 'Ортодромия, локсодромия, начальный и конечный курс':'Great circle, rhumb line, initial and final course',
+ 'Время в пути, требуемая скорость, время прибытия':'Time on passage, required speed, arrival time',
+ 'Градусы, минуты, секунды и десятичные':'Degrees, minutes, seconds and decimal',
+ 'UKC с учётом прилива, проседания, крена и волнения':'UKC allowing for tide, squat, heel and waves',
+ 'Squat по упрощённой формуле Барраса':'Squat by simplified Barrass formula',
+ 'Надводный габарит и запас по высоте':'Air draught and vertical margin',
+ 'Радиус циркуляции на якоре и длина скопа':'Swing radius at anchor and scope',
+ 'Расхождение с целью по данным радара':'Passing distance from radar data',
+ 'Wheel Over Point, advance и transfer':'Wheel over point, advance and transfer',
+ 'Расход, остаток и запас':'Consumption, remaining and reserve',
+ 'Для планирования вахт и смены режима наблюдения':'For watch planning and lookout changes',
+ 'Ветер, состояние моря и высота волны':'Wind, sea state and wave height',
+ 'Длина, скорость, масса, объём, температура':'Length, speed, mass, volume, temperature',
+ /* прочее в интерфейсе */
+ 'Открытая вода':'Open water','Стеснённая / канал':'Confined / channel',
+ 'Длина':'Length','Масса':'Mass','Объём':'Volume','Температура':'Temperature',
+ 'Проверь формат координат':'Check position format','Проверь формат':'Check format',
+ 'Проверь координаты':'Check positions','Проверь дату':'Check date',
+ 'Проверь введённые данные':'Check the input','да, с запасом':'yes, spare',
+ 'цель расходится':'target opening','круглые сутки':'all day',
+ 'Восход — заход':'Sunrise — sunset','Гражданские сумерки':'Civil twilight',
+ 'Навигационные сумерки':'Nautical twilight','Астрономические сумерки':'Astronomical twilight',
+ 'Расчёт справочный. Решение принимает судоводитель по официальным пособиям и данным судна.':
+   'Reference calculation only. The decision rests with the navigator using official publications and ship data.',
+ 'Все расчёты выполняются прямо в приложении и работают без связи.':
+   'All calculations run in the app and work offline.'
+});
+
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
 function applyLang(){
   const map=LANG==='en'?DICT:DICT_REV;
+  // длинные фразы заменяем раньше коротких, иначе короткая съест часть длинной
+  const keys=Object.keys(map).sort((a,b)=>b.length-a.length);
+
   const walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{
     acceptNode:n=>{
       const p=n.parentElement;
@@ -1808,18 +2062,33 @@ function applyLang(){
   });
   const nodes=[];
   while(walk.nextNode()) nodes.push(walk.currentNode);
+
   nodes.forEach(n=>{
-    const t=n.nodeValue.trim();
-    if(map[t]) n.nodeValue=n.nodeValue.replace(t,map[t]);
+    let v=n.nodeValue;
+    const t=v.trim();
+    if(map[t]){ n.nodeValue=v.replace(t,map[t]); return; }
+    // не нашли целиком -- пробуем вхождения (например "131 действующих ...")
+    let changed=false;
+    for(const k of keys){
+      if(k.length<4) continue;
+      if(v.indexOf(k)!==-1){ v=v.split(k).join(map[k]); changed=true; }
+    }
+    if(changed) n.nodeValue=v;
   });
-  document.querySelectorAll('input[placeholder]').forEach(el=>{
-    const p=el.getAttribute('placeholder');
-    if(map[p]) el.setAttribute('placeholder',map[p]);
+
+  document.querySelectorAll('input[placeholder],select option').forEach(el=>{
+    if(el.tagName==='OPTION'){
+      const t=el.textContent.trim();
+      if(map[t]) el.textContent=map[t];
+      return;
+    }
+    const ph=el.getAttribute('placeholder');
+    if(ph&&map[ph]) el.setAttribute('placeholder',map[ph]);
   });
+
   const lb=$('#langBtn'); if(lb) lb.textContent=LANG==='en'?'EN':'RU';
   try{ document.documentElement.lang=LANG; }catch(e){}
 }
-
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (TG) { TG.ready(); TG.expand(); try{ TG.setHeaderColor('#0a1520'); }catch(e){} }
 const INIT = TG ? (TG.initData || '') : '';
@@ -2221,11 +2490,12 @@ function switchView(v){
   const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='dash');
   const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='dash'&&v!=='areas');
   try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}
-  if(v==='tools'){renderTools();loadBridge();renderRefs();}
-  if(v==='ship')loadVessel();
+  if(v==='tools'){renderTools();renderRefs();if(gate('#bridgeBox','bridge'))loadBridge();}
+  if(v==='ship'){ if(gate('#v-ship','vessel')) loadVessel(); }
   setTimeout(applyLang,30);
   if(v==='radio')setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
   if(v==='dash')loadHistory();
+  if(v==='voy')gate('#v-voy','voyage');
   if(v==='map')setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{hap();switchView(t.dataset.v)});
@@ -2406,6 +2676,7 @@ function renderBridge(){
     : `<div class="empty">${ico('clock')}Сертификатов пока нет. Добавь — и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.</div>`;
 
   $('#bridgeBox').innerHTML=h;
+  applyLang();
 
   document.querySelectorAll('[data-cl]').forEach(el=>el.onclick=()=>openChecklist(el.dataset.cl));
   bindHistory();
@@ -2866,6 +3137,7 @@ function renderVessel(){
       <div class="hint" style="margin-top:13px">${ico('alert','xs')} Эти значения подставляются в расчёты как исходные — можно менять на месте, карточка от этого не изменится.</div>`;
   }
   const eb=$('#editVessel'); if(eb) eb.onclick=openVesselForm;
+  applyLang();
 }
 
 function openVesselForm(){
@@ -2917,6 +3189,7 @@ function renderTools(){
         <div class="grid2">${list.map(toolCard).join('')}</div>`;
   });
   $('#toollist').innerHTML=h;
+  applyLang();
   document.querySelectorAll('[data-tool]').forEach(c=>c.onclick=ev=>{
     if(ev.target.closest('.gstar')) return;
     openTool(TOOLS.find(t=>t.id===c.dataset.tool));
@@ -2974,6 +3247,7 @@ function openTool(t){
     el[ev]=()=>{ toolVals[el.dataset.k]=el.value; runTool(); };
   });
   runTool();
+  applyLang();
   $('#tool').classList.add('on');
   document.body.style.overflow='hidden';
 }
@@ -2982,11 +3256,13 @@ function runTool(){
   let rows;
   try{ rows=curTool.calc(toolVals)||[]; }
   catch(e){ rows=[{l:'Ошибка',v:'Проверь введённые данные'}]; }
+  const __al=1;
   $('#tResults').innerHTML=rows.map(r=>
     `<div class="tres ${r.hi?'hi':''} ${r.warn?'warn':''}">
        <span class="tl">${esc(r.l)}</span>
        <span class="tv mono">${esc(String(r.v))}</span>
      </div>`).join('');
+  applyLang();
 }
 function closeTool(){
   $('#tool').classList.remove('on');
@@ -3017,6 +3293,7 @@ document.querySelectorAll('#corr .cat').forEach((c,i)=>
 const wantTab=(location.hash||'').replace('#','');
 if(['dash','areas','map','tools','radio','voy'].includes(wantTab)) switchView(wantTab);
 
+loadAccess();
 if(loadCache())render();
 setTimeout(applyLang,60);
 load(false);

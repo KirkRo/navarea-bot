@@ -85,28 +85,48 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     db: Database = context.bot_data["db"]
     user_id = update.effective_user.id
     areas = db.get_user_areas(user_id)
-    is_premium = is_effectively_premium(db, user_id)
-    user = db.get_user(user_id)
 
-    if is_owner(user_id):
-        lines = ["Тариф: Premium ⭐ (доступ владельца бота, без подписки)"]
-    else:
-        lines = [f"Тариф: {'Premium ⭐' if is_premium else 'Бесплатный'}"]
-        if is_premium and user and user.premium_until:
-            until = datetime.fromisoformat(user.premium_until)
-            lines.append(f"Действует до {until.strftime('%d.%m.%Y')}")
+    from ..services.access import PAID_FEATURES, access_state
+    st = access_state(db, user_id)
+    is_premium = st["premium"]
+
+    lines = [f"<b>{st['title']}</b>"]
+
+    if st["tier"] == "open":
+        lines.append("Пока идёт отладка, открыты все разделы без ограничений.")
+        lines.append("")
+        lines.append(f"Районы: {len(areas)}" + (f" — {', '.join(areas)}" if areas else ""))
+        lines.append("Вопросы ассистенту: без лимита")
+        await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+        return
+
+    if st["tier"] == "trial":
+        lines.append(f"Открыто всё. После окончания — {config.stars_price_monthly} ⭐ в месяц (около 2 $).")
+    elif st["tier"] == "premium" and st.get("until"):
+        until = datetime.fromisoformat(st["until"])
+        lines.append(f"Действует до {until.strftime('%d.%m.%Y')}")
+    elif st["tier"] == "free":
+        lines.append("Открыты два района, карта, справочники и расчёты безопасности.")
 
     limit = config.premium_areas_limit if is_premium else config.free_areas_limit
-    lines.append(f"Районы ({len(areas)}/{limit}): {', '.join(areas) if areas else '—'}")
+    lines.append("")
+    lines.append(f"Районы: {len(areas)}/{limit}" + (f" — {', '.join(areas)}" if areas else ""))
 
     if not is_premium:
         today = datetime.now(timezone.utc).date().isoformat()
+        user = db.get_user(user_id)
         used = user.qa_count_today if user and user.qa_count_date == today else 0
-        lines.append(f"Вопросы Claude сегодня: {used}/{config.free_qa_daily_limit}")
+        lines.append(f"Вопросы ассистенту сегодня: {used}/{config.free_qa_daily_limit}")
+        lines.append("")
+        lines.append("<b>Что даёт Premium:</b>")
+        for text in PAID_FEATURES.values():
+            lines.append(f"• {text}")
+        lines.append("")
+        lines.append(f"{config.stars_price_monthly} ⭐ в месяц — /subscribe")
     else:
-        lines.append("Вопросы Claude: без лимита")
+        lines.append("Вопросы ассистенту: без лимита")
 
-    await update.message.reply_text("\n".join(lines))
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
 async def cmd_app(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

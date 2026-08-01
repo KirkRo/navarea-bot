@@ -134,6 +134,7 @@ class User:
     premium_until: Optional[str]
     qa_count_today: int
     qa_count_date: Optional[str]
+    created_at: Optional[str] = None
 
 
 def _msgnum_sort_key(row) -> tuple[int, int]:
@@ -196,6 +197,7 @@ class PostgresDatabase:
             premium_until=row["premium_until"],
             qa_count_today=row["qa_count_today"],
             qa_count_date=row["qa_count_date"],
+            created_at=row["created_at"],
         )
 
     def set_premium(self, user_id: int, until_iso: str) -> None:

@@ -225,6 +225,9 @@ def _api_voyage(query: dict) -> dict:
                                   resolve_point, warnings_on_route)
 
     db = _state["db"]
+    _uid, denied = _require("voyage", query)
+    if denied:
+        return denied
     src = (query.get("from") or [""])[0]
     dst = (query.get("to") or [""])[0]
     corridor = float((query.get("corridor") or ["150"])[0])
@@ -248,14 +251,53 @@ def _api_voyage(query: dict) -> dict:
     }
 
 
+
+def _require(feature: str, query: dict):
+    """Возвращает user_id или словарь с отказом, если раздел платный."""
+    from .services.access import can
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return None, {"error": "unauthorized"}
+    if not can(db, user_id, feature):
+        return None, {"error": "premium_required", "feature": feature}
+    return user_id, None
+
+
+def _api_access(query: dict) -> dict:
+    """Что доступно этому пользователю -- для интерфейса приложения."""
+    from .config import config
+    from .services.access import PAID_FEATURES, TRIAL_DAYS, access_state
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if not config.paywall_enabled:
+        return {"tier": "open", "premium": True, "paywall": False,
+                "title": "Открытый доступ", "paid_features": PAID_FEATURES,
+                "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
+
+    if user_id is None:
+        return {"tier": "free", "premium": False, "paywall": True,
+                "paid_features": PAID_FEATURES,
+                "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
+
+    st = access_state(db, user_id)
+    st["paywall"] = True
+    st["paid_features"] = PAID_FEATURES
+    st["trial_days"] = TRIAL_DAYS
+    st["price_stars"] = config.stars_price_monthly
+    return st
+
+
 def _api_vessel(query: dict) -> dict:
     """Карточка судна пользователя. Привязана к человеку -- только с подписью."""
     from .services.vessel import VESSEL_FIELDS, vessel_payload
 
     db = _state["db"]
-    user_id = _user_id_from_query(query)
-    if user_id is None:
-        return {"error": "unauthorized"}
+    user_id, denied = _require("vessel", query)
+    if denied:
+        return denied
 
     if (query.get("action") or [""])[0] == "save":
         data = {}
@@ -286,9 +328,9 @@ def _api_bridge(query: dict) -> dict:
                                   COMMON_CERTS, cert_status, days_left)
 
     db = _state["db"]
-    user_id = _user_id_from_query(query)
-    if user_id is None:
-        return {"error": "unauthorized"}
+    user_id, denied = _require("bridge", query)
+    if denied:
+        return denied
 
     action = (query.get("action") or [""])[0]
 
@@ -371,6 +413,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/access": _api_access,
     "/api/vessel": _api_vessel,
     "/api/stations": _api_stations,
     "/api/history": _api_history,
