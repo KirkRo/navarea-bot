@@ -28,6 +28,13 @@ async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     db: Database = context.bot_data["db"]
     user_id = update.effective_user.id
 
+    if not config.paywall_enabled:
+        await update.message.reply_text(
+            "Пока идёт отладка, все разделы открыты бесплатно — оформлять ничего не нужно. "
+            "Когда проект будет готов, здесь появится подписка."
+        )
+        return
+
     if is_owner(user_id):
         await update.message.reply_text("Ты владелец бота, Premium уже доступен без оплаты. Платить самому себе незачем 🙂")
         return
@@ -39,8 +46,9 @@ async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     link = await context.bot.create_invoice_link(
         title="NAVAREA Bot Premium",
         description=(
-            f"Безлимитные районы NAVAREA и вопросы к Claude на месяц. "
-            f"Автопродление каждые 30 дней, отменить можно в любой момент через /cancel_subscription."
+            "Все районы NAVAREA и береговые, проверка маршрута, карточка судна, "
+            "чек-листы и сертификаты, история, расширенные расчёты и вопросы без лимита. "
+            "Автопродление каждые 30 дней, отменить в любой момент через /cancel_subscription."
         ),
         payload=INVOICE_PAYLOAD,
         currency="XTR",
@@ -48,13 +56,23 @@ async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         subscription_period=SUBSCRIPTION_PERIOD_SECONDS,
     )
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(f"Оплатить {config.stars_price_monthly} ⭐", url=link)]])
-    await update.message.reply_text(
-        f"Premium даёт:\n"
-        f"• до {config.premium_areas_limit} районов NAVAREA одновременно (бесплатно -- {config.free_areas_limit})\n"
-        f"• безлимит вопросов к Claude (бесплатно -- {config.free_qa_daily_limit} в день)\n\n"
-        f"{config.stars_price_monthly} ⭐ / месяц, оплата прямо в Telegram, без карт и переводов.",
-        reply_markup=keyboard,
-    )
+    from ..services.access import PAID_FEATURES, TRIAL_DAYS, access_state
+    st = access_state(db, user_id)
+
+    lines = ["<b>Premium</b>", ""]
+    for text in PAID_FEATURES.values():
+        lines.append(f"• {text}")
+    lines.append("")
+    lines.append(f"{config.stars_price_monthly} ⭐ в месяц — около 2 долларов. "
+                 f"Оплата прямо в Telegram, без карт и переводов.")
+    if st["tier"] == "trial":
+        lines.append("")
+        lines.append(f"Сейчас идёт пробный период, осталось {st['trial']['days_left']} дн. "
+                     f"Оформить можно и сейчас — он просто продолжится дальше.")
+    lines.append("")
+    lines.append("Расчёты безопасности, карта и справочники остаются бесплатными в любом случае.")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML", reply_markup=keyboard)
 
 
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

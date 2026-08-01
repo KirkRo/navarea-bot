@@ -70,7 +70,12 @@ class Config:
     premium_areas_limit: int = field(default_factory=lambda: _get_int("PREMIUM_AREAS_LIMIT", 10))
 
     # --- Подписка через Telegram Stars ---
-    stars_price_monthly: int = field(default_factory=lambda: _get_int("STARS_PRICE_MONTHLY", 150))
+    stars_price_monthly: int = field(default_factory=lambda: _get_int("STARS_PRICE_MONTHLY", 100))
+
+    # Пока идёт отладка, платные разделы выключены и всё открыто всем.
+    # Когда проект будет готов -- поставить PAYWALL_ENABLED=true в .env,
+    # и тарифы включатся обратно без единой правки в коде.
+    paywall_enabled: bool = field(default_factory=lambda: _get_bool("PAYWALL_ENABLED", False))
 
     # --- Sealagom (платный агрегатор всех 21 района NAVAREA, $20/мес) ---
     # Если задан -- используется вместо собственных скрейперов (NGA/UKHO/Peru/Spain)
