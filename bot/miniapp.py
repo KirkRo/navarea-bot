@@ -356,7 +356,72 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-radius:var(--r-md);padding:12px 14px;font-size:12.5px;margin-bottom:14px;display:none;
 }
 .offline.on{display:block;animation:up .34s}
-".hidden{display:none!important}
+.hidden{display:none!important}
+.fromship{
+  display:inline-flex;align-items:center;gap:4px;margin-left:7px;font-size:9px;font-weight:750;
+  background:rgba(77,147,214,.16);color:var(--sea);border:1px solid rgba(77,147,214,.3);
+  border-radius:7px;padding:1px 6px;text-transform:none;letter-spacing:0;vertical-align:1px;
+}
+.fromship .ico{width:10px;height:10px}
+.tinput.fromship-in{border-color:rgba(77,147,214,.4)}
+.vkey{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:13px 0}
+.vk{background:var(--surf);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:10px 6px;text-align:center}
+.vk .vkv{font-size:17px;font-weight:800;color:var(--amber);line-height:1.1}
+.vk .vkl{font-size:9px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.vsec{background:var(--surf);border:1px solid var(--line);border-radius:var(--r-md);
+  margin-bottom:9px;overflow:hidden}
+.vsech{display:flex;align-items:center;gap:9px;padding:13px 14px;cursor:pointer;
+  font-size:13.5px;font-weight:700}
+.vsech .ico{color:var(--amber)}
+.vsarrow{margin-left:auto;color:var(--muted);transform:rotate(-90deg);transition:transform .25s}
+.vsec.open .vsarrow{transform:rotate(90deg)}
+.vsbody{display:none;padding:0 14px 12px}
+.vsec.open .vsbody{display:block}
+.vsrow{display:flex;align-items:center;gap:11px;padding:12px 13px;margin-bottom:8px;
+  background:var(--surf);border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;
+  transition:transform .18s,border-color .18s}
+.vsrow:active{transform:scale(.98);border-color:rgba(240,160,60,.4)}
+.vsi{width:34px;height:34px;flex:none;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;background:var(--amber-soft);color:var(--amber)}
+.vsn{font-size:14px;font-weight:700}
+.vsd{font-size:11.5px;color:var(--muted);margin-top:2px}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:4px}
+@media(min-width:640px){.quick{grid-template-columns:repeat(4,1fr)}}
+.qbtn{
+  background:var(--surf);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;gap:8px;
+  backdrop-filter:blur(14px);transition:transform .2s cubic-bezier(.34,1.4,.5,1),border-color .2s;
+}
+.qbtn:active{transform:scale(.96);border-color:rgba(240,160,60,.42)}
+.qbtn .qi{
+  width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--amber-soft);color:var(--amber);border:1px solid rgba(240,160,60,.22);
+}
+.qbtn .qt{font-size:13px;font-weight:700;line-height:1.25}
+.qbtn .qs{font-size:11px;color:var(--muted);line-height:1.3}
+.subtabs{
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+  margin:0 -15px 14px;padding:0 15px 2px;
+}
+.subtabs::-webkit-scrollbar{display:none}
+.subtab{
+  flex:none;border:1px solid var(--line);background:var(--surf);color:var(--muted);
+  border-radius:12px;padding:9px 15px;font-size:13px;font-weight:650;font-family:inherit;
+  cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;
+  transition:all .2s cubic-bezier(.34,1.4,.5,1);backdrop-filter:blur(12px);
+}
+.subtab:active{transform:scale(.94)}
+.subtab.on{
+  background:linear-gradient(140deg,var(--amber),var(--amber2));
+  color:var(--accent-text);border-color:transparent;box-shadow:var(--glow);
+}
+.subtab .ico{width:16px;height:16px}
+.subtab .cnt{
+  font-size:10px;font-weight:800;border-radius:8px;padding:1px 6px;
+  background:var(--amber-soft);color:var(--amber);
+}
+.subtab.on .cnt{background:rgba(22,35,47,.22);color:var(--accent-text)}
 .legs{display:flex;align-items:flex-start;gap:7px;margin-top:9px;padding-top:9px;
   border-top:1px solid rgba(240,160,60,.22);font-size:11.5px;color:var(--muted);line-height:1.45}
 .legs .ico{color:var(--amber);margin-top:2px}
@@ -422,114 +487,7 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .plan.gray li::before{background:var(--muted);opacity:.5}
 
 
-/* ---- Тариф, пробный период, платные разделы ---- */
-let ACC=null;
 
-async function loadAccess(){
-  try{ ACC=await api('/api/access'); localStorage.setItem('navarea_access',JSON.stringify(ACC)); }
-  catch(e){ try{ ACC=JSON.parse(localStorage.getItem('navarea_access')||'null'); }catch(e2){} }
-  renderTrialBar();
-  return ACC;
-}
-const isPaid=()=>!!(ACC&&ACC.premium);
-const featureName=k=>((ACC&&ACC.paid_features)||{})[k]||'';
-
-function renderTrialBar(){
-  const el=$('#trialbar'); if(!el||!ACC) return;
-  // тарифы выключены на время отладки либо это владелец -- баннер не нужен
-  if(ACC.paywall===false||ACC.tier==='open'||ACC.tier==='owner'){ el.classList.add('hidden'); return; }
-  el.classList.remove('hidden');
-
-  if(ACC.tier==='trial'){
-    const d=(ACC.trial&&ACC.trial.days_left)||0;
-    el.className='trialbar';
-    el.innerHTML=`<div class="ti">${ico('star')}</div>
-      <div class="tt"><div class="t1">Пробный период · осталось ${d} дн.</div>
-        <div class="t2">Открыты все разделы. Дальше ${ACC.price_stars} ⭐ в месяц, это примерно 2 доллара.</div></div>
-      <span class="tg">Подробнее →</span>`;
-  } else if(ACC.tier==='premium'){
-    el.className='trialbar';
-    el.innerHTML=`<div class="ti">${ico('star')}</div>
-      <div class="tt"><div class="t1">Premium активен</div>
-        <div class="t2">Открыты все разделы. Спасибо, что поддерживаешь проект.</div></div>`;
-  } else {
-    el.className='trialbar free';
-    el.innerHTML=`<div class="ti">${ico('lighthouse')}</div>
-      <div class="tt"><div class="t1">Бесплатный тариф</div>
-        <div class="t2">Два района, базовые расчёты и справочники. Остальное — ${ACC.price_stars} ⭐ в месяц.</div></div>
-      <span class="tg">Открыть всё →</span>`;
-  }
-  el.onclick=openPlans;
-}
-
-/* закрывает раздел, если он платный и доступа нет */
-function gate(sectionId, feature){
-  const el=$(sectionId); if(!el) return true;
-  const old=el.querySelector('.lockover'); if(old) old.remove();
-  el.classList.remove('locked');
-  // Пока сведения о доступе не пришли -- ничего не закрываем: иначе
-  // раздел блокируется на ровном месте при медленной сети.
-  if(!ACC) return true;
-  if(ACC.paywall===false) return true;
-  if(isPaid()) return true;
-
-  el.classList.add('lockwrap','locked');
-  const ov=document.createElement('div');
-  ov.className='lockover';
-  ov.innerHTML=`<div class="li">${ico('star','lg')}</div>
-    <div class="lt">${esc(featureName(feature))}</div>
-    <div class="ls">Раздел входит в Premium — ${ACC?ACC.price_stars:100} ⭐ в месяц, около 2 долларов.
-      Первые 14 дней после установки всё открыто.</div>
-    <button class="btn" id="lockBtn">Что входит в Premium</button>`;
-  el.appendChild(ov);
-  const b=ov.querySelector('#lockBtn'); if(b) b.onclick=openPlans;
-  return false;
-}
-
-function openPlans(){
-  hap('medium');
-  const price=ACC?ACC.price_stars:100;
-  const paid=(ACC&&ACC.paid_features)||{};
-  $('#tName').textContent='Тарифы';
-  { const b=$('#tBackTitle'); if(b) b.textContent='Тарифы'; }
-  $('#tDesc').textContent='Что открыто сейчас и что даёт Premium';
-  $('#tIcon').innerHTML=ico('star','lg');
-  $('#tFields').innerHTML=`
-    <div class="plans">
-      <div class="plan gray ${!isPaid()?'on':''}">
-        <div class="pt"><span>Бесплатно</span><span class="pp">0</span></div>
-        <ul>
-          <li>Два района NAVAREA с уведомлениями</li>
-          <li>Карта всех действующих предупреждений</li>
-          <li>Расчёты безопасности: запас под килём, проседание, CPA/TCPA, точка перекладки, якорь, габарит под мостом</li>
-          <li>Расстояние, курс, ETA, координаты, единицы, Бофорт, светила</li>
-          <li>Станции MF/HF DSC и справочные зоны</li>
-          <li>Пять вопросов ассистенту в день</li>
-        </ul>
-      </div>
-      <div class="plan ${isPaid()?'on':''}">
-        <div class="pt"><span>Premium</span><span class="pp">${price} ⭐ / мес</span></div>
-        <ul>${Object.keys(paid).map(k=>`<li>${esc(paid[k])}</li>`).join('')}</ul>
-      </div>
-    </div>
-    <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда — брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
-  $('#tResults').innerHTML = isPaid()
-    ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(ACC?ACC.title:'')}</span></div>`
-    : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>`;
-  $('#tool').classList.add('on');
-  document.body.style.overflow='hidden';
-  curTool=null;
-  applyLang();
-
-  const bb=$('#buyBtn');
-  if(bb) bb.onclick=()=>{
-    hap('medium');
-    try{ TG.close(); }catch(e){}
-    // оплата идёт в чате: там Telegram сам открывает окно платежа по /subscribe
-  };
-}
-
-/* ---- Моё судно ---- */
 .vhero{
   position:relative;border-radius:var(--r-lg);overflow:hidden;
   background:linear-gradient(150deg,#153c60,#0c2138);border:1px solid var(--line);
@@ -803,6 +761,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <div class="cats" id="cats"></div>
 
+  <div class="subtabs" id="subtabs"></div>
   <div class="trialbar hidden" id="trialbar"></div>
   <div class="offline" id="offline"><span id="offIco"></span>Нет связи. Показаны последние сохранённые данные.</div>
 
@@ -903,6 +862,12 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <div id="histBox"></div>
     <div class="sech" style="margin-top:17px"><h3>Избранные районы</h3><a id="toAreas">Все →</a></div>
     <div id="favlist"></div>
+
+    <div class="sech" style="margin-top:18px"><h3>Быстрые действия</h3></div>
+    <div class="quick" id="quick"></div>
+
+    <div id="lastVoyBox"></div>
+    <div id="lastCalcBox"></div>
   </section>
 
   <!-- РАЙОНЫ -->
@@ -937,18 +902,28 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
       <span><i style="background:#3fc97f"></i>MARPOL Прил. V</span>
       <span><i style="background:#4d93d6"></i>Судовые сообщения</span>
     </div>
+  </section>
+
+  <!-- СПРАВОЧНЫЕ ЗОНЫ -->
+  <section id="v-zones" class="hidden">
     <div class="sech"><h3>Справочные зоны</h3></div>
     <div id="zonelist"></div>
   </section>
 
   <!-- ИНСТРУМЕНТЫ -->
   <section id="v-tools" class="hidden">
-    <div class="sech"><h3>Мостик</h3></div>
     <div class="hint" id="toolsHint"></div>
-    <div id="bridgeBox"></div>
-    <div id="refBox" style="margin-top:19px"></div>
-    <div class="sech" style="margin-top:19px"><h3>Расчёты</h3></div>
     <div id="toollist"></div>
+  </section>
+
+  <!-- ЧЕК-ЛИСТЫ И СЕРТИФИКАТЫ -->
+  <section id="v-bridge" class="hidden">
+    <div id="bridgeBox"></div>
+  </section>
+
+  <!-- СПРАВОЧНИКИ -->
+  <section id="v-refs" class="hidden">
+    <div id="refBox"></div>
   </section>
 
   <!-- РАДИО -->
@@ -967,8 +942,12 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- МОЁ СУДНО -->
   <section id="v-ship" class="hidden">
-    <div class="sech"><h3>Моё судно</h3></div>
     <div id="vesselBox"><div class="sk card"></div><div class="sk card"></div></div>
+  </section>
+
+  <!-- НАСТРОЙКИ -->
+  <section id="v-settings" class="hidden">
+    <div id="settingsBox"></div>
   </section>
 
   <!-- РЕЙС -->
@@ -1041,13 +1020,10 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 </div>
 
 <nav class="tabs">
-  <button class="tab on" data-v="dash" data-i="gauge">Панель</button>
-  <button class="tab" data-v="areas" data-i="globe">Районы</button>
-  <button class="tab" data-v="map" data-i="map">Карта</button>
-  <button class="tab" data-v="tools" data-i="sliders">Мостик</button>
-  <button class="tab" data-v="radio" data-i="radar">Радио</button>
-  <button class="tab" data-v="ship" data-i="ship">Судно</button>
-  <button class="tab" data-v="voy" data-i="ship">Рейс</button>
+  <button class="tab on" data-g="home" data-i="gauge">Главная</button>
+  <button class="tab" data-g="tools" data-i="sliders">Инструменты</button>
+  <button class="tab" data-g="map" data-i="map">Карта</button>
+  <button class="tab" data-g="profile" data-i="compass">Профиль</button>
 </nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2068,6 +2044,97 @@ Object.assign(DICT,{
    'All calculations run in the app and work offline.'
 });
 
+
+/* остальные подписи интерфейса */
+Object.assign(DICT,{
+ 'Судно не заведено':'No ship saved','Найти судно по названию':'Find ship by name',
+ 'Заполнить вручную':'Enter manually','Изменить данные':'Edit details','Удалить судно':'Delete ship',
+ 'Поиск судна':'Ship search','Название, IMO или MMSI':'Name, IMO or MMSI',
+ 'Поиск по своим судам':'Search your own ships','Поиск по мировой базе судов':'Search the global ship database',
+ 'Основное':'General','Размерения':'Dimensions','Осадка':'Draught','Механическая часть':'Machinery',
+ 'Манёвренность и якорь':'Manoeuvring and anchoring','Оборудование мостика':'Bridge equipment',
+ 'Грузовое устройство':'Cargo gear','Документы':'Documents','Добавить документ':'Add document',
+ 'Документ судна':'Ship document','Редакция или дата':'Edition or date','Заметка':'Note',
+ 'Название, редакция и заметка':'Name, edition and note','Другой':'Other',
+ 'из карточки':'from ship card','длина, м':'length, m','ширина, м':'beam, m',
+ 'осадка, м':'draught, m','дедвейт, т':'deadweight, t','Судно':'Ship','Загружаю…':'Loading…',
+ 'Ничего не нашлось. Можно заполнить карточку вручную.':'Nothing found. You can fill in the card manually.',
+ 'Главная':'Home','Инструменты':'Tools','Профиль':'Profile','Обзор':'Overview',
+ 'Расчёты':'Calculations','Справочники':'References','Маршрут':'Route','Зоны':'Zones',
+ 'Настройки':'Settings','Быстрые действия':'Quick actions','Активный рейс':'Active passage',
+ 'Последние расчёты':'Recent calculations','Проверить маршрут':'Check route','Порт — порт':'Port to port',
+ 'Расхождение':'Passing distance','Все предупреждения':'All warnings','UKC и проседание':'UKC and squat',
+ 'Оформление':'Appearance','Тёмная тема':'Dark theme','Язык интерфейса':'Interface language',
+ 'Русский или английский':'Russian or English','Светлая версия для дневной вахты':'Light version for day watch',
+ 'Доступ':'Access','Текущий тариф':'Current plan','Данные без связи':'Offline data',
+ 'Последняя синхронизация':'Last sync','Очистить сохранённые данные':'Clear saved data',
+ 'О приложении':'About','Все →':'All →','Открыть →':'Open →','предупреждений на маршруте':'warnings on route',
+ 'Идёт отладка, все разделы открыты бесплатно.':'Testing in progress, all sections are open for free.',
+ 'Что входит в Premium':'What Premium includes','нет':'none',
+ 'Данные справочные. Официальный источник — оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.':
+   'Reference data only. The official source is GMDSS and NAVTEX equipment, ECDIS and ship publications. The decision rests with the navigator.',
+ 'Осадка и остойчивость':'Draught and stability','Справочники':'References','Чек-листы':'Checklists',
+ 'Сигнальные флаги':'Signal flags','МППСС-72':'COLREG 72','Частоты GMDSS':'GMDSS frequencies',
+ 'Архив наварий':'Warnings archive','Архив предупреждений':'Warnings archive',
+ 'Где сейчас горячо':'Where it is busiest','Динамика за 30 дней':'Last 30 days',
+ 'Течение: направление и снос':'Set and drift','Точка':'Point','Поиск':'Search','Порт':'Port',
+ 'Название':'Name','Действует до':'Valid until','По количеству':'By count',
+ 'Номер (необязательно)':'Number (optional)','Заметка (необязательно)':'Note (optional)',
+ 'Весь международный свод с расшифровкой':'Full international code with meanings',
+ 'Ключевые правила расхождения':'Key rules for passing',
+ 'Бедствие, NAVTEX, буи, каналы':'Distress, NAVTEX, buoys, channels',
+ 'Бедствие, безопасность, NAVTEX, буи':'Distress, safety, NAVTEX, buoys',
+ 'Поиск по отменённым за всё время':'Search all cancelled warnings',
+ 'Восход, заход, фаза и освещённость':'Rise, set, phase and illumination',
+ 'Гирокомпас, склонение, девиация, курсовой угол':'Gyro, variation, deviation, relative bearing',
+ 'Дифферент, средняя осадка, прогиб и перегиб':'Trim, mean draught, hog and sag',
+ 'Пресноводная поправка и поправка на плотность порта':'Fresh water and dock water allowance',
+ 'Тонны на сантиметр и осадка от груза':'Tonnes per centimetre and draught from cargo',
+ 'Сколько дедвейта занято и сколько осталось':'Deadweight used and remaining',
+ 'Плоское, параллельное, средней широты, Меркатора':'Plane, parallel, middle latitude, Mercator',
+ 'По разнице между курсом через воду и путём по грунту':'From course through water and course over ground',
+ 'Где выдан, что нужно для продления':'Where issued, what is needed to renew',
+ 'Номер, координаты, текст…':'Number, position, text…',
+ 'Поиск по букве или значению':'Search by letter or meaning',
+ 'Поиск по номеру или теме':'Search by number or subject',
+ 'Поиск по номеру, тексту или координатам':'Search by number, text or position',
+ 'Например O или водолаз':'For example O or diver','Например 15 или обгон':'For example 15 or overtaking',
+ 'Например NAVTEX или 2182':'For example NAVTEX or 2182','Например 700 или BUOY':'For example 700 or BUOY',
+ 'Например Constanta':'For example Constanta','Например Santos':'For example Santos',
+ 'Например Rotterdam':'For example Rotterdam','Например SSCEC':'For example SSCEC',
+ 'Сохранить сертификат':'Save certificate','Отмена':'Cancel','Назад':'Back',
+ 'Назад к инструментам':'Back to tools','Сохранить и закрыть':'Save and close',
+ 'Добавить +':'Add +','Без названия':'Unnamed','Берег':'Coastal','БЕРЕГ':'COASTAL',
+ 'Введи запрос, чтобы искать по архиву.':'Enter a query to search the archive.',
+ 'Введи хотя бы два символа.':'Enter at least two characters.',
+ 'В архиве ничего не нашлось.':'Nothing found in the archive.',
+ 'Ничего не нашлось.':'Nothing found.','Нет связи.':'No connection.',
+ 'В тексте нет распознанных координат.':'No positions recognised in the text.',
+ 'Без координат':'No positions','Заполни название и дату':'Fill in name and date',
+ 'Не удалось сохранить':'Could not save','нет связи':'no connection',
+ 'точная геометрия':'exact geometry','отменено':'cancelled',
+ 'Отвечают надёжнее всего':'Most reliable to answer','Остальные станции':'Other stations',
+ 'В этом регионе станций нет.':'No stations in this region.',
+ 'Не удалось загрузить справочник станций. Попробуй позже.':'Could not load the station list. Try later.',
+ 'Сертификатов пока нет. Добавь — и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.':
+   'No certificates yet. Add one and the bot will remind you 60, 30, 14, 7, 3 and 1 day before expiry.',
+ 'Premium активен':'Premium active','Открытый доступ':'Open access',
+ 'MARPOL Прил. V':'MARPOL Annex V','Приход в порт':'Arrival in port','Отход из порта':'Departure from port',
+ 'Подготовка к PSC':'PSC preparation','пунктов':'items','пункта':'items','пункт':'item'
+});
+
+Object.assign(DICT,{
+ 'Бесплатно':'Free','Бесплатный тариф':'Free plan','Выполнено':'Completed','Документ':'Document',
+ 'Два района NAVAREA с уведомлениями':'Two NAVAREA areas with alerts',
+ 'Карта всех действующих предупреждений':'Chart of all warnings in force',
+ 'Нет связи с сервером.':'No connection to the server.',
+ 'Открыты все разделы. Спасибо, что поддерживаешь проект.':'All sections open. Thanks for supporting the project.',
+ 'Открыть всё →':'Unlock all →','Подробнее →':'Details →','Сейчас у тебя':'You have now',
+ 'Пять вопросов ассистенту в день':'Five assistant questions a day',
+ 'Расстояние, курс, ETA, координаты, единицы, Бофорт, светила':'Distance, course, ETA, positions, units, Beaufort, celestial',
+ 'Своё название (если выбрано «Другой»)':'Custom name (if "Other" selected)',
+ 'Станции MF/HF DSC и справочные зоны':'MF/HF DSC stations and reference zones'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -2095,7 +2162,7 @@ function applyLang(){
     // не нашли целиком -- пробуем вхождения (например "131 действующих ...")
     let changed=false;
     for(const k of keys){
-      if(k.length<4) continue;
+      if(k.length<18) continue;  // короткие слова внутри фраз не трогаем
       if(v.indexOf(k)!==-1){ v=v.split(k).join(map[k]); changed=true; }
     }
     if(changed) n.nodeValue=v;
@@ -2203,7 +2270,7 @@ function render(){renderCats();renderDash();renderAreas();renderZones();applyLan
 
 /* --- плитки районов --- */
 function renderCats(){
-  if(!S.stats) return;
+  if(!S.stats||!S.stats.totals) return;
   const list=(S.stats.areas||[]).slice().sort((a,b)=>b.in_force-a.in_force);
   $('#cats').innerHTML=
     `<div class="cat ${S.cat==='all'?'on':''}" data-cat="all">
@@ -2220,9 +2287,68 @@ function renderCats(){
   });
 }
 
+/* --- быстрые действия на главной --- */
+const QUICK=[
+  {i:'route',t:'Проверить маршрут',s:'Порт — порт',go:()=>switchView('voy')},
+  {i:'buoy',t:'Запас под килём',s:'UKC и проседание',go:()=>{switchView('tools');setTimeout(()=>openTool(TOOLS.find(x=>x.id==='ukc')),80)}},
+  {i:'radar',t:'Расхождение',s:'CPA и TCPA',go:()=>{switchView('tools');setTimeout(()=>openTool(TOOLS.find(x=>x.id==='cpa')),80)}},
+  {i:'map',t:'Карта',s:'Все предупреждения',go:()=>switchView('map')},
+];
+function renderQuick(){
+  const el=$('#quick'); if(!el) return;
+  el.innerHTML=QUICK.map((q,i)=>
+    `<div class="qbtn up" style="animation-delay:${i*45}ms" data-q="${i}">
+       <div class="qi">${ico(q.i)}</div>
+       <div><div class="qt">${esc(q.t)}</div><div class="qs">${esc(q.s)}</div></div>
+     </div>`).join('');
+  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{hap('medium');QUICK[+b.dataset.q].go()});
+}
+
+/* последний проложенный маршрут и последние открытые расчёты */
+function renderLastVoyage(){
+  const el=$('#lastVoyBox'); if(!el) return;
+  let v=null;
+  try{ v=JSON.parse(localStorage.getItem('navarea_lastvoy')||'null'); }catch(e){}
+  if(!v){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="sech" style="margin-top:18px"><h3>Активный рейс</h3>
+      <a id="openVoy">Открыть →</a></div>
+    <div class="voyhead" style="margin:0" id="lastVoyCard">
+      <div class="big">${esc(v.from)} → ${esc(v.to)}</div>
+      <div class="sm"><span class="mono">${v.distance}</span> миль · предупреждений на маршруте: <span class="mono">${v.count}</span></div>
+      ${v.legs?`<div class="legs">${ico('route','xs')}<span>${esc(v.legs)}</span></div>`:''}
+    </div>`;
+  const go=()=>{hap();switchView('voy')};
+  const a=$('#openVoy'); if(a) a.onclick=go;
+  const c=$('#lastVoyCard'); if(c) c.onclick=go;
+}
+function renderLastCalcs(){
+  const el=$('#lastCalcBox'); if(!el) return;
+  let ids=[];
+  try{ ids=JSON.parse(localStorage.getItem('navarea_lastcalc')||'[]'); }catch(e){}
+  const list=ids.map(id=>TOOLS.find(t=>t.id===id)).filter(Boolean).slice(0,4);
+  if(!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="sech" style="margin-top:18px"><h3>Последние расчёты</h3>
+      <a id="allCalc">Все →</a></div>
+    <div class="quick">${list.map((t,i)=>
+      `<div class="qbtn up" style="animation-delay:${i*45}ms" data-lc="${t.id}">
+         <div class="qi">${ico(t.icon)}</div>
+         <div><div class="qt">${esc(t.name)}</div></div>
+       </div>`).join('')}</div>`;
+  document.querySelectorAll('[data-lc]').forEach(b=>b.onclick=()=>{
+    hap('medium'); openTool(TOOLS.find(t=>t.id===b.dataset.lc));
+  });
+  const a=$('#allCalc'); if(a) a.onclick=()=>{hap();switchView('tools')};
+}
+function rememberCalc(id){
+  let ids=[];
+  try{ ids=JSON.parse(localStorage.getItem('navarea_lastcalc')||'[]'); }catch(e){}
+  ids=[id].concat(ids.filter(x=>x!==id)).slice(0,6);
+  try{ localStorage.setItem('navarea_lastcalc',JSON.stringify(ids)); }catch(e){}
+}
+
 /* --- панель --- */
 function renderDash(){
-  if(!S.stats) return;
+  if(!S.stats||!S.stats.totals) return;
   const t=S.stats.totals;
   const num=$('#heroNum'); if(num) countUp(num,t.in_force);
   const hl=$('#hello'); if(hl) hl.textContent=S.offline?'Данные из кэша':'Инструменты вахтенного помощника';
@@ -2241,6 +2367,7 @@ function renderDash(){
   $('#favlist').innerHTML=fav.length?`<div class="grid2">${fav.map(areaCard).join('')}</div>`
     :`<div class="empty">${ico('star')}Отметь районы звёздочкой — они появятся здесь для быстрого доступа.</div>`;
   bindAreas();
+  renderQuick(); renderLastVoyage(); renderLastCalcs();
 }
 
 function areaCard(a,i){
@@ -2283,7 +2410,7 @@ function warnCard(w,i){
 
 /* --- районы --- */
 function renderAreas(){
-  if(!S.stats) return;
+  if(!S.stats||!S.stats.areas) return;
   const t=$('#areasTitle');
 
   if(S.q){
@@ -2373,6 +2500,8 @@ function initMap(){
   drawZones();drawMap();
 }
 function shapeLayer(pts,type,popup,color,radiusNm){
+  // Фигура без точек (источник отдал пустую геометрию) раньше роняла карту
+  if(!Array.isArray(pts)||!pts.length||!Array.isArray(pts[0])) return null;
   let l;
   if(type==='polygon'&&pts.length>=3) l=L.polygon(pts,{color:color,weight:2,fillOpacity:.16,fillColor:color});
   else if(type==='line'&&pts.length>=2) l=L.polyline(pts,{color:color,weight:3});
@@ -2407,6 +2536,7 @@ function drawMap(){
       if(!isA&&!LY.points)return;
       isA?nA++:nP++;
       const l=shapeLayer(s.points,s.type,popup,'#f0a03c',s.radius_nm);
+      if(!l) return;
       l.addTo(map);wLayers.push(l);
       if(LY.labels&&isA) l.bindTooltip(`${esc(w.area_code)} ${esc(w.msg_number||'')}`,
         {permanent:true,direction:'center',className:'wlabel',opacity:1});
@@ -2452,7 +2582,8 @@ function renderZones(){
 }
 function focusWarning(w){
   initMap();drawMap();
-  const all=[];w.shapes.forEach(s=>s.points.forEach(p=>all.push(p)));
+  const all=[];(w.shapes||[]).forEach(s=>(s.points||[]).forEach(p=>all.push(p)));
+  if(!all.length) return;
   if(all.length===1)map.setView(all[0],8);
   else map.fitBounds(L.latLngBounds(all),{padding:[45,45]});
 }
@@ -2495,6 +2626,8 @@ async function runVoyage(){
       <div id="vmap"></div>
       ${r.results.length?r.results.map(warnCard).join('')
         :`<div class="empty">${ico('anchor')}По этому маршруту действующих предупреждений с координатами нет.</div>`}`;
+    try{ localStorage.setItem('navarea_lastvoy',JSON.stringify({
+      from:r.from.label,to:r.to.label,distance:r.distance_nm,count:r.count,legs:legs})); }catch(e){}
     bindWarns();setTimeout(()=>drawVoy(r),80);
   }catch(e){
     $('#voyout').innerHTML=`<div class="empty">${ico('radar')}Нет связи с сервером. Попробуй позже.</div>`;
@@ -2511,32 +2644,99 @@ function drawVoy(r){
     L.circleMarker([l.lat,l.lon],{radius:5,color:'#6fb3f0',fillColor:'#0b1e30',
       fillOpacity:1,weight:2}).bindPopup(`<b>${esc(l.title)}</b><br>точка поворота`).addTo(vmap);
   });
-  r.results.forEach(w=>(w.shapes||[]).forEach(s=>
-    shapeLayer(s.points,s.type,`<b>${esc(w.area_code)} №${esc(w.msg_number||'—')}</b><br>${w.distance_nm} миль от курса`,'#f0a03c',s.radius_nm).addTo(vmap)));
+  r.results.forEach(w=>(w.shapes||[]).forEach(s=>{
+    const l=shapeLayer(s.points,s.type,`<b>${esc(w.area_code)} №${esc(w.msg_number||'—')}</b><br>${w.distance_nm} миль от курса`,'#f0a03c',s.radius_nm);
+    if(l) l.addTo(vmap);
+  }));
   vmap.fitBounds(line.getBounds(),{padding:[28,28]});
 }
 
 /* --- навигация --- */
+/* ---- Четыре группы внизу, подразделы лентой сверху ---- */
+const GROUPS={
+  home:{t:'Главная',i:'gauge',subs:[
+    {v:'dash',t:'Обзор',i:'gauge'},
+    {v:'areas',t:'Предупреждения',i:'globe'}]},
+  tools:{t:'Инструменты',i:'sliders',subs:[
+    {v:'tools',t:'Расчёты',i:'sliders'},
+    {v:'bridge',t:'Чек-листы',i:'flag'},
+    {v:'refs',t:'Справочники',i:'archive'},
+    {v:'radio',t:'Радио',i:'radar'}]},
+  map:{t:'Карта',i:'map',subs:[
+    {v:'map',t:'Предупреждения',i:'map'},
+    {v:'voy',t:'Маршрут',i:'route'},
+    {v:'zones',t:'Зоны',i:'wave'}]},
+  profile:{t:'Профиль',i:'compass',subs:[
+    {v:'ship',t:'Моё судно',i:'ship'},
+    {v:'settings',t:'Настройки',i:'sliders'}]}
+};
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','ship','settings','voy','zones'];
+const VIEW_GROUP={};
+Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
+let S_GROUP='home';
+
+function renderSubtabs(){
+  const el=$('#subtabs'); if(!el) return;
+  const okStats=S.stats&&S.stats.totals;
+  const subs=(GROUPS[S_GROUP]||{}).subs||[];
+  // один подраздел -- ленту не показываем, она была бы бессмысленной
+  if(subs.length<2){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML=subs.map(x=>{
+    let cnt='';
+    // Счётчики только если данные действительно пришли: раньше ответ вида
+    // {"error": ...} ронял отрисовку подвкладок, а с ней и всё переключение
+    // разделов -- нижнее меню внешне переставало работать.
+    if(x.v==='areas'&&okStats) cnt=`<span class="cnt">${S.stats.totals.in_force}</span>`;
+    if(x.v==='radio'&&RADIO&&Array.isArray(RADIO.stations)) cnt=`<span class="cnt">${RADIO.stations.length}</span>`;
+    if(x.v==='tools'&&Array.isArray(TOOLS)) cnt=`<span class="cnt">${TOOLS.length}</span>`;
+    return `<button class="subtab ${S.view===x.v?'on':''}" data-sv="${x.v}">${ico(x.i,'sm')}${esc(x.t)}${cnt}</button>`;
+  }).join('');
+  document.querySelectorAll('[data-sv]').forEach(b=>b.onclick=()=>{hap();switchView(b.dataset.sv)});
+}
+
 function switchView(v){
   S.view=v;
-  ['dash','areas','map','tools','radio','ship','voy'].forEach(x=>{
-    const el=$('#v-'+x);
+  S_GROUP=VIEW_GROUP[v]||S_GROUP;
+
+  ALL_VIEWS.forEach(x=>{
+    const el=$('#v-'+x); if(!el) return;
     if(x===v){el.classList.remove('hidden');el.style.animation='none';void el.offsetWidth;el.style.animation=''}
     else el.classList.add('hidden');
   });
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.g===S_GROUP));
+  renderSubtabs();
+
   const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='dash');
   const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='dash'&&v!=='areas');
   try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}
-  if(v==='tools'){renderTools();renderRefs();if(gate('#bridgeBox','bridge'))loadBridge();}
+
+  if(v==='tools') renderTools();
+  if(v==='refs') renderRefs();
+  if(v==='bridge'){ if(gate('#bridgeBox','bridge')) loadBridge(); }
   if(v==='ship'){ if(gate('#v-ship','vessel')) loadVessel(); }
+  if(v==='settings') renderSettings();
+  if(v==='radio') setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
+  if(v==='dash') loadHistory();
+  if(v==='voy') gate('#v-voy','voyage');
+  if(v==='zones') renderZones();
+  if(v==='map') setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
   setTimeout(applyLang,30);
-  if(v==='radio')setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
-  if(v==='dash')loadHistory();
-  if(v==='voy')gate('#v-voy','voyage');
-  if(v==='map')setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{hap();switchView(t.dataset.v)});
+
+function switchGroup(g){
+  S_GROUP=g;
+  const subs=(GROUPS[g]||{}).subs||[];
+  // возвращаемся на тот подраздел группы, где были в прошлый раз
+  const last=GROUP_LAST[g]||(subs[0]&&subs[0].v);
+  if(last) switchView(last);
+}
+const GROUP_LAST={};
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  hap();
+  GROUP_LAST[S_GROUP]=S.view;
+  switchGroup(t.dataset.g);
+});
 $('#toAreas').onclick=()=>{hap();S.cat='all';renderCats();switchView('areas');renderAreas()};
 $('#heroBtn').onclick=()=>{hap('medium');switchView('map')};
 $('#fbtn').onclick=()=>{
@@ -2610,7 +2810,7 @@ function openDetail(w){
       '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12.5px">Без координат</div>';return}
     dmap=L.map('dmap',{zoomControl:false,attributionControl:false,worldCopyJump:true});
     L.tileLayer(BASES.dark.url,{maxZoom:18,subdomains:'abcd'}).addTo(dmap);
-    sh.forEach(s=>shapeLayer(s.points,s.type,'',	'#f0a03c',s.radius_nm).addTo(dmap));
+    sh.forEach(s=>{const l=shapeLayer(s.points,s.type,'','#f0a03c',s.radius_nm); if(l) l.addTo(dmap);});
     if(pts.length===1) dmap.setView(pts[0],8);
     else dmap.fitBounds(L.latLngBounds(pts),{padding:[45,45]});
   },60);
@@ -2663,6 +2863,13 @@ function bindHistory(){
   };
 }
 function renderBridge(){
+  if(!BR||!BR.templates){
+    const box=$('#bridgeBox');
+    if(box) box.innerHTML=BR&&BR.error
+      ? `<div class="empty">${ico('alert')}Раздел недоступен: ${esc(BR.error)}</div>`
+      : '<div class="sk card"></div><div class="sk card"></div>';
+    return;
+  }
   if(!BR){ $('#bridgeBox').innerHTML='<div class="sk card"></div>'; return; }
   const c=BR.certificates||[], soon=c.filter(x=>x.status==='soon'||x.status==='expired').length;
   const st={expired:'просрочен',soon:'скоро истекает',watch:'под контролем',ok:'в порядке',unknown:'—'};
@@ -2994,6 +3201,7 @@ const replyClass=r=>r==='auto'?'ok':(r==='reliable'?'am':'no');
 
 async function renderRadio(){
   const d=await loadRadio();
+  if(d&&d.error){ $('#radiolist').innerHTML=`<div class="empty">${ico('radar')}Раздел недоступен.</div>`; return; }
   if(!d){ $('#radiolist').innerHTML=`<div class="empty">${ico('radar')}Не удалось загрузить справочник станций. Попробуй позже.</div>`; return; }
 
   const counts={all:d.stations.length};
@@ -3102,8 +3310,181 @@ function focusStation(s){
 }
 
 
-/* ---- Моё судно ---- */
-let VES=null;
+/* ---- Тариф, пробный период, платные разделы ---- */
+let ACC=null;
+
+async function loadAccess(){
+  try{ ACC=await api('/api/access'); localStorage.setItem('navarea_access',JSON.stringify(ACC)); }
+  catch(e){ try{ ACC=JSON.parse(localStorage.getItem('navarea_access')||'null'); }catch(e2){} }
+  renderTrialBar();
+  return ACC;
+}
+const isPaid=()=>!!(ACC&&ACC.premium);
+const featureName=k=>((ACC&&ACC.paid_features)||{})[k]||'';
+
+function renderTrialBar(){
+  const el=$('#trialbar'); if(!el||!ACC) return;
+  // тарифы выключены на время отладки либо это владелец -- баннер не нужен
+  if(ACC.paywall===false||ACC.tier==='open'||ACC.tier==='owner'){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+
+  if(ACC.tier==='trial'){
+    const d=(ACC.trial&&ACC.trial.days_left)||0;
+    el.className='trialbar';
+    el.innerHTML=`<div class="ti">${ico('star')}</div>
+      <div class="tt"><div class="t1">Пробный период · осталось ${d} дн.</div>
+        <div class="t2">Открыты все разделы. Дальше ${ACC.price_stars} ⭐ в месяц, это примерно 2 доллара.</div></div>
+      <span class="tg">Подробнее →</span>`;
+  } else if(ACC.tier==='premium'){
+    el.className='trialbar';
+    el.innerHTML=`<div class="ti">${ico('star')}</div>
+      <div class="tt"><div class="t1">Premium активен</div>
+        <div class="t2">Открыты все разделы. Спасибо, что поддерживаешь проект.</div></div>`;
+  } else {
+    el.className='trialbar free';
+    el.innerHTML=`<div class="ti">${ico('lighthouse')}</div>
+      <div class="tt"><div class="t1">Бесплатный тариф</div>
+        <div class="t2">Два района, базовые расчёты и справочники. Остальное — ${ACC.price_stars} ⭐ в месяц.</div></div>
+      <span class="tg">Открыть всё →</span>`;
+  }
+  el.onclick=openPlans;
+}
+
+/* закрывает раздел, если он платный и доступа нет */
+function gate(sectionId, feature){
+  const el=$(sectionId); if(!el) return true;
+  const old=el.querySelector('.lockover'); if(old) old.remove();
+  el.classList.remove('locked');
+  // Пока сведения о доступе не пришли -- ничего не закрываем: иначе
+  // раздел блокируется на ровном месте при медленной сети.
+  if(!ACC) return true;
+  if(ACC.paywall===false) return true;
+  if(isPaid()) return true;
+
+  el.classList.add('lockwrap','locked');
+  const ov=document.createElement('div');
+  ov.className='lockover';
+  ov.innerHTML=`<div class="li">${ico('star','lg')}</div>
+    <div class="lt">${esc(featureName(feature))}</div>
+    <div class="ls">Раздел входит в Premium — ${ACC?ACC.price_stars:100} ⭐ в месяц, около 2 долларов.
+      Первые 14 дней после установки всё открыто.</div>
+    <button class="btn" id="lockBtn">Что входит в Premium</button>`;
+  el.appendChild(ov);
+  const b=ov.querySelector('#lockBtn'); if(b) b.onclick=openPlans;
+  return false;
+}
+
+function openPlans(){
+  hap('medium');
+  const price=ACC?ACC.price_stars:100;
+  const paid=(ACC&&ACC.paid_features)||{};
+  $('#tName').textContent='Тарифы';
+  { const b=$('#tBackTitle'); if(b) b.textContent='Тарифы'; }
+  $('#tDesc').textContent='Что открыто сейчас и что даёт Premium';
+  $('#tIcon').innerHTML=ico('star','lg');
+  $('#tFields').innerHTML=`
+    <div class="plans">
+      <div class="plan gray ${!isPaid()?'on':''}">
+        <div class="pt"><span>Бесплатно</span><span class="pp">0</span></div>
+        <ul>
+          <li>Два района NAVAREA с уведомлениями</li>
+          <li>Карта всех действующих предупреждений</li>
+          <li>Расчёты безопасности: запас под килём, проседание, CPA/TCPA, точка перекладки, якорь, габарит под мостом</li>
+          <li>Расстояние, курс, ETA, координаты, единицы, Бофорт, светила</li>
+          <li>Станции MF/HF DSC и справочные зоны</li>
+          <li>Пять вопросов ассистенту в день</li>
+        </ul>
+      </div>
+      <div class="plan ${isPaid()?'on':''}">
+        <div class="pt"><span>Premium</span><span class="pp">${price} ⭐ / мес</span></div>
+        <ul>${Object.keys(paid).map(k=>`<li>${esc(paid[k])}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда — брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
+  $('#tResults').innerHTML = isPaid()
+    ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(ACC?ACC.title:'')}</span></div>`
+    : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>`;
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+  curTool=null;
+  applyLang();
+
+  const bb=$('#buyBtn');
+  if(bb) bb.onclick=()=>{
+    hap('medium');
+    try{ TG.close(); }catch(e){}
+    // оплата идёт в чате: там Telegram сам открывает окно платежа по /subscribe
+  };
+}
+
+
+/* ---- Профиль: настройки, подписка, о приложении ---- */
+function renderSettings(){
+  const box=$('#settingsBox'); if(!box) return;
+  const dark=!document.body.classList.contains('light');
+  const tier=ACC?ACC.title:'—';
+  const price=ACC?ACC.price_stars:100;
+  const cached=(()=>{ try{ const c=JSON.parse(localStorage.getItem(CK)||'null');
+    return c&&c.at?ago(new Date(c.at).toISOString()):'нет'; }catch(e){ return 'нет'; } })();
+
+  box.innerHTML=`
+    <div class="dpanel"><h4>Оформление</h4>
+      <div class="sw" data-set="theme">
+        <div style="min-width:0"><div class="t">${ico('sun','sm')}Тёмная тема</div>
+          <div class="d">Светлая версия для дневной вахты</div></div>
+        <div class="toggle ${dark?'on':''}"></div>
+      </div>
+      <div class="sw" data-set="lang">
+        <div style="min-width:0"><div class="t">${ico('flag','sm')}Язык интерфейса</div>
+          <div class="d">Русский или английский</div></div>
+        <span class="rtag am">${LANG==='en'?'EN':'RU'}</span>
+      </div>
+    </div>
+
+    <div class="dpanel"><h4>Доступ</h4>
+      <div class="tres hi"><span class="tl">Текущий тариф</span><span class="tv">${esc(tier)}</span></div>
+      ${(ACC&&ACC.paywall===false)
+        ? `<div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Идёт отладка, все разделы открыты бесплатно.</div>`
+        : `<button class="btn wide" id="setPlans" style="margin-top:9px">Что входит в Premium · ${price} ⭐</button>`}
+    </div>
+
+    <div class="dpanel"><h4>Данные без связи</h4>
+      <div class="tres"><span class="tl">Последняя синхронизация</span><span class="tv" style="font-size:13px">${esc(cached)}</span></div>
+      <div class="hint" style="margin:9px 0 0">${ico('radar','xs')} Предупреждения, станции и справочники сохраняются на устройстве — в рейсе приложение открывается и работает без сети. Расчёты работают всегда.</div>
+      <button class="btn g wide" id="setClear" style="margin-top:9px">Очистить сохранённые данные</button>
+    </div>
+
+    <div class="dpanel"><h4>О приложении</h4>
+      <div class="tres"><span class="tl">Watchkeeper</span><span class="tv" style="font-size:13px">${APP_VERSION}</span></div>
+      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Данные справочные. Официальный источник — оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.</div>
+    </div>`;
+
+  const th=box.querySelector('[data-set="theme"]');
+  if(th) th.onclick=()=>{
+    document.body.classList.toggle('light'); hap('medium');
+    localStorage.setItem(TK, document.body.classList.contains('light')?'light':'dark');
+    renderSettings();
+  };
+  const lg=box.querySelector('[data-set="lang"]');
+  if(lg) lg.onclick=()=>{
+    LANG=(LANG==='en')?'ru':'en';
+    localStorage.setItem('navarea_lang',LANG); hap('medium');
+    applyLang(); renderSettings(); applyLang();
+  };
+  const pl=$('#setPlans'); if(pl) pl.onclick=openPlans;
+  const cl=$('#setClear'); if(cl) cl.onclick=()=>{
+    hap('medium');
+    if(!confirm('Удалить сохранённые данные с устройства? Настройки и избранное останутся.')) return;
+    try{ localStorage.removeItem(CK); localStorage.removeItem('navarea_radio');
+         localStorage.removeItem('navarea_vessel'); }catch(e){}
+    load(true); renderSettings();
+  };
+  applyLang();
+}
+const APP_VERSION='1.0';
+
+/* ---- Моё судно: поиск, профиль, документы ---- */
+let VES=null, vesSearchTimer=null;
 
 async function loadVessel(){
   try{ VES=await api('/api/vessel'); localStorage.setItem('navarea_vessel',JSON.stringify(VES)); }
@@ -3112,13 +3493,11 @@ async function loadVessel(){
   return VES;
 }
 
-/* размерения судна подставляются в расчёты по умолчанию */
-function vesselDefault(key){
-  const v=(VES&&VES.vessel)||{};
-  const map={dr:'draft',ad:'air_draft',cb:'cb',loa:'loa',hh:'hawse',s:'speed',c:'cons'};
-  const src=map[key];
-  return src&&v[src]?v[src]:null;
+/* значения из карточки судна для полей расчёта */
+function vesselPrefill(toolId){
+  return (VES&&VES.prefill&&VES.prefill[toolId])||{};
 }
+const activeVessel=()=>(VES&&VES.active)||{};
 
 function renderVessel(){
   const box=$('#vesselBox'); if(!box) return;
@@ -3127,88 +3506,248 @@ function renderVessel(){
     box.innerHTML=`<div class="empty">${ico('ship')}Открой приложение из чата с ботом, чтобы карточка судна привязалась к тебе.</div>`;
     return;
   }
-  const v=VES.vessel||{};
-  const filled=Object.keys(v).length;
+  const v=VES.active||{};
+  const list=VES.vessels||[];
 
-  if(!filled){
-    box.innerHTML=`
-      <div class="vhero">
-        <svg class="vwave" viewBox="0 0 800 40" preserveAspectRatio="none">
-          <path d="M0 20 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v24 h-800 z" fill="#4d93d6"/>
-        </svg>
-        <div class="vin">${ico('ship','lg')}
-          <div class="vt">Судно не заведено</div>
-          <div class="vs">Заполни один раз — размерения сами подставятся в расчёты запаса под килём, проседания, якорной стоянки и прохода под мостом.</div>
+  if(!list.length){ renderVesselEmpty(box); return; }
+
+  const row=(l,val,u)=>val?`<div class="tres"><span class="tl">${esc(l)}</span><span class="tv mono">${esc(val)}${u?' '+u:''}</span></div>`:'';
+  const section=(sec)=>{
+    const rows=sec.fields.map(f=>row(f.l,v[f.k],f.u)).filter(Boolean);
+    if(!rows.length) return '';
+    return `<div class="dpanel"><h4>${ico(sec.icon,'xs')} ${esc(sec.title)}</h4>${rows.join('')}</div>`;
+  };
+
+  const switcher = list.length>1
+    ? `<div class="chips" style="margin-bottom:12px">${list.map(x=>
+        `<button class="chip ${x._id===VES.active_id?'on':''}" data-sel="${esc(x._id)}">${esc(x.name||'Без названия')}</button>`).join('')}
+       <button class="chip" data-addship>+ Судно</button></div>`
+    : '';
+
+  box.innerHTML=switcher+`
+    <div class="vhero">
+      <svg class="vwave" viewBox="0 0 800 40" preserveAspectRatio="none">
+        <path d="M0 20 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v24 h-800 z" fill="#4d93d6"/>
+      </svg>
+      <div class="vin">
+        <div class="vname">${esc(v.name||'Без названия')}</div>
+        <div class="vmeta">
+          ${v.type?`<span class="dchip">${ico('ship','xs')}${esc(v.type)}</span>`:''}
+          ${v.flag?`<span class="dchip">${ico('flag','xs')}${esc(v.flag)}</span>`:''}
+          ${v.imo?`<span class="dchip">IMO ${esc(v.imo)}</span>`:''}
+          ${v.built?`<span class="dchip">${esc(v.built)} г.</span>`:''}
         </div>
       </div>
-      <button class="btn wide" id="editVessel" style="margin-top:13px">Заполнить карточку</button>
-      <div class="hint" style="margin-top:13px">${ico('alert','xs')} ${esc(VES.note||'')}</div>`;
-  } else {
-    const row=(l,val,u)=>val?`<div class="tres"><span class="tl">${esc(l)}</span><span class="tv mono">${esc(val)}${u?' '+u:''}</span></div>`:'';
-    box.innerHTML=`
-      <div class="vhero">
-        <svg class="vwave" viewBox="0 0 800 40" preserveAspectRatio="none">
-          <path d="M0 20 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v24 h-800 z" fill="#4d93d6"/>
-        </svg>
-        <div class="vin">
-          <div class="vname">${esc(v.name||'Без названия')}</div>
-          <div class="vmeta">
-            ${v.type?`<span class="dchip">${ico('ship','xs')}${esc(v.type)}</span>`:''}
-            ${VES.flag?`<span class="dchip">${ico('flag','xs')}${esc(VES.flag)}</span>`:''}
-            ${v.imo?`<span class="dchip">IMO ${esc(v.imo)}</span>`:''}
-          </div>
-        </div>
-      </div>
-      <div class="dpanel" style="margin-top:13px"><h4>Опознавание</h4>
-        ${row('MMSI',v.mmsi)}${row('Позывной',v.callsign)}${row('Флаг по MMSI',VES.flag)}
-      </div>
-      <div class="dpanel"><h4>Размерения</h4>
-        ${row('Длина наибольшая',v.loa,'м')}${row('Ширина',v.beam,'м')}
-        ${row('Осадка в грузу',v.draft,'м')}${row('Надводный габарит',v.air_draft,'м')}
-        ${row('Коэффициент полноты',v.cb)}${row('Высота клюза',v.hawse,'м')}
-      </div>
-      <div class="dpanel"><h4>Эксплуатация</h4>
-        ${row('Дедвейт',v.dwt,'т')}${row('Валовая вместимость',v.gt)}
-        ${row('Скорость в грузу',v.speed,'узлов')}${row('Расход на ходу',v.cons,'т/сут')}
-      </div>
-      <button class="btn wide" id="editVessel">Изменить данные</button>
-      <div class="hint" style="margin-top:13px">${ico('alert','xs')} Эти значения подставляются в расчёты как исходные — можно менять на месте, карточка от этого не изменится.</div>`;
-  }
-  const eb=$('#editVessel'); if(eb) eb.onclick=openVesselForm;
+    </div>
+
+    <div class="vkey">
+      ${v.loa?`<div class="vk"><div class="vkv mono">${esc(v.loa)}</div><div class="vkl">длина, м</div></div>`:''}
+      ${v.beam?`<div class="vk"><div class="vkv mono">${esc(v.beam)}</div><div class="vkl">ширина, м</div></div>`:''}
+      ${v.draft_max?`<div class="vk"><div class="vkv mono">${esc(v.draft_max)}</div><div class="vkl">осадка, м</div></div>`:''}
+      ${v.dwt?`<div class="vk"><div class="vkv mono">${esc(v.dwt)}</div><div class="vkl">дедвейт, т</div></div>`:''}
+    </div>
+
+    ${(VES.sections||[]).map(section).join('')}
+
+    <div class="dpanel"><h4>${ico('archive','xs')} Документы</h4>
+      <div id="docList"></div>
+      <button class="btn g wide" id="addDoc" style="margin-top:9px">Добавить документ</button>
+    </div>
+
+    <button class="btn wide" id="editVessel">Изменить данные</button>
+    <button class="btn g wide" id="delVessel" style="margin-top:9px">Удалить судно</button>
+    <div class="hint" style="margin-top:13px">${ico('alert','xs')} Эти значения подставляются в расчёты как исходные — можно менять на месте, карточка от этого не изменится.</div>`;
+
+  renderDocs();
+  const eb=$('#editVessel'); if(eb) eb.onclick=()=>openVesselForm(VES.active_id);
+  const db_=$('#delVessel'); if(db_) db_.onclick=async()=>{
+    hap('medium');
+    if(!confirm('Удалить это судно из профиля?')) return;
+    try{ VES=await api('/api/vessel?action=delete&id='+encodeURIComponent(VES.active_id)); renderVessel(); }catch(e){}
+  };
+  document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=async()=>{
+    hap();
+    try{ VES=await api('/api/vessel?action=select&id='+encodeURIComponent(b.dataset.sel)); renderVessel(); }catch(e){}
+  });
+  const add=box.querySelector('[data-addship]'); if(add) add.onclick=()=>openVesselSearch();
+  const ad=$('#addDoc'); if(ad) ad.onclick=openDocForm;
   applyLang();
 }
 
-function openVesselForm(){
+function renderVesselEmpty(box){
+  box.innerHTML=`
+    <div class="vhero">
+      <svg class="vwave" viewBox="0 0 800 40" preserveAspectRatio="none">
+        <path d="M0 20 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v24 h-800 z" fill="#4d93d6"/>
+      </svg>
+      <div class="vin">${ico('ship','lg')}
+        <div class="vt">Судно не заведено</div>
+        <div class="vs">Заполни карточку один раз — длина, ширина, осадка, Cb и остальное сами подставятся в расчёты запаса под килём, проседания, якорной стоянки и прохода под мостом.</div>
+      </div>
+    </div>
+    <button class="btn wide" id="findVessel" style="margin-top:13px">Найти судно по названию</button>
+    <button class="btn g wide" id="manualVessel" style="margin-top:9px">Заполнить вручную</button>
+    <div class="hint" style="margin-top:13px">${ico('alert','xs')} ${esc((VES.provider||{}).note||'')}</div>`;
+  const f=$('#findVessel'); if(f) f.onclick=openVesselSearch;
+  const m=$('#manualVessel'); if(m) m.onclick=()=>openVesselForm('');
+  applyLang();
+}
+
+/* --- поиск судна с автодополнением --- */
+function openVesselSearch(){
+  hap('medium');
+  const prov=(VES&&VES.provider)||{};
+  $('#tName').textContent='Поиск судна';
+  $('#tDesc').textContent=prov.title||'';
+  $('#tIcon').innerHTML=ico('search','lg');
+  { const b=$('#tBackTitle'); if(b) b.textContent='Поиск судна'; }
+  $('#tFields').innerHTML=`
+    <div class="fld">
+      <label>Название, IMO или MMSI</label>
+      <div class="sbox"><input class="tinput" id="vsQ" placeholder="Например Cape" autocomplete="off" style="border:none;background:none;padding:0"></div>
+    </div>
+    <div class="hint">${ico('alert','xs')} ${esc(prov.note||'')}</div>`;
+  $('#tResults').innerHTML=`<div id="vsList"></div>
+    <button class="btn wide" id="vsManual" style="margin-top:11px">Заполнить вручную</button>`;
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+  curTool=null;
+
+  const inp=$('#vsQ');
+  inp.oninput=()=>{
+    clearTimeout(vesSearchTimer);
+    const q=inp.value.trim();
+    if(q.length<2){ $('#vsList').innerHTML=''; return; }
+    $('#vsList').innerHTML='<div class="sk card" style="height:52px"></div>';
+    vesSearchTimer=setTimeout(async()=>{
+      try{
+        const r=await api('/api/ship-search?q='+encodeURIComponent(q));
+        const rows=r.results||[];
+        $('#vsList').innerHTML = rows.length
+          ? rows.map(x=>`<div class="vsrow" data-ident="${esc(x.ident)}">
+              <div class="vsi">${ico('ship','sm')}</div>
+              <div style="flex:1;min-width:0">
+                <div class="vsn">${esc(x.name)}</div>
+                <div class="vsd">${[x.imo?'IMO '+x.imo:'',x.type,x.flag].filter(Boolean).map(esc).join(' · ')}</div>
+              </div>
+              <span class="rtag">${esc(x.source||'')}</span>
+            </div>`).join('')
+          : `<div class="hint">${ico('search','xs')} Ничего не нашлось. Можно заполнить карточку вручную.</div>`;
+        document.querySelectorAll('[data-ident]').forEach(el=>el.onclick=async()=>{
+          hap('medium');
+          el.innerHTML='<div class="vsn">Загружаю…</div>';
+          try{
+            const res=await api('/api/ship-search?fetch='+encodeURIComponent(el.dataset.ident));
+            openVesselForm('', res.card||{});
+          }catch(e){ openVesselForm('',{name:inp.value.trim()}); }
+        });
+      }catch(e){ $('#vsList').innerHTML=`<div class="hint">Нет связи с сервером.</div>`; }
+    },260);
+  };
+  const mv=$('#vsManual'); if(mv) mv.onclick=()=>openVesselForm('',{name:inp.value.trim()});
+  applyLang();
+}
+
+/* --- форма карточки по разделам --- */
+function openVesselForm(vid, preset){
   if(!VES) return;
   hap('medium');
-  const v=VES.vessel||{};
-  $('#tName').textContent='Карточка судна';
-  { const b=$('#tBackTitle'); if(b) b.textContent='Карточка судна'; }
+  const base=vid ? (VES.vessels||[]).find(x=>x._id===vid)||{} : (preset||{});
+  $('#tName').textContent=vid?'Изменить судно':'Карточка судна';
   $('#tDesc').textContent='Заполняется один раз, подставляется во все расчёты';
   $('#tIcon').innerHTML=ico('ship','lg');
-  $('#tFields').innerHTML=(VES.fields||[]).map(f=>
-    `<div class="fld"><label>${esc(f.l)}${f.u?' · '+esc(f.u):''}</label>
-     <input class="vinput" data-k="${f.k}" inputmode="${f.t==='num'?'decimal':'text'}"
-            value="${esc(v[f.k]||'')}"></div>`).join('');
+  { const b=$('#tBackTitle'); if(b) b.textContent='Карточка судна'; }
+
+  $('#tFields').innerHTML=(VES.sections||[]).map((sec,i)=>`
+    <div class="vsec ${i===0?'open':''}" data-sec="${sec.id}">
+      <div class="vsech">${ico(sec.icon,'sm')}<span>${esc(sec.title)}</span>
+        <span class="vsarrow">${ico('back','xs')}</span></div>
+      <div class="vsbody">${sec.fields.map(f=>
+        `<div class="fld"><label>${esc(f.l)}${f.u?' · '+esc(f.u):''}</label>
+         <input class="vinput" data-k="${f.k}" inputmode="${f.t==='num'?'decimal':'text'}"
+                value="${esc(base[f.k]||'')}"></div>`).join('')}</div>
+    </div>`).join('');
+
   $('#tResults').innerHTML=`<button class="btn wide" id="saveVessel">Сохранить</button>`;
   $('#tool').classList.add('on');
   document.body.style.overflow='hidden';
   curTool=null;
+
+  document.querySelectorAll('.vsech').forEach(h=>h.onclick=()=>{
+    h.parentElement.classList.toggle('open'); hap();
+  });
 
   $('#saveVessel').onclick=async()=>{
     const q=[];
     document.querySelectorAll('.vinput').forEach(el=>{
       if(el.value.trim()) q.push(encodeURIComponent(el.dataset.k)+'='+encodeURIComponent(el.value.trim()));
     });
+    if(!q.length){ return; }
     hap('medium');
     try{
-      VES=await api('/api/vessel?action=save&'+q.join('&'));
+      VES=await api('/api/vessel?action=save'+(vid?'&id='+encodeURIComponent(vid):'')+'&'+q.join('&'));
       localStorage.setItem('navarea_vessel',JSON.stringify(VES));
       renderVessel(); closeTool();
     }catch(e){
       $('#tResults').innerHTML=`<div class="tres warn"><span class="tl">Не удалось сохранить</span><span class="tv">нет связи</span></div>`;
     }
   };
+  applyLang();
+}
+
+/* --- документы судна --- */
+function renderDocs(){
+  const el=$('#docList'); if(!el||!VES) return;
+  const docs=VES.docs||[];
+  el.innerHTML = docs.length
+    ? docs.map(d=>`<div class="tres"><span class="tl">${esc(d.title)}
+        ${d.note?`<br><span style="font-size:11px;opacity:.7">${esc(d.note)}</span>`:''}</span>
+        <span class="tv" style="font-size:12.5px">${esc(d.edition||'')}</span>
+        <button class="rcopy" data-deldoc="${esc(d.id)}" style="margin-left:9px">${ico('archive','sm')}</button></div>`).join('')
+    : `<div class="hint" style="margin:0">${ico('archive','xs')} Список судовых документов с номером редакции — чтобы под рукой было, что и когда корректировалось.</div>`;
+  document.querySelectorAll('[data-deldoc]').forEach(b=>b.onclick=async ev=>{
+    ev.stopPropagation(); hap('medium');
+    try{ VES=await api('/api/vessel?action=doc_del&doc='+encodeURIComponent(b.dataset.deldoc)); renderVessel(); }catch(e){}
+  });
+}
+
+function openDocForm(){
+  hap('medium');
+  const types=(VES&&VES.doc_types)||[];
+  $('#tName').textContent='Документ судна';
+  $('#tDesc').textContent='Название, редакция и заметка';
+  $('#tIcon').innerHTML=ico('archive','lg');
+  { const b=$('#tBackTitle'); if(b) b.textContent='Документ судна'; }
+  $('#tFields').innerHTML=`
+    <div class="fld"><label>Документ</label>
+      <select class="tinput" id="docTitle">
+        ${types.map(t=>`<option>${esc(t)}</option>`).join('')}
+        <option>Другой</option>
+      </select></div>
+    <div class="fld"><label>Своё название (если выбрано «Другой»)</label>
+      <input class="tinput" id="docOther" placeholder="Например Ballast Water Plan"></div>
+    <div class="fld"><label>Редакция или дата</label>
+      <input class="tinput" id="docEd" placeholder="Например Rev. 3, 2025"></div>
+    <div class="fld"><label>Заметка</label>
+      <input class="tinput" id="docNote" placeholder="Например где хранится"></div>`;
+  $('#tResults').innerHTML=`<button class="btn wide" id="docSave">Сохранить</button>`;
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+  curTool=null;
+
+  $('#docSave').onclick=async()=>{
+    let title=$('#docTitle').value;
+    if(title==='Другой') title=$('#docOther').value.trim();
+    if(!title){ return; }
+    hap('medium');
+    try{
+      VES=await api('/api/vessel?action=doc_add&title='+encodeURIComponent(title)+
+        '&edition='+encodeURIComponent($('#docEd').value.trim())+
+        '&note='+encodeURIComponent($('#docNote').value.trim()));
+      renderVessel(); closeTool();
+    }catch(e){}
+  };
+  applyLang();
 }
 
 /* ---- Экран инструментов ---- */
@@ -3263,23 +3802,36 @@ function toolCard(t,i){
 function openTool(t){
   if(!t) return;
   curTool=t; hap('medium');
+  rememberCalc(t.id);
+
+  // Известные параметры судна подставляются вместо значений по умолчанию:
+  // открывая запас под килём, вводить нужно только текущую глубину и прилив.
+  const pre=vesselPrefill(t.id);
   toolVals={};
-  t.fields.forEach(f=>{ toolVals[f.k]=(f.def!==undefined?f.def:''); });
+  t.fields.forEach(f=>{
+    toolVals[f.k] = (pre[f.k]!==undefined && pre[f.k]!=='')
+      ? pre[f.k]
+      : (f.def!==undefined?f.def:'');
+  });
 
   $('#tName').textContent=t.name;
   { const b=$('#tBackTitle'); if(b) b.textContent=t.name; }
   $('#tDesc').textContent=t.desc;
   $('#tIcon').innerHTML=ico(t.icon,'lg');
+  const shipName=(activeVessel().name)||'';
   $('#tFields').innerHTML=t.fields.map(f=>{
+    const fromShip = pre[f.k]!==undefined && pre[f.k]!=='';
+    const tag = fromShip ? `<span class="fromship">${ico('ship','xs')}${esc(shipName||'из карточки')}</span>` : '';
     if(f.t==='sel'){
-      return `<div class="fld"><label>${esc(f.l)}</label>
+      return `<div class="fld"><label>${esc(f.l)}${tag}</label>
         <select class="tinput" data-k="${f.k}">
           ${f.opts.map(o=>`<option ${o===f.def?'selected':''}>${esc(o)}</option>`).join('')}
         </select></div>`;
     }
     const im=f.t==='num'?'decimal':'text';
-    return `<div class="fld"><label>${esc(f.l)}${f.u?` · ${esc(f.u)}`:''}</label>
-      <input class="tinput" data-k="${f.k}" inputmode="${im}" value="${esc(String(f.def||''))}"></div>`;
+    return `<div class="fld"><label>${esc(f.l)}${f.u?` · ${esc(f.u)}`:''}${tag}</label>
+      <input class="tinput${fromShip?' fromship-in':''}" data-k="${f.k}" inputmode="${im}"
+             value="${esc(String(toolVals[f.k]||''))}"></div>`;
   }).join('');
 
   document.querySelectorAll('.tinput').forEach(el=>{

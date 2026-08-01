@@ -77,6 +77,12 @@ class Config:
     # и тарифы включатся обратно без единой правки в коде.
     paywall_enabled: bool = field(default_factory=lambda: _get_bool("PAYWALL_ENABLED", False))
 
+    # --- Внешний источник данных о судах (необязательно) ---
+    # Любой сервис, отдающий JSON по ключу. Без него поиск судна работает
+    # по своим сохранённым карточкам -- см. services/ship_providers.py.
+    ship_api_url: str = field(default_factory=lambda: os.getenv("SHIP_API_URL", "").strip())
+    ship_api_token: str = field(default_factory=lambda: os.getenv("SHIP_API_TOKEN", "").strip())
+
     # --- Sealagom (платный агрегатор всех 21 района NAVAREA, $20/мес) ---
     # Если задан -- используется вместо собственных скрейперов (NGA/UKHO/Peru/Spain)
     # сразу для всех районов. Если пусто -- работают только свои источники.

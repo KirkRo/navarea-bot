@@ -304,23 +304,98 @@ def _api_access(query: dict) -> dict:
 
 
 def _api_vessel(query: dict) -> dict:
-    """Карточка судна пользователя. Привязана к человеку -- только с подписью."""
-    from .services.vessel import VESSEL_FIELDS, vessel_payload
+    """Карточка судна: список, сохранение, выбор активного, документы."""
+    import time as _t
+    from .services.ship_providers import provider_info
+    from .services.vessel import FIELD_KEYS, normalize, vessel_payload
 
     db = _state["db"]
     user_id, denied = _require("vessel", query)
     if denied:
         return denied
 
-    if (query.get("action") or [""])[0] == "save":
-        data = {}
-        for f in VESSEL_FIELDS:
-            v = (query.get(f["k"]) or [""])[0].strip()
-            if v:
-                data[f["k"]] = v
-        db.save_vessel(user_id, data)
+    vessels, active_id = db.get_vessels(user_id)
+    docs = db.get_vessel_docs(user_id)
+    action = (query.get("action") or [""])[0]
+    vid = (query.get("id") or [""])[0]
 
-    return vessel_payload(db.get_vessel(user_id))
+    if action == "save":
+        data = normalize({k: (query.get(k) or [""])[0] for k in FIELD_KEYS})
+        if data:
+            if vid:
+                for i, v in enumerate(vessels):
+                    if v.get("_id") == vid:
+                        data["_id"] = vid
+                        vessels[i] = data
+                        break
+                else:
+                    data["_id"] = vid
+                    vessels.append(data)
+            else:
+                data["_id"] = f"v{int(_t.time() * 1000)}"
+                vessels.append(data)
+            active_id = data["_id"]
+            db.save_vessels(user_id, vessels, active_id, docs)
+
+    elif action == "select" and vid:
+        if any(v.get("_id") == vid for v in vessels):
+            active_id = vid
+            db.save_vessels(user_id, vessels, active_id, docs)
+
+    elif action == "delete" and vid:
+        vessels = [v for v in vessels if v.get("_id") != vid]
+        if active_id == vid:
+            active_id = vessels[0]["_id"] if vessels else ""
+        db.save_vessels(user_id, vessels, active_id, docs)
+
+    elif action == "doc_add":
+        title = (query.get("title") or [""])[0].strip()
+        if title:
+            docs.append({
+                "id": f"d{int(_t.time() * 1000)}",
+                "title": title,
+                "edition": (query.get("edition") or [""])[0].strip(),
+                "note": (query.get("note") or [""])[0].strip(),
+            })
+            db.save_vessels(user_id, vessels, active_id, docs)
+
+    elif action == "doc_del":
+        did = (query.get("doc") or [""])[0]
+        docs = [d for d in docs if d.get("id") != did]
+        db.save_vessels(user_id, vessels, active_id, docs)
+
+    return vessel_payload(vessels, active_id, docs, provider_info())
+
+
+def _api_ship_search(query: dict) -> dict:
+    """Подсказки при вводе названия судна. Источники -- по приоритету."""
+    import asyncio
+
+    from .services.ship_providers import fetch_ship, search_ships
+
+    db = _state["db"]
+    user_id, denied = _require("vessel", query)
+    if denied:
+        return denied
+
+    vessels, _active = db.get_vessels(user_id)
+    q = (query.get("q") or [""])[0].strip()
+    ident = (query.get("fetch") or [""])[0].strip()
+
+    try:
+        loop = asyncio.new_event_loop()
+        try:
+            if ident:
+                card = loop.run_until_complete(fetch_ship(vessels, ident))
+                return {"card": card or {}}
+            if len(q) < 2:
+                return {"results": [], "providers": []}
+            return loop.run_until_complete(search_ships(vessels, q))
+        finally:
+            loop.close()
+    except Exception as e:
+        logger.exception("Поиск судна не удался")
+        return {"results": [], "providers": [], "error": str(e)}
 
 
 def _api_stations(query: dict) -> dict:
@@ -426,6 +501,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/ship-search": _api_ship_search,
     "/api/access": _api_access,
     "/api/vessel": _api_vessel,
     "/api/stations": _api_stations,

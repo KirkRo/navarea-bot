@@ -649,3 +649,19 @@ class PostgresDatabase:
                 ON CONFLICT (user_id) DO UPDATE SET data_json = EXCLUDED.data_json,
                                                     updated_at = EXCLUDED.updated_at
             """, (user_id, payload, _now()))
+
+    def get_vessels(self, user_id: int) -> tuple[list, str]:
+        raw = self.get_vessel(user_id)
+        if isinstance(raw, dict) and "vessels" in raw:
+            return raw.get("vessels", []), raw.get("active_id", "")
+        if raw:
+            v = dict(raw); v.setdefault("_id", "v1")
+            return [v], v["_id"]
+        return [], ""
+
+    def save_vessels(self, user_id: int, vessels: list, active_id: str, docs: list) -> None:
+        self.save_vessel(user_id, {"vessels": vessels, "active_id": active_id, "docs": docs})
+
+    def get_vessel_docs(self, user_id: int) -> list:
+        raw = self.get_vessel(user_id)
+        return raw.get("docs", []) if isinstance(raw, dict) else []
