@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.55" y2="1">
+      <stop offset="0%" stop-color="#173d63"/>
+      <stop offset="52%" stop-color="#0e2742"/>
+      <stop offset="100%" stop-color="#071829"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffc472"/>
+      <stop offset="55%" stop-color="#f0a03c"/>
+      <stop offset="100%" stop-color="#d1782a"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d7cb8"/>
+      <stop offset="100%" stop-color="#124a76"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#ffc472" stop-opacity=".45"/>
+      <stop offset="100%" stop-color="#ffc472" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- градусная шкала по кругу -->
+  <g stroke="#5b83aa" stroke-linecap="round" opacity=".5">
+    <g stroke-width="4">
+      <path d="M256 66 v20"/><path d="M256 426 v20"/>
+      <path d="M66 256 h20"/><path d="M426 256 h20"/>
+    </g>
+    <g stroke-width="3" opacity=".75">
+      <path d="M390 122 l-14 14"/><path d="M136 376 l-14 14"/>
+      <path d="M122 122 l14 14"/><path d="M376 376 l14 14"/>
+    </g>
+  </g>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#38618a" stroke-width="3" opacity=".55"/>
+
+  <!-- свечение вокруг картушки -->
+  <circle cx="256" cy="236" r="150" fill="url(#halo)"/>
+
+  <!-- картушка компаса: четыре главных румба -->
+  <g>
+    <path d="M256 92 L286 236 L256 268 L226 236 Z" fill="url(#brass)"/>
+    <path d="M256 92 L256 268 L226 236 Z" fill="#c9782c" opacity=".55"/>
+    <path d="M256 404 L226 268 L256 236 L286 268 Z" fill="#e8eef5"/>
+    <path d="M256 404 L256 236 L286 268 Z" fill="#9fb3c7" opacity=".6"/>
+    <path d="M92 256 L236 226 L268 256 L236 286 Z" fill="#e8eef5"/>
+    <path d="M92 256 L268 256 L236 286 Z" fill="#9fb3c7" opacity=".6"/>
+    <path d="M420 256 L276 286 L244 256 L276 226 Z" fill="#e8eef5"/>
+    <path d="M420 256 L244 256 L276 226 Z" fill="#9fb3c7" opacity=".6"/>
+  </g>
+
+  <!-- промежуточные румбы -->
+  <g fill="#f0a03c" opacity=".62">
+    <path d="M372 140 L280 216 L296 232 Z"/>
+    <path d="M140 372 L232 296 L216 280 Z"/>
+    <path d="M140 140 L216 232 L232 216 Z"/>
+    <path d="M372 372 L296 280 L280 296 Z"/>
+  </g>
+
+  <!-- центральная ось -->
+  <circle cx="256" cy="256" r="26" fill="#0b2338" stroke="url(#brass)" stroke-width="7"/>
+  <circle cx="256" cy="256" r="9" fill="url(#brass)"/>
+
+  <!-- горизонт: три волны внизу -->
+  <path d="M46 404 q42 -20 84 0 t84 0 t84 0 t84 0 t84 0 v70 h-420 z" fill="url(#sea)" opacity=".92"/>
+  <path d="M46 430 q42 -18 84 0 t84 0 t84 0 t84 0 t84 0 v50 h-420 z" fill="#0d3556"/>
+  <path d="M46 454 q42 -15 84 0 t84 0 t84 0 t84 0 t84 0 v34 h-420 z" fill="#08203a"/>
+</svg>
