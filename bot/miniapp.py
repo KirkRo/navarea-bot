@@ -357,6 +357,22 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 }
 .offline.on{display:block;animation:up .34s}
 ".hidden{display:none!important}
+.showall{
+  width:100%;margin-top:10px;padding:11px;border-radius:var(--r-md);cursor:pointer;
+  background:var(--surf);border:1px dashed var(--line);color:var(--muted);
+  font-family:inherit;font-size:12.5px;font-weight:650;
+  transition:border-color .2s,color .2s;
+}
+.showall:active{border-color:var(--amber);color:var(--amber)}
+
+.errbar{
+  position:fixed;left:10px;right:10px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:3000;
+  background:rgba(255,107,74,.95);color:#fff;border-radius:12px;padding:10px 12px;
+  font-size:11.5px;line-height:1.4;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.errbar.on{display:block}
+.errbar b{display:block;font-size:12.5px;margin-bottom:3px}
+.errbar .x{position:absolute;top:6px;right:9px;font-size:16px;cursor:pointer;opacity:.8}
 .mapgear{
   position:absolute;top:11px;right:11px;z-index:701;width:40px;height:40px;border-radius:13px;
   background:rgba(11,22,34,.92);border:1px solid var(--line);color:var(--text);cursor:pointer;
@@ -773,6 +789,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <div class="subtabs" id="subtabs"></div>
   <div class="trialbar hidden" id="trialbar"></div>
+  <div class="errbar" id="errbar"></div>
   <div class="offline" id="offline"><span id="offIco"></span>Нет связи. Показаны последние сохранённые данные.</div>
 
   <!-- ПАНЕЛЬ -->
@@ -2187,7 +2204,7 @@ Object.assign(DICT,{
  'Пора заказывать замену':'Time to order a replacement',
  'Планируй замену заранее':'Plan the replacement ahead',
  'Ресурс должен быть больше нуля':'Rated life must be greater than zero',
- 'Внимание':'Attention','Проверка':'Check','сут':'d','мес':'mo'
+ 'Внимание':'Attention','Проверка':'Check','Показать все':'Show all','Свернуть':'Collapse','Чаще всего':'Most used','сут':'d','мес':'mo'
 });
 
 /* Перевод одной строки. Раньше перевод делался только обходом готовой
@@ -2282,6 +2299,24 @@ function applyLang(){
   const lb=$('#langBtn'); if(lb) lb.textContent=LANG==='en'?'EN':'RU';
   try{ document.documentElement.lang=LANG; }catch(e){}
 }
+/* Перехват ошибок: если что-то падает, показываем текст прямо на экране,
+   иначе с телефона его никак не увидеть. */
+(function(){
+  let shown=0;
+  function show(msg){
+    if(shown>2) return; shown++;
+    try{
+      const el=document.getElementById('errbar');
+      if(!el) return;
+      el.innerHTML='<span class="x" onclick="this.parentNode.classList.remove(\'on\')">×</span>'+
+        '<b>Сбой в приложении</b>'+String(msg).slice(0,300);
+      el.classList.add('on');
+    }catch(e){}
+  }
+  window.addEventListener('error', e=>show((e.message||'ошибка')+' @ '+((e.filename||'').split('/').pop()||'')+':'+(e.lineno||'')));
+  window.addEventListener('unhandledrejection', e=>show('запрос не выполнен: '+((e.reason&&e.reason.message)||e.reason||'')));
+})();
+
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (TG) { TG.ready(); TG.expand(); try{ TG.setHeaderColor('#0a1520'); }catch(e){} }
 const INIT = TG ? (TG.initData || '') : '';
@@ -2395,14 +2430,62 @@ const QUICK=[
   {i:'radar',t:'Расхождение',s:'CPA и TCPA',go:()=>{switchView('tools');setTimeout(()=>openTool(TOOLS.find(x=>x.id==='cpa')),80)}},
   {i:'map',t:'Карта',s:'Все предупреждения',go:()=>switchView('map')},
 ];
+
+/* ---- Что человек открывает чаще всего ----
+   Считаем локально, на устройстве: ничего никуда не отправляется, просто
+   счётчик открытий, чтобы поднять частое наверх. */
+function bump(kind,id){
+  try{
+    const u=JSON.parse(localStorage.getItem('navarea_usage')||'{}');
+    const k=kind+':'+id; u[k]=(u[k]||0)+1;
+    localStorage.setItem('navarea_usage',JSON.stringify(u));
+  }catch(e){}
+}
+function topUsed(kind,n){
+  try{
+    const u=JSON.parse(localStorage.getItem('navarea_usage')||'{}');
+    return Object.keys(u).filter(k=>k.indexOf(kind+':')===0)
+      .sort((a,b)=>u[b]-u[a]).slice(0,n).map(k=>k.slice(kind.length+1));
+  }catch(e){ return []; }
+}
+
+/* ---- Список с показом первых четырёх ---- */
+const SHOWN=4;
+const EXPANDED={};
+function collapsible(id,items,renderItem,labelAll){
+  if(!items.length) return '';
+  const open=EXPANDED[id];
+  const vis=open?items:items.slice(0,SHOWN);
+  const hidden=items.length-vis.length;
+  return `<div class="grid2">${vis.map(renderItem).join('')}</div>`+
+    (items.length>SHOWN
+      ? `<button class="showall" data-exp="${id}">${open?'Свернуть':(labelAll||'Показать все')+' · '+hidden}</button>`
+      : '');
+}
+function bindExpand(rerender){
+  document.querySelectorAll('[data-exp]').forEach(b=>b.onclick=()=>{
+    EXPANDED[b.dataset.exp]=!EXPANDED[b.dataset.exp]; hap(); rerender();
+  });
+}
+
 function renderQuick(){
   const el=$('#quick'); if(!el) return;
-  el.innerHTML=QUICK.map((q,i)=>
+
+  // Сначала то, что человек открывает чаще всего, потом обычный набор --
+  // так первые кнопки со временем становятся его личными.
+  const often=topUsed('tool',4).map(id=>{
+    const t=TOOLS.find(x=>x.id===id); if(!t) return null;
+    return {i:t.icon,t:t.name,s:t.desc,go:()=>{switchView('tools');setTimeout(()=>openTool(t),60);}};
+  }).filter(Boolean);
+  const rest=QUICK.filter(q=>!often.some(o=>o.t===q.t));
+  const list=often.concat(rest).slice(0,6);
+
+  el.innerHTML=list.map((q,i)=>
     `<div class="qbtn up" style="animation-delay:${i*45}ms" data-q="${i}">
        <div class="qi">${ico(q.i)}</div>
        <div><div class="qt">${esc(q.t)}</div><div class="qs">${esc(q.s)}</div></div>
      </div>`).join('');
-  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{hap('medium');QUICK[+b.dataset.q].go()});
+  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{hap('medium');list[+b.dataset.q].go()});
 }
 
 /* последний проложенный маршрут и последние открытые расчёты */
@@ -2465,7 +2548,7 @@ function renderDash(){
   document.querySelectorAll('.hcell .v').forEach(el=>countUp(el,+el.dataset.n));
 
   const fav=(S.stats.areas||[]).filter(a=>S.favs.includes(a.code));
-  $('#favlist').innerHTML=fav.length?`<div class="grid2">${fav.map(areaCard).join('')}</div>`
+  $('#favlist').innerHTML=fav.length?collapsible('fav',fav,areaCard)
     :`<div class="empty">${ico('star')}Отметь районы звёздочкой — они появятся здесь для быстрого доступа.</div>`;
   bindAreas();
   renderQuick(); renderLastVoyage(); renderLastCalcs();
@@ -2537,8 +2620,8 @@ function renderAreas(){
   if(S.sort==='new') list.sort((a,b)=>b.added_today-a.added_today||b.added_week-a.added_week);
   if(S.sort==='code') list.sort((a,b)=>a.code.localeCompare(b.code,undefined,{numeric:true}));
   if(t) t.textContent='Все районы';
-  $('#arealist').innerHTML=`<div class="grid2">${list.map(areaCard).join('')}</div>`;
-  bindAreas();
+  $('#arealist').innerHTML=collapsible('areas',list,areaCard);
+  bindAreas(); bindExpand(renderAreas);
 }
 
 function bindAreas(){
@@ -2804,6 +2887,7 @@ function renderSubtabs(){
 
 function switchView(v){
   S.view=v;
+  bump('view',v);
   S_GROUP=VIEW_GROUP[v]||S_GROUP;
 
   ALL_VIEWS.forEach(x=>{
@@ -2812,7 +2896,7 @@ function switchView(v){
     else el.classList.add('hidden');
   });
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.g===S_GROUP));
-  renderSubtabs();
+  try{ renderSubtabs(); }catch(e){ console.warn('подвкладки:',e); }
 
   const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='dash');
   const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='dash'&&v!=='areas');
@@ -2839,6 +2923,9 @@ function switchGroup(g){
   if(last) switchView(last);
 }
 const GROUP_LAST={};
+// Обработчики нижнего меню вешаем в защищённом блоке и как можно раньше:
+// раньше ошибка в любом другом месте оставляла панель без обработчиков,
+// и внешне это выглядело как "кнопки не нажимаются".
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   hap();
   GROUP_LAST[S_GROUP]=S.view;
@@ -3901,14 +3988,19 @@ function renderTools(){
   const favT=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
   let h='';
   if(favT.length){
-    h+=`<div class="sech"><h3>Избранные инструменты</h3></div><div class="grid2">`+
-       TOOLS.filter(t=>favT.includes(t.id)).map(toolCard).join('')+`</div>`;
+    const list=TOOLS.filter(t=>favT.includes(t.id));
+    h+=`<div class="sech"><h3>Избранные инструменты</h3></div>`+collapsible('t_fav',list,toolCard);
+  }
+  const often=topUsed('tool',4).map(id=>TOOLS.find(t=>t.id===id)).filter(Boolean);
+  if(often.length){
+    h+=`<div class="sech" style="margin-top:17px"><h3>Чаще всего</h3></div>`+
+       `<div class="grid2">${often.map(toolCard).join('')}</div>`;
   }
   Object.keys(TOOL_CATS).forEach(ck=>{
     const list=TOOLS.filter(t=>t.cat===ck);
     if(!list.length) return;
-    h+=`<div class="sech" style="margin-top:17px"><h3>${TOOL_CATS[ck].t}</h3></div>
-        <div class="grid2">${list.map(toolCard).join('')}</div>`;
+    h+=`<div class="sech" style="margin-top:17px"><h3>${TOOL_CATS[ck].t}</h3></div>`+
+       collapsible('t_'+ck,list,toolCard);
   });
   $('#toollist').innerHTML=h;
   applyLang();
@@ -3924,7 +4016,9 @@ function renderTools(){
     localStorage.setItem('navarea_favtools',JSON.stringify(f));
     renderTools();
   });
+  bindExpand(renderTools);
 }
+
 function toolCard(t,i){
   const favT=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
   const f=favT.includes(t.id);
@@ -3945,6 +4039,7 @@ function toolCard(t,i){
 
 function openTool(t){
   if(!t) return;
+  bump('tool',t.id);
   curTool=t; hap('medium');
   rememberCalc(t.id);
 

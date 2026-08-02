@@ -48,6 +48,10 @@ NODES: dict[str, tuple[float, float]] = {
     "n_atlantic": (45.0, -30.0),
     "azores": (38.5, -28.0),
     "canaries": (28.0, -17.0),
+    "atlantic_trade": (27.0, -30.0),   # трасса Гибралтар/Канары -- Карибы
+    "atlantic_mid": (22.0, -52.0),     # середина трансатлантического перехода
+    "hispaniola": (19.5, -68.0),       # восточная оконечность Эспаньолы
+    "atlantic_nw": (32.0, -55.0),      # подходы к Флоридскому проливу с востока
     "dakar_w": (14.0, -19.5),
     "gulf_guinea": (2.0, 3.0),
     "c_atlantic": (0.0, -25.0),
@@ -140,7 +144,13 @@ EDGES: list[tuple[str, str]] = [
     ("north_sea", "hebrides"), ("skagen", "baltic"), ("baltic", "gulf_finland"),
     ("hebrides", "norway_sea"), ("norway_sea", "barents"), ("irish_sea", "hebrides"),
     ("hebrides", "n_atlantic"), ("n_atlantic", "azores"), ("n_atlantic", "cape_race"),
-    ("azores", "canaries"), ("canaries", "dakar_w"), ("dakar_w", "gulf_guinea"),
+    ("azores", "canaries"), ("canaries", "dakar_w"), ("canaries", "brazil_ne"),
+    ("canaries", "atlantic_trade"), ("gibraltar", "atlantic_trade"),
+    ("atlantic_trade", "atlantic_mid"), ("atlantic_mid", "caribbean_e"),
+    ("atlantic_mid", "hispaniola"), ("hispaniola", "caribbean_e"),
+    ("hispaniola", "florida_str"), ("hispaniola", "caribbean_w"),
+    ("atlantic_trade", "atlantic_nw"),
+    ("atlantic_nw", "florida_str"), ("atlantic_nw", "us_east"), ("atlantic_nw", "azores"), ("dakar_w", "gulf_guinea"),
     ("dakar_w", "c_atlantic"), ("gulf_guinea", "c_atlantic"), ("c_atlantic", "brazil_ne"),
     ("c_atlantic", "s_atlantic"), ("gulf_guinea", "s_atlantic"), ("s_atlantic", "cape_town"),
     ("cape_town", "cape_agulhas"), ("cape_agulhas", "mozambique"), ("cape_agulhas", "indian_s"),
