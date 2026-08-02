@@ -9,6 +9,10 @@ from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 
+# Номер сборки: видно в приложении и в логе, чтобы не гадать,
+# какая версия сейчас развёрнута.
+BUILD = "260802.a3df"
+
 load_dotenv()
 
 

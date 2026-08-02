@@ -120,6 +120,11 @@ def _row_to_dict(row, with_coords: bool = True) -> dict:
     return data
 
 
+def _build_id() -> str:
+    from .config import BUILD
+    return BUILD
+
+
 def _build_stats() -> dict:
     from .services.sources.registry import AREAS, POLLABLE_AREAS, area_display_name
 
@@ -155,6 +160,7 @@ def _build_stats() -> dict:
         "totals": totals,
         "areas": areas,
         "last_update": last_update,
+        "build": _build_id(),
         "server": {
             "status": "ok",
             "uptime_seconds": int(time.time() - _state["started_at"]),

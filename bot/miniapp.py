@@ -771,6 +771,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <div class="hdr">
     <div style="min-width:0">
       <div class="hello" id="hello">Спокойной вахты</div>
+      <div class="hello" id="buildId" style="font-size:9.5px;opacity:.55;margin-top:1px"></div>
       <div class="h1">Watch<span>keeper</span></div>
     </div>
     <button class="langbtn" id="langBtn">RU</button>
@@ -2317,6 +2318,27 @@ function applyLang(){
   window.addEventListener('unhandledrejection', e=>show('запрос не выполнен: '+((e.reason&&e.reason.message)||e.reason||'')));
 })();
 
+/* Нижнее меню на делегировании: обработчик один, висит на документе и
+   срабатывает, даже если где-то ниже по коду случилась ошибка. Раньше
+   привязка шла перебором кнопок в середине скрипта -- любая ошибка выше
+   оставляла панель без обработчиков, и она выглядела мёртвой. */
+document.addEventListener('click', function(ev){
+  const t=ev.target && ev.target.closest && ev.target.closest('.tab');
+  if(t){
+    try{
+      if(typeof hap==='function') hap();
+      if(typeof GROUP_LAST!=='undefined'&&typeof S!=='undefined') GROUP_LAST[S_GROUP]=S.view;
+      switchGroup(t.dataset.g);
+    }catch(e){ console.warn('меню:',e); }
+    return;
+  }
+  const st=ev.target && ev.target.closest && ev.target.closest('[data-sv]');
+  if(st){
+    try{ if(typeof hap==='function') hap(); switchView(st.dataset.sv); }
+    catch(e){ console.warn('подраздел:',e); }
+  }
+});
+
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (TG) { TG.ready(); TG.expand(); try{ TG.setHeaderColor('#0a1520'); }catch(e){} }
 const INIT = TG ? (TG.initData || '') : '';
@@ -2926,11 +2948,7 @@ const GROUP_LAST={};
 // Обработчики нижнего меню вешаем в защищённом блоке и как можно раньше:
 // раньше ошибка в любом другом месте оставляла панель без обработчиков,
 // и внешне это выглядело как "кнопки не нажимаются".
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
-  hap();
-  GROUP_LAST[S_GROUP]=S.view;
-  switchGroup(t.dataset.g);
-});
+// (нижнее меню обрабатывается делегированием в начале скрипта)
 $('#toAreas').onclick=()=>{hap();S.cat='all';renderCats();switchView('areas');renderAreas()};
 $('#heroBtn').onclick=()=>{hap('medium');switchView('map')};
 $('#fbtn').onclick=()=>{

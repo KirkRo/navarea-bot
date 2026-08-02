@@ -81,6 +81,8 @@ def build_application() -> Application:
     for p in problems:
         logger.warning("Проблема конфигурации: %s", p)
 
+    from .config import BUILD
+    logger.info("Сборка: %s", BUILD)
     logger.info(
         "Настройки: публичный адрес=%s | Sealagom=%s | база=%s",
         config.public_url or "НЕ ЗАДАН (Mini App работать не будет)",
