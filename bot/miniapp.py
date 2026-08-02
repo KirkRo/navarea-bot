@@ -366,7 +366,7 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .showall:active{border-color:var(--amber);color:var(--amber)}
 
 .errbar{
-  position:fixed;left:10px;right:10px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:3000;
+  position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top));z-index:3000;
   background:rgba(255,107,74,.95);color:#fff;border-radius:12px;padding:10px 12px;
   font-size:11.5px;line-height:1.4;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5);
 }
@@ -2322,20 +2322,63 @@ function applyLang(){
    срабатывает, даже если где-то ниже по коду случилась ошибка. Раньше
    привязка шла перебором кнопок в середине скрипта -- любая ошибка выше
    оставляла панель без обработчиков, и она выглядела мёртвой. */
+/* Резервное переключение: работает напрямую через разметку и не зависит
+   ни от одной функции ниже по файлу. Если основная логика по какой-то
+   причине не догрузилась, панель всё равно переключает разделы. */
+var FALLBACK_GROUPS={
+  home:['dash','areas'],
+  tools:['tools','bridge','refs','radio'],
+  map:['map','voy','zones'],
+  profile:['ship','settings']
+};
+function fallbackSwitch(g){
+  var first=(FALLBACK_GROUPS[g]||['dash'])[0];
+  var secs=document.querySelectorAll('section[id^="v-"]');
+  for(var i=0;i<secs.length;i++){
+    if(secs[i].id==='v-'+first) secs[i].classList.remove('hidden');
+    else secs[i].classList.add('hidden');
+  }
+  var tabs=document.querySelectorAll('.tab');
+  for(var j=0;j<tabs.length;j++){
+    if(tabs[j].getAttribute('data-g')===g) tabs[j].classList.add('on');
+    else tabs[j].classList.remove('on');
+  }
+}
+
 document.addEventListener('click', function(ev){
-  const t=ev.target && ev.target.closest && ev.target.closest('.tab');
-  if(t){
+  var el=ev.target;
+  var tab=null, sub=null;
+  while(el&&el!==document.body){
+    if(!tab&&el.classList&&el.classList.contains('tab')) tab=el;
+    if(!sub&&el.getAttribute&&el.getAttribute('data-sv')) sub=el;
+    el=el.parentNode;
+  }
+
+  if(tab){
+    var g=tab.getAttribute('data-g');
     try{
       if(typeof hap==='function') hap();
-      if(typeof GROUP_LAST!=='undefined'&&typeof S!=='undefined') GROUP_LAST[S_GROUP]=S.view;
-      switchGroup(t.dataset.g);
+      if(typeof switchGroup==='function'){
+        if(typeof GROUP_LAST!=='undefined'&&typeof S!=='undefined') GROUP_LAST[S_GROUP]=S.view;
+        switchGroup(g);
+        return;
+      }
     }catch(e){ console.warn('меню:',e); }
+    fallbackSwitch(g);   // основная логика недоступна -- переключаем сами
     return;
   }
-  const st=ev.target && ev.target.closest && ev.target.closest('[data-sv]');
-  if(st){
-    try{ if(typeof hap==='function') hap(); switchView(st.dataset.sv); }
-    catch(e){ console.warn('подраздел:',e); }
+
+  if(sub){
+    var v=sub.getAttribute('data-sv');
+    try{
+      if(typeof hap==='function') hap();
+      if(typeof switchView==='function'){ switchView(v); return; }
+    }catch(e){ console.warn('подраздел:',e); }
+    var secs=document.querySelectorAll('section[id^="v-"]');
+    for(var k=0;k<secs.length;k++){
+      if(secs[k].id==='v-'+v) secs[k].classList.remove('hidden');
+      else secs[k].classList.add('hidden');
+    }
   }
 });
 
@@ -4190,6 +4233,30 @@ if(loadCache())render();
 setTimeout(applyLang,60);
 load(false);
 setInterval(()=>{if(S.view==='dash'||S.view==='areas')load(false)},120000);
+
+/* Самопроверка: через пару секунд после загрузки смотрим, доехал ли скрипт
+   до конца. Если какая-то часть не определилась -- значит выполнение
+   оборвалось, и мы показываем, где именно, вместо молчаливой поломки. */
+setTimeout(function(){
+  try{
+    var need=['switchGroup','switchView','render','renderTools','renderRadio','renderSubtabs','openTool'];
+    var missing=[];
+    for(var i=0;i<need.length;i++){
+      var ok=false;
+      try{ ok=(eval('typeof '+need[i])==='function'); }catch(e){}
+      if(!ok) missing.push(need[i]);
+    }
+    if(missing.length){
+      var el=document.getElementById('errbar');
+      if(el){
+        el.innerHTML='<span class="x" onclick="this.parentNode.classList.remove(\'on\')">×</span>'+
+          '<b>Часть приложения не загрузилась</b>Не определено: '+missing.join(', ')+
+          '. Панель работает в упрощённом режиме. Пришли этот текст разработчику.';
+        el.classList.add('on');
+      }
+    }
+  }catch(e){}
+}, 2500);
 </script>
 </body>
 </html>
