@@ -203,10 +203,29 @@ def flag_by_mmsi(mmsi: str | None) -> str | None:
     return MID.get(digits[:3])
 
 
+# Поля, которые потом подставляются в расчёты -- их значения должны быть
+# числами с точкой, иначе на телефоне запятая приедет в расчёт и даст NaN.
+NUMERIC_KEYS = {"loa", "lbp", "beam", "depth", "air_draft", "gt", "nt", "dwt", "displ",
+                "cb", "tpc", "draft_summer", "draft_max", "draft_now", "trim_now", "fwa",
+                "power", "speed", "cons", "cons_port", "turn_radius", "advance", "transfer",
+                "hawse", "chain_p", "chain_s", "anchor_w", "cargo_cap", "holds", "hatches"}
+
+
+def _num(value: str) -> str:
+    """Запятая с телефонной клавиатуры -> точка."""
+    v = value.strip()
+    if "," not in v:
+        return v
+    return v.replace(",", "") if "." in v else v.replace(",", ".")
+
+
 def normalize(data: dict) -> dict:
     """Оставляет только известные поля и подставляет флаг по MMSI."""
     clean = {k: str(v).strip() for k, v in (data or {}).items()
              if k in FIELD_KEYS and str(v).strip()}
+    for k in list(clean):
+        if k in NUMERIC_KEYS:
+            clean[k] = _num(clean[k])
     if not clean.get("flag"):
         f = flag_by_mmsi(clean.get("mmsi"))
         if f:
@@ -241,3 +260,115 @@ def vessel_payload(vessels: list[dict], active_id: str | None, docs: list[dict],
         "note": ("Данные судна хранятся только у тебя и подставляются в расчёты. "
                  "Автоматический поиск по названию требует доступа к AIS-сервису."),
     }
+
+
+# ---------------------------------------------------------------------- #
+# Подсказки при заполнении карточки
+# ---------------------------------------------------------------------- #
+#
+# Автоматического поиска судна по названию не существует в открытом виде
+# (все AIS-сервисы отдают данные только по платному ключу), поэтому
+# карточка заполняется руками. Чтобы это не превращалось в мучение,
+# помогаем двумя способами:
+#
+#   1. Подсказки по своим прежним судам -- на флоте нередко возвращаешься
+#      на систер-шип или то же судно после отпуска, и всё уже заполнено.
+#   2. Типовые серии: выбрал "Panamax контейнеровоз" -- подставились
+#      характерные размерения, которые остаётся поправить под своё судно.
+#
+# Значения в типовых сериях -- ориентировочные, средние по классу. Это
+# отправная точка для заполнения, а не паспортные данные конкретного судна:
+# сверять всё равно нужно с судовой документацией.
+
+VESSEL_PRESETS: list[dict] = [
+    {"id": "cont_feeder", "title": "Контейнеровоз, фидер", "type": "Container ship",
+     "loa": "150", "lbp": "142", "beam": "23.5", "depth": "12.5", "dwt": "12000", "gt": "9600",
+     "draft_summer": "8.5", "cb": "0.68", "tpc": "18", "speed": "17", "cons": "28",
+     "air_draft": "38", "hawse": "8", "turn_radius": "0.25"},
+    {"id": "cont_panamax", "title": "Контейнеровоз, Panamax", "type": "Container ship",
+     "loa": "294", "lbp": "283", "beam": "32.2", "depth": "21.4", "dwt": "67000", "gt": "54000",
+     "draft_summer": "13.5", "cb": "0.68", "tpc": "62", "speed": "23", "cons": "120",
+     "air_draft": "50", "hawse": "12", "turn_radius": "0.45"},
+    {"id": "cont_post", "title": "Контейнеровоз, Post-Panamax", "type": "Container ship",
+     "loa": "336", "lbp": "320", "beam": "45.6", "depth": "24.6", "dwt": "110000", "gt": "98000",
+     "draft_summer": "14.5", "cb": "0.66", "tpc": "95", "speed": "22", "cons": "150",
+     "air_draft": "55", "hawse": "14", "turn_radius": "0.55"},
+    {"id": "cont_ulcv", "title": "Контейнеровоз, ULCV", "type": "Container ship",
+     "loa": "400", "lbp": "383", "beam": "59", "depth": "33", "dwt": "199000", "gt": "232000",
+     "draft_summer": "16", "cb": "0.68", "tpc": "140", "speed": "22", "cons": "200",
+     "air_draft": "73", "hawse": "16", "turn_radius": "0.7"},
+    {"id": "bulk_handy", "title": "Балкер, Handysize", "type": "Bulk carrier",
+     "loa": "180", "lbp": "172", "beam": "28", "depth": "15", "dwt": "32000", "gt": "20000",
+     "draft_summer": "10.2", "cb": "0.80", "tpc": "34", "speed": "14", "cons": "26",
+     "air_draft": "32", "hawse": "9", "turn_radius": "0.3"},
+    {"id": "bulk_supra", "title": "Балкер, Supramax", "type": "Bulk carrier",
+     "loa": "199", "lbp": "192", "beam": "32.2", "depth": "18", "dwt": "57000", "gt": "32000",
+     "draft_summer": "12.8", "cb": "0.83", "tpc": "48", "speed": "14", "cons": "30",
+     "air_draft": "36", "hawse": "10", "turn_radius": "0.35"},
+    {"id": "bulk_panamax", "title": "Балкер, Panamax", "type": "Bulk carrier",
+     "loa": "229", "lbp": "222", "beam": "32.2", "depth": "19.3", "dwt": "76000", "gt": "40000",
+     "draft_summer": "14.2", "cb": "0.84", "tpc": "58", "speed": "14", "cons": "34",
+     "air_draft": "40", "hawse": "11", "turn_radius": "0.4"},
+    {"id": "bulk_cape", "title": "Балкер, Capesize", "type": "Bulk carrier",
+     "loa": "292", "lbp": "282", "beam": "45", "depth": "24.8", "dwt": "180000", "gt": "93000",
+     "draft_summer": "18.2", "cb": "0.85", "tpc": "105", "speed": "14.5", "cons": "45",
+     "air_draft": "48", "hawse": "14", "turn_radius": "0.5"},
+    {"id": "tank_mr", "title": "Танкер, MR продуктовый", "type": "Products tanker",
+     "loa": "183", "lbp": "174", "beam": "32.2", "depth": "19.1", "dwt": "50000", "gt": "29000",
+     "draft_summer": "13", "cb": "0.80", "tpc": "45", "speed": "14.5", "cons": "30",
+     "air_draft": "38", "hawse": "10", "turn_radius": "0.35"},
+    {"id": "tank_afra", "title": "Танкер, Aframax", "type": "Crude oil tanker",
+     "loa": "250", "lbp": "239", "beam": "44", "depth": "21", "dwt": "115000", "gt": "62000",
+     "draft_summer": "14.9", "cb": "0.83", "tpc": "82", "speed": "14.5", "cons": "42",
+     "air_draft": "44", "hawse": "12", "turn_radius": "0.45"},
+    {"id": "tank_suez", "title": "Танкер, Suezmax", "type": "Crude oil tanker",
+     "loa": "274", "lbp": "264", "beam": "48", "depth": "23.1", "dwt": "160000", "gt": "82000",
+     "draft_summer": "17", "cb": "0.84", "tpc": "100", "speed": "14.5", "cons": "50",
+     "air_draft": "46", "hawse": "13", "turn_radius": "0.5"},
+    {"id": "tank_vlcc", "title": "Танкер, VLCC", "type": "Crude oil tanker",
+     "loa": "333", "lbp": "320", "beam": "60", "depth": "30.5", "dwt": "300000", "gt": "160000",
+     "draft_summer": "22", "cb": "0.83", "tpc": "155", "speed": "15", "cons": "70",
+     "air_draft": "55", "hawse": "16", "turn_radius": "0.65"},
+    {"id": "gc", "title": "Генгруз (General cargo)", "type": "General cargo",
+     "loa": "130", "lbp": "122", "beam": "19", "depth": "11", "dwt": "9500", "gt": "6500",
+     "draft_summer": "8", "cb": "0.75", "tpc": "14", "speed": "13", "cons": "14",
+     "air_draft": "30", "hawse": "7", "turn_radius": "0.22"},
+    {"id": "lng", "title": "Газовоз LNG", "type": "LNG carrier",
+     "loa": "295", "lbp": "282", "beam": "46", "depth": "26", "dwt": "85000", "gt": "120000",
+     "draft_summer": "12.5", "cb": "0.75", "tpc": "95", "speed": "19.5", "cons": "110",
+     "air_draft": "50", "hawse": "13", "turn_radius": "0.5"},
+    {"id": "roro", "title": "Ро-ро / автомобилевоз", "type": "Ro-Ro / PCTC",
+     "loa": "200", "lbp": "190", "beam": "32.2", "depth": "31", "dwt": "20000", "gt": "60000",
+     "draft_summer": "10", "cb": "0.60", "tpc": "42", "speed": "19", "cons": "50",
+     "air_draft": "48", "hawse": "10", "turn_radius": "0.35"},
+]
+
+
+def preset_titles() -> list[dict]:
+    return [{"id": p["id"], "title": p["title"], "type": p.get("type", "")} for p in VESSEL_PRESETS]
+
+
+def preset_values(preset_id: str) -> dict:
+    for p in VESSEL_PRESETS:
+        if p["id"] == preset_id:
+            return {k: v for k, v in p.items() if k not in ("id", "title") and k in FIELD_KEYS}
+    return {}
+
+
+def suggest_from_history(vessels: list[dict], query: str, limit: int = 6) -> list[dict]:
+    """Подсказки по судам, которые пользователь уже заводил."""
+    q = (query or "").strip().lower()
+    out = []
+    for v in vessels or []:
+        name = str(v.get("name") or "")
+        hay = " ".join(str(v.get(k) or "") for k in ("name", "imo", "mmsi", "callsign", "type")).lower()
+        if not q or q in hay:
+            out.append({
+                "id": v.get("_id"),
+                "name": name,
+                "sub": " · ".join(x for x in [v.get("type"), v.get("flag"),
+                                              f"IMO {v['imo']}" if v.get("imo") else ""] if x),
+            })
+        if len(out) >= limit:
+            break
+    return out

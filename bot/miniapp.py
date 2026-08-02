@@ -356,7 +356,17 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-radius:var(--r-md);padding:12px 14px;font-size:12.5px;margin-bottom:14px;display:none;
 }
 .offline.on{display:block;animation:up .34s}
-.hidden{display:none!important}
+".hidden{display:none!important}
+.mapgear{
+  position:absolute;top:11px;right:11px;z-index:701;width:40px;height:40px;border-radius:13px;
+  background:rgba(11,22,34,.92);border:1px solid var(--line);color:var(--text);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(14px);
+  box-shadow:var(--sh);transition:transform .2s cubic-bezier(.34,1.6,.5,1),color .2s;
+}
+.mapgear:active{transform:scale(.88)}
+.mapgear.on{color:var(--amber);border-color:rgba(240,160,60,.45)}
+.mapctl{display:none}
+.mapctl.on{display:block;top:59px;animation:drop .2s cubic-bezier(.34,1.4,.5,1)}
 .fromship{
   display:inline-flex;align-items:center;gap:4px;margin-left:7px;font-size:9px;font-weight:750;
   background:rgba(77,147,214,.16);color:var(--sea);border:1px solid rgba(77,147,214,.3);
@@ -426,7 +436,7 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-top:1px solid rgba(240,160,60,.22);font-size:11.5px;color:var(--muted);line-height:1.45}
 .legs .ico{color:var(--amber);margin-top:2px}
 .topback{
-  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:9px;
+  position:sticky;top:0;z-index:60;margin-bottom:12px;display:flex;align-items:center;gap:9px;
   padding:calc(11px + env(safe-area-inset-top)) 15px 11px;margin:0 -16px 4px;
   background:linear-gradient(180deg,var(--bg) 72%,transparent);
 }
@@ -881,7 +891,8 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <div class="chips" id="mapchips"></div>
     <div class="mapwrap">
       <div id="map"></div>
-      <div class="mapctl">
+      <button class="mapgear" id="mapGear"></button>
+      <div class="mapctl" id="mapCtl">
         <p class="ttl">Подложка</p>
         <label><input type="radio" name="base" value="dark" checked>Тёмная</label>
         <label><input type="radio" name="base" value="ocean">Океан</label>
@@ -1008,7 +1019,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <div class="thead">
       <div class="ti" id="tIcon"></div>
       <div style="min-width:0">
-        <div class="dtitle" id="tName" style="font-size:20px;margin:0"></div>
+        <div class="dtitle hidden" id="tName" style="font-size:20px;margin:0"></div>
         <div class="gsub" id="tDesc" style="display:block;margin-top:3px"></div>
       </div>
     </div>
@@ -2178,6 +2189,53 @@ Object.assign(DICT,{
  'Ресурс должен быть больше нуля':'Rated life must be greater than zero',
  'Внимание':'Attention','Проверка':'Check','сут':'d','мес':'mo'
 });
+
+/* Перевод одной строки. Раньше перевод делался только обходом готовой
+   разметки, и подписи полей вида "Расстояние · миль" вместе с единицами
+   в значениях ("278.2 т", "45.0° правый борт") оставались русскими.
+   Теперь строки переводятся явно при формировании. */
+const UNIT_MAP={
+ 'миль':'NM','миля':'NM','узлов':'kn','узла':'kn','м':'m','км':'km','фут':'ft',
+ 'сажень':'fathom','кабельтов':'cables','кабельтовых':'cables','мм':'mm','см':'cm',
+ 'т':'t','кг':'kg','ч':'h','часов':'hours','часа':'hours','сут':'d','суток':'d','мес':'mo','мин':'min','минут':'min','м²':'m²','м³':'m³',
+ 'т/см':'t/cm','т/м³':'t/m³','кг/м³':'kg/m³','л':'l','°':'°','%':'%',
+ 'правый борт':'starboard','левый борт':'port','на корму':'by the stern',
+ 'на нос':'by the head','прогиб':'sagging','перегиб':'hogging','ровный киль':'even keel',
+ 'убывающая луна':'waning moon','растущая луна':'waxing moon','полнолуние':'full moon',
+ 'новолуние':'new moon','первая четверть':'first quarter','последняя четверть':'last quarter',
+ 'да, с запасом':'yes, spare','цель расходится':'target opening','пусто':'empty'
+};
+function tr(str){
+  if(LANG!=='en'||str==null) return str;
+  let s=String(str);
+  if(DICT[s]) return DICT[s];
+  // длинные ключи раньше коротких, иначе короткий съест часть длинного
+  if(!tr._keys) tr._keys=Object.keys(DICT).sort((a,b)=>b.length-a.length);
+  for(const k of tr._keys){
+    if(k.length>=4&&s.indexOf(k)!==-1) s=s.split(k).join(DICT[k]);
+  }
+  // единицы стоят отдельным словом в конце или после разделителя
+  Object.keys(UNIT_MAP).forEach(u=>{
+    s=s.replace(new RegExp('(^|[\\s·(])'+u.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?=$|[\\s).,;])','g'),
+                (m,p1)=>p1+UNIT_MAP[u]);
+  });
+  return s;
+}
+
+Object.assign(DICT,{
+ 'Штиль':'Calm','Тихий':'Light air','Лёгкий':'Light breeze','Слабый':'Gentle breeze',
+ 'Умеренный':'Moderate breeze','Свежий':'Fresh breeze','Сильный':'Strong breeze',
+ 'Крепкий':'Near gale','Очень крепкий':'Gale','Шторм':'Strong gale',
+ 'Сильный шторм':'Storm','Жестокий шторм':'Violent storm','Ураган':'Hurricane',
+ 'Зеркально гладкое море':'Sea like a mirror','Рябь':'Ripples',
+ 'Небольшие волны':'Small wavelets','Гребни начинают опрокидываться':'Crests begin to break',
+ 'Небольшие волны, барашки':'Small waves, whitecaps','Умеренные волны':'Moderate waves',
+ 'Крупные волны, пена':'Large waves, foam','Море вздымается, пена полосами':'Sea heaps up, foam in streaks',
+ 'Умеренно высокие волны':'Moderately high waves','Высокие волны, видимость снижена':'High waves, reduced visibility',
+ 'Очень высокие волны, море белое':'Very high waves, sea white',
+ 'Исключительно высокие волны':'Exceptionally high waves',
+ 'Воздух наполнен пеной и брызгами':'Air filled with foam and spray'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -2538,6 +2596,12 @@ function initMap(){
   map.on('mousemove',e=>{$('#curpos').textContent=fmtPos(e.latlng.lat,e.latlng.lng)});
   map.on('click',e=>{$('#curpos').textContent=fmtPos(e.latlng.lat,e.latlng.lng)});
   document.querySelectorAll('input[name=base]').forEach(r=>r.onchange=()=>{setBase(r.value);hap()});
+  // Панель настроек занимала четверть карты -- прячем её под иконку
+  const gear=$('#mapGear'), ctl=$('#mapCtl');
+  if(gear&&ctl){
+    gear.innerHTML=ico('sliders');
+    gear.onclick=()=>{ ctl.classList.toggle('on'); gear.classList.toggle('on'); hap(); };
+  }
   const bind=(id,k)=>{const el=$(id);if(el)el.onchange=()=>{LY[k]=el.checked;drawMap();hap()}};
   bind('#lyAreas','areas');bind('#lyPoints','points');bind('#lyLabels','labels');
   drawZones();drawMap();
@@ -3657,35 +3721,57 @@ function openVesselSearch(){
   curTool=null;
 
   const inp=$('#vsQ');
+
+  /* Внешнего справочника судов в открытом доступе нет, поэтому подсказываем
+     тем, что реально помогает: судами, которые пользователь уже заводил
+     (часто это тот же пароход после отпуска или систер-шип), и типовыми
+     сериями -- выбрал класс, размерения подставились, останется поправить. */
+  async function vsRender(q){
+    let r;
+    try{ r=await api('/api/vessel?action=suggest&q='+encodeURIComponent(q||'')); }
+    catch(e){ $('#vsList').innerHTML=`<div class="hint">Нет связи с сервером.</div>`; return; }
+
+    const hist=r.history||[], pres=r.presets||[];
+    let h='';
+    if(hist.length){
+      h+=`<div class="sech" style="margin:4px 0 9px"><h3 style="font-size:13px">Мои суда</h3></div>`+
+        hist.map(x=>`<div class="vsrow" data-mine="${esc(x.id)}">
+            <div class="vsi">${ico('ship','sm')}</div>
+            <div style="flex:1;min-width:0">
+              <div class="vsn">${esc(x.name)}</div>
+              <div class="vsd">${esc(x.sub||'')}</div>
+            </div><span class="rtag am">в профиле</span></div>`).join('');
+    }
+    if(pres.length){
+      h+=`<div class="sech" style="margin:15px 0 9px"><h3 style="font-size:13px">Типовые серии</h3></div>`+
+        pres.map(x=>`<div class="vsrow" data-preset="${esc(x.id)}">
+            <div class="vsi">${ico('ship','sm')}</div>
+            <div style="flex:1;min-width:0">
+              <div class="vsn">${esc(x.title)}</div>
+              <div class="vsd">${esc(x.type)} · размерения подставятся</div>
+            </div><span class="rtag">шаблон</span></div>`).join('');
+    }
+    $('#vsList').innerHTML = h || `<div class="hint">${ico('search','xs')} Ничего не нашлось. Можно заполнить карточку вручную.</div>`;
+
+    document.querySelectorAll('[data-mine]').forEach(el=>el.onclick=()=>{
+      hap('medium'); openVesselForm(el.dataset.mine);
+    });
+    document.querySelectorAll('[data-preset]').forEach(el=>el.onclick=async()=>{
+      hap('medium');
+      try{
+        const res=await api('/api/vessel?action=preset&preset='+encodeURIComponent(el.dataset.preset));
+        const card=res.values||{};
+        if(inp.value.trim()) card.name=inp.value.trim();
+        openVesselForm('', card);
+      }catch(e){ openVesselForm('',{name:inp.value.trim()}); }
+    });
+    applyLang();
+  }
+
+  vsRender('');
   inp.oninput=()=>{
     clearTimeout(vesSearchTimer);
-    const q=inp.value.trim();
-    if(q.length<2){ $('#vsList').innerHTML=''; return; }
-    $('#vsList').innerHTML='<div class="sk card" style="height:52px"></div>';
-    vesSearchTimer=setTimeout(async()=>{
-      try{
-        const r=await api('/api/ship-search?q='+encodeURIComponent(q));
-        const rows=r.results||[];
-        $('#vsList').innerHTML = rows.length
-          ? rows.map(x=>`<div class="vsrow" data-ident="${esc(x.ident)}">
-              <div class="vsi">${ico('ship','sm')}</div>
-              <div style="flex:1;min-width:0">
-                <div class="vsn">${esc(x.name)}</div>
-                <div class="vsd">${[x.imo?'IMO '+x.imo:'',x.type,x.flag].filter(Boolean).map(esc).join(' · ')}</div>
-              </div>
-              <span class="rtag">${esc(x.source||'')}</span>
-            </div>`).join('')
-          : `<div class="hint">${ico('search','xs')} Ничего не нашлось. Можно заполнить карточку вручную.</div>`;
-        document.querySelectorAll('[data-ident]').forEach(el=>el.onclick=async()=>{
-          hap('medium');
-          el.innerHTML='<div class="vsn">Загружаю…</div>';
-          try{
-            const res=await api('/api/ship-search?fetch='+encodeURIComponent(el.dataset.ident));
-            openVesselForm('', res.card||{});
-          }catch(e){ openVesselForm('',{name:inp.value.trim()}); }
-        });
-      }catch(e){ $('#vsList').innerHTML=`<div class="hint">Нет связи с сервером.</div>`; }
-    },260);
+    vesSearchTimer=setTimeout(()=>vsRender(inp.value.trim()),240);
   };
   const mv=$('#vsManual'); if(mv) mv.onclick=()=>openVesselForm('',{name:inp.value.trim()});
   applyLang();
@@ -3703,10 +3789,10 @@ function openVesselForm(vid, preset){
 
   $('#tFields').innerHTML=(VES.sections||[]).map((sec,i)=>`
     <div class="vsec ${i===0?'open':''}" data-sec="${sec.id}">
-      <div class="vsech">${ico(sec.icon,'sm')}<span>${esc(sec.title)}</span>
+      <div class="vsech">${ico(sec.icon,'sm')}<span>${esc(tr(sec.title))}</span>
         <span class="vsarrow">${ico('back','xs')}</span></div>
       <div class="vsbody">${sec.fields.map(f=>
-        `<div class="fld"><label>${esc(f.l)}${f.u?' · '+esc(f.u):''}</label>
+        `<div class="fld"><label>${esc(tr(f.l))}${f.u?' · '+esc(tr(f.u)):''}</label>
          <input class="vinput" data-k="${f.k}" inputmode="${f.t==='num'?'decimal':'text'}"
                 value="${esc(base[f.k]||'')}"></div>`).join('')}</div>
     </div>`).join('');
@@ -3796,6 +3882,21 @@ function openDocForm(){
 /* ---- Экран инструментов ---- */
 let curTool=null, toolVals={};
 
+/* Что пользователь вводил в каждом расчёте. Раньше при выходе всё
+   сбрасывалось на значения по умолчанию, и длинные наборы (CPA, ECDIS,
+   дифферент) приходилось набивать заново. */
+const CALC_MEM='navarea_calc_vals';
+function loadCalcVals(id){
+  try{ return (JSON.parse(localStorage.getItem(CALC_MEM)||'{}'))[id]||null; }catch(e){ return null; }
+}
+function saveCalcVals(id,vals){
+  try{
+    const all=JSON.parse(localStorage.getItem(CALC_MEM)||'{}');
+    all[id]=vals;
+    localStorage.setItem(CALC_MEM,JSON.stringify(all));
+  }catch(e){}
+}
+
 function renderTools(){
   const favT=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
   let h='';
@@ -3850,16 +3951,18 @@ function openTool(t){
   // Известные параметры судна подставляются вместо значений по умолчанию:
   // открывая запас под килём, вводить нужно только текущую глубину и прилив.
   const pre=vesselPrefill(t.id);
+  const saved=loadCalcVals(t.id)||{};
   toolVals={};
   t.fields.forEach(f=>{
-    toolVals[f.k] = (pre[f.k]!==undefined && pre[f.k]!=='')
-      ? pre[f.k]
-      : (f.def!==undefined?f.def:'');
+    // приоритет: что вводил сам -> данные судна -> значение по умолчанию
+    if(saved[f.k]!==undefined && saved[f.k]!=='') toolVals[f.k]=saved[f.k];
+    else if(pre[f.k]!==undefined && pre[f.k]!=='') toolVals[f.k]=pre[f.k];
+    else toolVals[f.k]=(f.def!==undefined?f.def:'');
   });
 
-  $('#tName').textContent=t.name;
-  { const b=$('#tBackTitle'); if(b) b.textContent=t.name; }
-  $('#tDesc').textContent=t.desc;
+  $('#tName').textContent=tr(t.name);
+  { const b=$('#tBackTitle'); if(b) b.textContent=tr(t.name); }
+  $('#tDesc').textContent=tr(t.desc);
   $('#tIcon').innerHTML=ico(t.icon,'lg');
   const shipName=(activeVessel().name)||'';
   $('#tFields').innerHTML=t.fields.map(f=>{
@@ -3879,23 +3982,44 @@ function openTool(t){
 
   document.querySelectorAll('.tinput').forEach(el=>{
     const ev=el.tagName==='SELECT'?'onchange':'oninput';
-    el[ev]=()=>{ toolVals[el.dataset.k]=el.value; runTool(); };
+    el[ev]=()=>{
+      toolVals[el.dataset.k]=el.value;
+      if(curTool) saveCalcVals(curTool.id,toolVals);
+      runTool();
+    };
   });
   runTool();
   applyLang();
   $('#tool').classList.add('on');
   document.body.style.overflow='hidden';
 }
+/* На числовой клавиатуре телефона десятичный разделитель -- запятая, а JS
+   понимает только точку: "1424,7" превращалось в NaN и весь расчёт молча
+   ломался. Приводим ввод к машинному виду перед вычислением.
+   Если в строке есть и точка, и запятая -- запятая считается разделителем
+   тысяч ("1,424.7") и просто убирается. */
+function numFix(s){
+  if(typeof s!=='string') return s;
+  const t=s.trim();
+  if(t.indexOf(',')===-1) return t;
+  return (t.indexOf('.')!==-1) ? t.replace(/,/g,'') : t.replace(/,/g,'.');
+}
+function normVals(v){
+  const out={};
+  Object.keys(v||{}).forEach(k=>{ out[k]=numFix(v[k]); });
+  return out;
+}
+
 function runTool(){
   if(!curTool) return;
   let rows;
-  try{ rows=curTool.calc(toolVals)||[]; }
+  try{ rows=curTool.calc(normVals(toolVals))||[]; }
   catch(e){ rows=[{l:'Ошибка',v:'Проверь введённые данные'}]; }
   const __al=1;
   $('#tResults').innerHTML=rows.map(r=>
     `<div class="tres ${r.hi?'hi':''} ${r.warn?'warn':''}">
-       <span class="tl">${esc(r.l)}</span>
-       <span class="tv mono">${esc(String(r.v))}</span>
+       <span class="tl">${esc(tr(r.l))}</span>
+       <span class="tv mono">${esc(tr(String(r.v)))}</span>
      </div>`).join('');
   applyLang();
 }
@@ -3906,10 +4030,22 @@ function closeTool(){
 }
 
 $('#tBack').onclick=()=>{ if(curCL) saveCL(); closeTool(); $('#tBack').textContent='Назад к инструментам'; };
+/* Тап по пустому месту убирает клавиатуру: на телефоне она иначе висит
+   поверх результата, и пересчитанные цифры не видно. */
+document.addEventListener('pointerdown', ev=>{
+  const a=document.activeElement;
+  if(!a) return;
+  const tag=a.tagName;
+  if(tag!=='INPUT'&&tag!=='TEXTAREA'&&tag!=='SELECT') return;
+  if(ev.target===a||(ev.target.closest&&ev.target.closest('input,textarea,select,.sugg'))) return;
+  a.blur();
+}, true);
+
 $('#tBackTop').innerHTML=ico('back');
 $('#tBackTop').onclick=()=>{ if(typeof curCL!=='undefined'&&curCL) saveCL(); closeTool(); };
 $('#langBtn').onclick=()=>{
   LANG=(LANG==='en')?'ru':'en';
+  tr._keys=null;
   localStorage.setItem('navarea_lang',LANG);
   hap('medium');
   applyLang();

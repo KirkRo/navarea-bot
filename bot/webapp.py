@@ -307,7 +307,8 @@ def _api_vessel(query: dict) -> dict:
     """Карточка судна: список, сохранение, выбор активного, документы."""
     import time as _t
     from .services.ship_providers import provider_info
-    from .services.vessel import FIELD_KEYS, normalize, vessel_payload
+    from .services.vessel import (FIELD_KEYS, normalize, preset_titles,
+                                  preset_values, suggest_from_history, vessel_payload)
 
     db = _state["db"]
     user_id, denied = _require("vessel", query)
@@ -318,6 +319,16 @@ def _api_vessel(query: dict) -> dict:
     docs = db.get_vessel_docs(user_id)
     action = (query.get("action") or [""])[0]
     vid = (query.get("id") or [""])[0]
+
+    # Подсказки при заполнении: свои прежние суда и типовые серии.
+    if action == "suggest":
+        q = (query.get("q") or [""])[0]
+        return {"history": suggest_from_history(vessels, q),
+                "presets": [p for p in preset_titles()
+                            if not q or q.lower() in (p["title"] + " " + p["type"]).lower()]}
+
+    if action == "preset":
+        return {"values": preset_values((query.get("preset") or [""])[0])}
 
     if action == "save":
         data = normalize({k: (query.get(k) or [""])[0] for k in FIELD_KEYS})
