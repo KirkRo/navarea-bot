@@ -116,6 +116,7 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("subscribe", billing.cmd_subscribe))
     application.add_handler(CommandHandler("cancel_subscription", billing.cmd_cancel_subscription))
     application.add_handler(CommandHandler("stats", admin.cmd_stats))
+    application.add_handler(CommandHandler("diag", admin.cmd_diag))
     application.add_handler(CommandHandler("broadcast", admin.cmd_broadcast))
 
     # --- callback-кнопки выбора районов ---

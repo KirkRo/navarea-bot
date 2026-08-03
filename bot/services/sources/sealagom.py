@@ -40,12 +40,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from typing import Optional
 
 import httpx
 
 from .base import ParsedWarning
+
+logger = logging.getLogger(__name__)
 
 NAVAREA_URL = "https://www.sealagom.com/api/v1/navarea/"
 COASTAL_URL = "https://www.sealagom.com/api/v1/coastal/"
@@ -293,19 +296,45 @@ class SealagomCoastalSource:
         self._cache_at: float = 0.0
 
     async def _fetch_all(self) -> dict:
+        """Береговые регионы. При 403 пробуем сокращать набор параметров:
+        часть из них (geo_features, архив, расширенные координаты) доступна
+        не на всяком тарифе, и сервер отвечает отказом на весь запрос
+        целиком, а не на отдельное поле."""
         now = time.time()
         if self._cache is not None and (now - self._cache_at) < self._cache_seconds:
             return self._cache
 
-        headers = _browser_headers(self._api_token)
-        async with httpx.AsyncClient(timeout=self._timeout, headers=headers, follow_redirects=True) as client:
-            resp = await client.get(COASTAL_URL, params=_NAVAREA_PARAMS)
-            resp.raise_for_status()
-            data = resp.json()
+        # от самого полного набора к самому скромному
+        attempts = [
+            _NAVAREA_PARAMS,
+            {"include_messages": "true", "include_coordinates": "true"},
+            {"include_messages": "true"},
+            {},
+        ]
 
-        self._cache = data
-        self._cache_at = now
-        return data
+        headers = _browser_headers(self._api_token)
+        last_error: Exception | None = None
+
+        async with httpx.AsyncClient(timeout=self._timeout, headers=headers, follow_redirects=True) as client:
+            for params in attempts:
+                try:
+                    resp = await client.get(COASTAL_URL, params=params)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    if params is not _NAVAREA_PARAMS:
+                        logger.info("Береговые регионы Sealagom: подошёл сокращённый запрос %s", sorted(params))
+                    self._cache = data
+                    self._cache_at = now
+                    return data
+                except httpx.HTTPStatusError as e:
+                    last_error = e
+                    if e.response.status_code not in (400, 401, 403):
+                        raise
+                except Exception as e:
+                    last_error = e
+                    raise
+
+        raise last_error if last_error else RuntimeError("Sealagom coastal: запрос не удался")
 
     async def fetch_raw(self, area_code: str) -> str:
         data = await self._fetch_all()

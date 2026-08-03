@@ -192,8 +192,17 @@ async def register_coastal_areas() -> int:
 
     try:
         regions = await _coastal_source.list_regions()
-    except Exception:
-        logger.exception("Не удалось получить список береговых регионов Sealagom")
+    except Exception as e:
+        # Обычно это 403: береговые предупреждения входят не во всякий тариф
+        # Sealagom. Бот от этого не страдает -- просто работает без них,
+        # поэтому пишем одну понятную строку, а не полный стектрейс.
+        code = getattr(getattr(e, "response", None), "status_code", None)
+        if code == 403:
+            logger.warning("Береговые предупреждения Sealagom недоступны (403). "
+                           "Проверь, входят ли они в оплаченный тариф. "
+                           "Всё остальное работает как обычно.")
+        else:
+            logger.warning("Не удалось получить список береговых регионов Sealagom: %s", e)
         return 0
 
     added = 0
