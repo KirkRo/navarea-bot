@@ -356,7 +356,36 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-radius:var(--r-md);padding:12px 14px;font-size:12.5px;margin-bottom:14px;display:none;
 }
 .offline.on{display:block;animation:up .34s}
-".hidden{display:none!important}
+.hidden{display:none!important}
+
+/* ---- Кнопки-фильтры ---- */
+.chip{
+  background:var(--surf);border:1px solid var(--line);color:var(--muted);
+  border-radius:20px;padding:6px 13px;font-size:12.5px;white-space:nowrap;cursor:pointer;
+  flex:none;transition:all .18s;font-family:inherit;
+}
+.chip:active{transform:scale(.94)}
+.chip.on{background:linear-gradient(140deg,var(--amber),var(--amber2));
+  color:var(--accent-text);border-color:transparent;font-weight:650;box-shadow:var(--glow)}
+
+/* ---- Анимации морской заставки ---- */
+.ship{animation:sail 26s linear infinite}
+@keyframes sail{
+  0%{transform:translate(-110px,0)}
+  50%{transform:translate(180px,-2px)}
+  100%{transform:translate(460px,0)}
+}
+.beamRay{transform-origin:357px 75px;animation:sweep 8s ease-in-out infinite;mix-blend-mode:screen}
+@keyframes sweep{0%,100%{transform:rotate(-20deg);opacity:.2}50%{transform:rotate(16deg);opacity:.9}}
+.lamp{animation:lampGlow 2.6s ease-in-out infinite}
+@keyframes lampGlow{0%,100%{opacity:.5}50%{opacity:1}}
+.gulls{animation:glide 19s linear infinite}
+@keyframes glide{0%{transform:translate(0,0)}50%{transform:translate(150px,-8px)}100%{transform:translate(320px,2px)}}
+.w1{animation:wave 9s ease-in-out infinite}
+.w2{animation:wave 12s ease-in-out infinite reverse}
+.w3{animation:wave 16s ease-in-out infinite}
+@keyframes wave{0%,100%{transform:translateX(0)}50%{transform:translateX(100px)}}
+@keyframes ping{0%{transform:scale(.35);opacity:.9}80%{transform:scale(1.15);opacity:0}100%{opacity:0}}
 .showall{
   width:100%;margin-top:10px;padding:11px;border-radius:var(--r-md);cursor:pointer;
   background:var(--surf);border:1px dashed var(--line);color:var(--muted);
