@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import json
 import os
 import re
@@ -112,6 +113,9 @@ CREATE TABLE IF NOT EXISTS daily_stats (
 """
 
 
+logger = logging.getLogger(__name__)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -145,12 +149,48 @@ def _msgnum_sort_key(row) -> tuple[int, int]:
     return (year, num)
 
 
+def _expected_columns(schema: str) -> dict:
+    """Разбирает текст SCHEMA на таблицы и их колонки -- см. пояснение
+    в db_postgres.py: CREATE TABLE IF NOT EXISTS не добавляет поля в уже
+    существующую таблицу, поэтому новые колонки нужно дописывать вручную."""
+    tables: dict[str, dict[str, str]] = {}
+    for m in re.finditer(r"CREATE TABLE IF NOT EXISTS\s+(\w+)\s*\((.*?)\n\);", schema, re.S):
+        name, body = m.group(1), m.group(2)
+        cols: dict[str, str] = {}
+        for line in body.split("\n"):
+            line = line.strip().rstrip(",")
+            if not line or line.upper().startswith(("PRIMARY KEY", "FOREIGN KEY", "UNIQUE", "CHECK")):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                cols[parts[0]] = parts[1]
+        tables[name] = cols
+    return tables
+
+
 class Database:
     def __init__(self, path: str):
         self.path = path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         with self._conn() as conn:
             conn.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Дописывает колонки, появившиеся в новых версиях бота."""
+        expected = _expected_columns(SCHEMA)
+        added = []
+        with self._conn() as conn:
+            for table, cols in expected.items():
+                have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+                if not have:
+                    continue
+                for col, coltype in cols.items():
+                    if col not in have:
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {coltype}")
+                        added.append(f"{table}.{col}")
+        if added:
+            logger.warning("База обновлена, добавлены колонки: %s", ", ".join(added))
 
     @contextmanager
     def _conn(self) -> Iterator[sqlite3.Connection]:

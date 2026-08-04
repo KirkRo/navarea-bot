@@ -11,6 +11,7 @@ db.py, чтобы хендлеры не знали и не заботились,
 from __future__ import annotations
 
 import hashlib
+import logging
 import json
 import re
 from contextlib import contextmanager
@@ -116,6 +117,9 @@ CREATE TABLE IF NOT EXISTS daily_stats (
 """
 
 
+logger = logging.getLogger(__name__)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -149,12 +153,59 @@ def _msgnum_sort_key(row) -> tuple[int, int]:
     return (year, num)
 
 
+def _expected_columns(schema: str) -> dict:
+    """Разбирает текст SCHEMA на таблицы и их колонки.
+
+    Нужно для миграции: CREATE TABLE IF NOT EXISTS не трогает уже
+    существующую таблицу. Если в новой версии бота у таблицы появилось
+    поле, у того, кто обновился со старой базой, его не будет -- и любая
+    вставка начнёт падать (именно так пропала колонка shapes_json).
+    Поэтому при запуске сверяем описание с фактической схемой.
+    """
+    tables: dict[str, dict[str, str]] = {}
+    for m in re.finditer(r"CREATE TABLE IF NOT EXISTS\s+(\w+)\s*\((.*?)\n\);", schema, re.S):
+        name, body = m.group(1), m.group(2)
+        cols: dict[str, str] = {}
+        for line in body.split("\n"):
+            line = line.strip().rstrip(",")
+            if not line or line.upper().startswith(("PRIMARY KEY", "FOREIGN KEY", "UNIQUE", "CHECK")):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                # тип берём без DEFAULT/NOT NULL: добавить NOT NULL колонку
+                # в непустую таблицу нельзя
+                cols[parts[0]] = parts[1]
+        tables[name] = cols
+    return tables
+
+
 class PostgresDatabase:
     def __init__(self, dsn: str):
         self.dsn = dsn
         with self._conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Дописывает колонки, появившиеся в новых версиях бота."""
+        expected = _expected_columns(SCHEMA)
+        added = []
+        with self._conn() as conn, conn.cursor() as cur:
+            for table, cols in expected.items():
+                cur.execute(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
+                    (table,),
+                )
+                have = {r["column_name"] for r in cur.fetchall()}
+                if not have:
+                    continue  # таблицы нет -- её только что создал CREATE TABLE
+                for col, coltype in cols.items():
+                    if col not in have:
+                        cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {coltype}")
+                        added.append(f"{table}.{col}")
+        if added:
+            logger.warning("База обновлена, добавлены колонки: %s", ", ".join(added))
 
     @contextmanager
     def _conn(self) -> Iterator["psycopg2.extensions.connection"]:
