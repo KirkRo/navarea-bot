@@ -236,3 +236,30 @@ async def certificates_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if sent:
         logger.info("Отправлено напоминаний по сертификатам: %d", sent)
+
+
+async def keep_awake_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Не даём бесплатному тарифу Render усыпить процесс.
+
+    Render засыпает после 15 минут без входящих запросов. Внешний пинг-сервис
+    для этого и нужен, но он может отвалиться (как это и случилось: он
+    проверял сервис HEAD-запросом, получал отказ и считал бота лежащим).
+    Поэтому бот сам обращается к своему публичному адресу раз в 10 минут --
+    это независимая подстраховка, не требующая ничего настраивать снаружи.
+
+    Когда публичный адрес не задан (свой сервер, где усыпления нет),
+    задача просто ничего не делает.
+    """
+    if not config.public_url:
+        return
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(f"{config.public_url.rstrip('/')}/", headers={
+                "User-Agent": "watchkeeper-keepalive/1.0",
+            })
+            logger.debug("Самопинг: %s", resp.status_code)
+    except Exception as e:
+        # не страшно: следующая попытка через десять минут
+        logger.debug("Самопинг не прошёл: %s", e)

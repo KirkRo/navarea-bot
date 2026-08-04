@@ -19,7 +19,7 @@ from telegram.ext import (
 
 from .config import config
 from .handlers import admin, areas, billing, qa, start, warnings
-from .scheduler import daily_job, poll_sources_job
+from .scheduler import daily_job, keep_awake_job, poll_sources_job
 from .services.claude_qa import ClaudeQA
 from .services.db_factory import build_database
 from .webapp import start_web_server
@@ -133,6 +133,11 @@ def build_application() -> Application:
 
     # --- фоновый опрос источников ---
     if application.job_queue is not None:
+        # Самоподдержка от усыпления на бесплатном тарифе
+        if config.public_url:
+            application.job_queue.run_repeating(keep_awake_job, interval=600, first=120)
+            logger.info("Самопинг включён: %s раз в 10 минут", config.public_url)
+
         application.job_queue.run_repeating(
             poll_sources_job,
             interval=config.poll_interval_minutes * 60,

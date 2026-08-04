@@ -609,9 +609,31 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        # на HEAD отдаём только заголовки, тело слать нельзя
+        if getattr(self, "_with_body", True):
+            self.wfile.write(body)
+
+    def do_HEAD(self) -> None:
+        """Пинг-сервисы (UptimeRobot и подобные) проверяют сервис HEAD-запросом.
+        Без этого метода стандартная библиотека отвечает 501 Not Implemented,
+        мониторинг считает сервис лежащим, перестаёт его нормально будить --
+        и Render усыпляет процесс. Отвечаем теми же заголовками, что на GET,
+        только без тела, как и положено для HEAD."""
+        self._handle(with_body=False)
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def do_GET(self) -> None:
+        self._handle(with_body=True)
+
+    def _handle(self, with_body: bool = True) -> None:
+        self._with_body = with_body
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query)
