@@ -3971,7 +3971,9 @@ function openVesselForm(vid, preset){
       <div class="vsbody">${sec.fields.map(f=>
         `<div class="fld"><label>${esc(tr(f.l))}${f.u?' · '+esc(tr(f.u)):''}</label>
          <input class="vinput" data-k="${f.k}" inputmode="${f.t==='num'?'decimal':'text'}"
-                value="${esc(base[f.k]||'')}"></div>`).join('')}</div>
+                autocomplete="off" ${f.ref?`data-ref="${f.ref}"`:''}
+                value="${esc(base[f.k]||'')}">
+         ${f.ref?`<div class="sugg" data-sugg="${f.k}"></div>`:''}</div>`).join('')}</div>
     </div>`).join('');
 
   $('#tResults').innerHTML=`<button class="btn wide" id="saveVessel">Сохранить</button>`;
@@ -3982,6 +3984,7 @@ function openVesselForm(vid, preset){
   document.querySelectorAll('.vsech').forEach(h=>h.onclick=()=>{
     h.parentElement.classList.toggle('open'); hap();
   });
+  bindVesselSuggest();
 
   $('#saveVessel').onclick=async()=>{
     const q=[];

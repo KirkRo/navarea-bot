@@ -22,15 +22,15 @@ SECTIONS: list[dict] = [
         {"k": "imo",       "l": "Номер IMO",           "u": "", "t": "text"},
         {"k": "mmsi",      "l": "MMSI",                "u": "", "t": "text"},
         {"k": "callsign",  "l": "Позывной",            "u": "", "t": "text"},
-        {"k": "type",      "l": "Тип судна",           "u": "", "t": "text"},
-        {"k": "flag",      "l": "Флаг",                "u": "", "t": "text"},
+        {"k": "type",      "l": "Тип судна",           "u": "", "t": "text", "ref": "ship_types"},
+        {"k": "flag",      "l": "Флаг",                "u": "", "t": "text", "ref": "flags"},
         {"k": "built",     "l": "Год постройки",       "u": "", "t": "num"},
         {"k": "builder",   "l": "Верфь",               "u": "", "t": "text"},
         {"k": "owner",     "l": "Судовладелец",        "u": "", "t": "text"},
         {"k": "operator",  "l": "Оператор",            "u": "", "t": "text"},
         {"k": "ism",       "l": "ISM-менеджер",        "u": "", "t": "text"},
-        {"k": "class_soc", "l": "Классификационное общество", "u": "", "t": "text"},
-        {"k": "pi_club",   "l": "P&I клуб",            "u": "", "t": "text"},
+        {"k": "class_soc", "l": "Классификационное общество", "u": "", "t": "text", "ref": "class_soc"},
+        {"k": "pi_club",   "l": "P&I клуб",            "u": "", "t": "text", "ref": "pi_clubs"},
         {"k": "ice_class", "l": "Ледовый класс",       "u": "", "t": "text"},
     ]},
     {"id": "dims", "title": "Размерения", "icon": "sliders", "fields": [
@@ -54,7 +54,7 @@ SECTIONS: list[dict] = [
         {"k": "fwa",          "l": "FWA",               "u": "мм", "t": "num"},
     ]},
     {"id": "tech", "title": "Механическая часть", "icon": "gauge", "fields": [
-        {"k": "engine",     "l": "Главный двигатель",   "u": "",      "t": "text"},
+        {"k": "engine",     "l": "Главный двигатель",   "u": "",      "t": "text", "ref": "engines"},
         {"k": "power",      "l": "Мощность",            "u": "кВт",   "t": "num"},
         {"k": "propeller",  "l": "Винт",                "u": "",      "t": "text"},
         {"k": "thruster",   "l": "Подруливающее",       "u": "",      "t": "text"},
@@ -73,14 +73,14 @@ SECTIONS: list[dict] = [
         {"k": "anchor_w",    "l": "Масса якоря",         "u": "кг",   "t": "num"},
     ]},
     {"id": "bridge", "title": "Оборудование мостика", "icon": "radar", "fields": [
-        {"k": "ecdis",   "l": "ECDIS",            "u": "", "t": "text"},
-        {"k": "radar_x", "l": "Радар X-диапазон", "u": "", "t": "text"},
-        {"k": "radar_s", "l": "Радар S-диапазон", "u": "", "t": "text"},
-        {"k": "gyro",    "l": "Гирокомпас",       "u": "", "t": "text"},
-        {"k": "ais",     "l": "АИС",              "u": "", "t": "text"},
+        {"k": "ecdis",   "l": "ECDIS",            "u": "", "t": "text", "ref": "ecdis"},
+        {"k": "radar_x", "l": "Радар X-диапазон", "u": "", "t": "text", "ref": "radar_x"},
+        {"k": "radar_s", "l": "Радар S-диапазон", "u": "", "t": "text", "ref": "radar_s"},
+        {"k": "gyro",    "l": "Гирокомпас",       "u": "", "t": "text", "ref": "gyro"},
+        {"k": "ais",     "l": "АИС",              "u": "", "t": "text", "ref": "ais"},
         {"k": "gmdss",   "l": "GMDSS, район",     "u": "", "t": "text"},
-        {"k": "bnwas",   "l": "BNWAS",            "u": "", "t": "text"},
-        {"k": "vdr",     "l": "VDR",              "u": "", "t": "text"},
+        {"k": "bnwas",   "l": "BNWAS",            "u": "", "t": "text", "ref": "bnwas"},
+        {"k": "vdr",     "l": "VDR",              "u": "", "t": "text", "ref": "vdr"},
     ]},
     {"id": "cargo", "title": "Грузовое устройство", "icon": "archive", "fields": [
         {"k": "holds",    "l": "Трюмов",          "u": "", "t": "num"},
@@ -90,6 +90,136 @@ SECTIONS: list[dict] = [
         {"k": "cargo_cap","l": "Вместимость трюмов", "u": "м³", "t": "num"},
     ]},
 ]
+
+# ---------------------------------------------------------------------- #
+# Справочники для подсказок в карточке судна
+# ---------------------------------------------------------------------- #
+#
+# Списки не исчерпывающие -- это подсказки, чтобы не набирать вручную
+# длинные названия. Любое своё значение вводится как есть: поле остаётся
+# обычным текстовым, подсказки только предлагаются.
+
+SHIP_TYPES = [
+    "Bulk Carrier", "Container Ship", "General Cargo", "Multi-Purpose Vessel",
+    "Crude Oil Tanker", "Product Tanker", "Chemical Tanker", "Chemical/Product Tanker",
+    "LNG Carrier", "LPG Carrier", "Bitumen Tanker", "Asphalt Carrier",
+    "Ore Carrier", "Ore/Bulk/Oil Carrier", "Wood Chip Carrier", "Cement Carrier",
+    "Ro-Ro Cargo", "Ro-Pax", "Pure Car Carrier (PCC)", "Pure Car and Truck Carrier (PCTC)",
+    "Reefer", "Livestock Carrier", "Heavy Lift Vessel", "Semi-Submersible Heavy Lift",
+    "Passenger Ship", "Cruise Ship", "Ferry", "High Speed Craft",
+    "Offshore Supply Vessel (PSV)", "Anchor Handling Tug Supply (AHTS)",
+    "Platform Supply Vessel", "Crew Transfer Vessel", "Pipe Layer", "Cable Layer",
+    "Drilling Ship", "Accommodation Vessel", "Well Stimulation Vessel",
+    "Tug", "Escort Tug", "Salvage Tug", "Pusher", "Barge", "Hopper Dredger",
+    "Cutter Suction Dredger", "Research Vessel", "Survey Vessel", "Seismic Vessel",
+    "Fishing Vessel", "Fish Factory", "Icebreaker", "Cable Repair Ship",
+    "Sail Training Ship", "Yacht", "Naval Auxiliary", "Buoy Tender",
+]
+
+PI_CLUBS = [
+    # Международная группа клубов взаимного страхования
+    "American Club", "Britannia P&I Club", "Gard", "Japan P&I Club",
+    "London P&I Club", "NorthStandard", "Shipowners' Club", "Skuld",
+    "Steamship Mutual", "Swedish Club", "UK P&I Club", "West of England",
+    # Фиксированная премия и прочие страховщики
+    "Hanseatic Underwriters", "Norwegian Hull Club", "Alandia", "MS Amlin",
+    "Navigators P&I", "Carina P&I", "Osprey P&I", "British Marine",
+    "Raets Marine", "Ingosstrakh", "China P&I Club", "Korea P&I Club",
+]
+
+ECDIS_MODELS = [
+    "Furuno FMD-3100", "Furuno FMD-3200", "Furuno FMD-3300", "Furuno FEA-2107",
+    "JRC JAN-7201", "JRC JAN-9201", "JRC JAN-701B", "JRC JAN-901B", "JRC JAN-2000",
+    "Transas Navi-Sailor 4000", "Transas Navi-Sailor 4100",
+    "Wärtsilä NACOS Platinum", "Wärtsilä Navi-Sailor 4100",
+    "Kongsberg K-Bridge ECDIS", "Sperry Marine VisionMaster FT ECDIS",
+    "Raytheon Anschütz Synapsis ECDIS", "Raytheon Anschütz NautoChart",
+    "Tokyo Keiki EC-8600", "Tokyo Keiki EC-8100",
+    "Consilium Selux ECDIS", "SAM Electronics Chartpilot 1100",
+    "Alphatron AlphaChart", "Alphatron AlphaMiniBridge",
+    "Marine Technologies Bridge Mate ECDIS", "ChartWorld eGlobe G2",
+    "MARIS ECDIS900", "Danelec DM100 ECDIS", "Simrad ECDIS", "Sodena Nauticast",
+]
+
+RADAR_X = [
+    "Furuno FAR-2117", "Furuno FAR-2817", "Furuno FAR-3220", "Furuno FAR-2228",
+    "Furuno FAR-1518", "Furuno FAR-15x8",
+    "JRC JMA-9172", "JRC JMA-7110", "JRC JMA-5212", "JRC JMA-9110",
+    "Sperry Marine VisionMaster FT X-band", "Kelvin Hughes SharpEye X-band",
+    "Raytheon Anschütz Synapsis NX X-band", "Raytheon Anschütz NSC 25",
+    "Tokyo Keiki BR-3440 X-band", "Alphatron AlphaRadar X-band",
+    "Consilium Selux X-band", "Terma SCANTER",
+]
+
+RADAR_S = [
+    "Furuno FAR-2127", "Furuno FAR-2827", "Furuno FAR-3230", "Furuno FAR-2238S",
+    "Furuno FAR-2137S", "Furuno FAR-2837S",
+    "JRC JMA-9132", "JRC JMA-9133", "JRC JMA-7132", "JRC JMA-5232",
+    "Sperry Marine VisionMaster FT S-band", "Kelvin Hughes SharpEye S-band",
+    "Raytheon Anschütz Synapsis NX S-band", "Raytheon Anschütz NSC 34",
+    "Tokyo Keiki BR-3440 S-band", "Alphatron AlphaRadar S-band",
+    "Consilium Selux S-band",
+]
+
+GYRO_MODELS = [
+    "Sperry NAVIGAT X MK1", "Sperry NAVIGAT 2100", "Sperry NAVIGAT 3000",
+    "Sperry MK-27", "Sperry NAVIGAT 200",
+    "Yokogawa CMZ-900", "Yokogawa CMZ-900D", "Yokogawa CMZ-700D", "Yokogawa CMZ-500",
+    "Tokimec TG-8000", "Tokimec TG-8500", "Tokimec TG-6000", "Tokimec ES-11",
+    "Raytheon Anschütz Standard 22", "Raytheon Anschütz Standard 30 MF",
+    "Raytheon Anschütz Standard 20",
+    "Simrad GC80", "Simrad GC85", "Kongsberg MGC-R3", "Teledyne TSS Meridian",
+    "Furuno SC-70", "Furuno SC-130", "Tokyo Keiki TG-8000", "Navigat 100",
+]
+
+AIS_MODELS = [
+    "Furuno FA-150", "Furuno FA-170", "Furuno FA-100",
+    "JRC JHS-183", "JRC JHS-770S", "JRC JHS-800S",
+    "Saab R4 AIS", "Saab R5 Supreme AIS", "SAILOR 6280 AIS",
+    "Transas T104 AIS", "Kongsberg AIS", "Alphatron AlphaTracker AIS",
+    "McMurdo SmartFind AIS", "em-trak A200", "em-trak B400",
+    "Raytheon Anschütz AIS", "Simrad V5035", "Weatherdock easyTRX",
+]
+
+BNWAS_MODELS = [
+    "Furuno BR-500", "Furuno BR-1000", "JRC NBA-800", "JRC NBA-5000",
+    "Daniamant BNWAS", "AMI Marine WatchDog BNWAS", "Marine Technologies BNWAS",
+    "McMurdo BNWAS", "Alphatron AlphaBridge BNWAS", "Consilium BNWAS",
+    "Höglund BNWAS", "Navitron NT-990 BNWAS", "Emri BNWAS", "Yokogawa BNWAS",
+    "Böning BNWAS", "Kongsberg BNWAS",
+]
+
+VDR_MODELS = [
+    "Furuno VR-3000", "Furuno VR-3000S", "Furuno VR-7000", "Furuno VR-7000S",
+    "JRC JCY-1800", "JRC JCY-1900", "JRC JCY-1950", "JRC JCY-1000",
+    "Danelec DM100 VDR", "Danelec DM200 VDR", "Danelec DM500",
+    "Consilium Selux VDR F1", "Consilium Selux VDR F2", "Consilium Selux VDR F3",
+    "Netwave NW-4000", "Netwave NW-6000", "Rutter VDR-100 G3", "Rutter VDR-100 G4",
+    "Kelvin Hughes VDR", "SAM Electronics VDR", "Wärtsilä VDR", "Interschalt VDR-G4",
+    "Totem Plus VDR", "Marine Technologies VDR",
+]
+
+
+CLASS_SOCIETIES = [
+    "ABS (American Bureau of Shipping)", "Bureau Veritas (BV)", "China Classification Society (CCS)",
+    "Croatian Register of Shipping (CRS)", "DNV", "Indian Register of Shipping (IRS)",
+    "Korean Register (KR)", "Lloyd's Register (LR)", "Nippon Kaiji Kyokai (ClassNK)",
+    "Polski Rejestr Statków (PRS)", "RINA", "Russian Maritime Register (RS)",
+    "Turk Loydu", "International Register of Shipping", "Isthmus Bureau of Shipping",
+]
+
+ENGINE_MODELS = [
+    "MAN B&W 6S60ME-C", "MAN B&W 6S50MC-C", "MAN B&W 7S50ME-B", "MAN B&W 5S60ME-C",
+    "MAN B&W 6G70ME-C", "MAN B&W 8S70ME-C", "MAN B&W 6S35ME-B", "MAN B&W 6L70MC",
+    "Wärtsilä RT-flex50", "Wärtsilä RT-flex58T", "Wärtsilä RT-flex68", "Wärtsilä X62",
+    "Wärtsilä 6RT-flex50-D", "Wärtsilä 46F", "Wärtsilä 32", "Wärtsilä 20",
+    "MAN 9L32/40", "MAN 6L23/30H", "MAN 8L48/60", "MAN 6L16/24",
+    "Mitsubishi UE 6UEC50LSII", "Mitsubishi UE 7UEC60LSII",
+    "Hyundai HiMSEN 6H21/32", "Hyundai HiMSEN 8H25/33",
+    "Caterpillar 3512", "Caterpillar 3516", "Yanmar 6EY18ALW", "Daihatsu 6DK-20",
+    "Sulzer 6RTA62", "Sulzer 7RTA84", "Doosan MAN 6L27/38",
+]
+
 
 # Документы, которые полезно держать под рукой. Хранится название,
 # номер редакции и заметка -- сами файлы не грузим, Mini App для этого
@@ -193,6 +323,84 @@ MID = {
 }
 
 
+
+
+# Английские названия стран для поиска флага: в судовых документах флаг
+# пишется по-английски, и набирать "Мальта" вместо "Malta" неудобно.
+# Поэтому в подсказках показываем оба варианта -- искать можно как угодно.
+FLAG_EN = {
+    "Антигуа и Барбуда": "Antigua and Barbuda", "Багамы": "Bahamas", "Барбадос": "Barbados",
+    "Белиз": "Belize", "Бельгия": "Belgium", "Бермуды": "Bermuda", "Болгария": "Bulgaria",
+    "Бразилия": "Brazil", "Великобритания": "United Kingdom", "Вануату": "Vanuatu",
+    "Виргинские о-ва (США)": "US Virgin Islands", "Британские Виргинские о-ва": "British Virgin Islands",
+    "Германия": "Germany", "Гибралтар": "Gibraltar", "Гонконг": "Hong Kong", "Греция": "Greece",
+    "Грузия": "Georgia", "Дания": "Denmark", "Джибути": "Djibouti", "Египет": "Egypt",
+    "Индия": "India", "Индонезия": "Indonesia", "Иран": "Iran", "Ирландия": "Ireland",
+    "Исландия": "Iceland", "Испания": "Spain", "Италия": "Italy", "Каймановы о-ва": "Cayman Islands",
+    "Камбоджа": "Cambodia", "Канада": "Canada", "Кипр": "Cyprus", "Китай": "China",
+    "Корея": "Korea", "Южная Корея": "South Korea", "Кюрасао": "Curacao", "Латвия": "Latvia",
+    "Либерия": "Liberia", "Литва": "Lithuania", "Люксембург": "Luxembourg", "Маврикий": "Mauritius",
+    "Мадейра": "Madeira", "Малайзия": "Malaysia", "Мальта": "Malta",
+    "Маршалловы о-ва": "Marshall Islands", "Мексика": "Mexico", "Молдова": "Moldova",
+    "Монголия": "Mongolia", "Мьянма": "Myanmar", "Нидерланды": "Netherlands",
+    "Новая Зеландия": "New Zealand", "Норвегия": "Norway", "ОАЭ": "United Arab Emirates",
+    "Оман": "Oman", "Панама": "Panama", "Перу": "Peru", "Польша": "Poland",
+    "Португалия": "Portugal", "Россия": "Russia", "Румыния": "Romania", "Сингапур": "Singapore",
+    "Сент-Винсент": "St Vincent and the Grenadines", "Сент-Китс и Невис": "St Kitts and Nevis",
+    "США": "United States", "Таиланд": "Thailand", "Тайвань": "Taiwan", "Того": "Togo",
+    "Турция": "Turkey", "Украина": "Ukraine", "Филиппины": "Philippines", "Финляндия": "Finland",
+    "Франция": "France", "Хорватия": "Croatia", "Черногория": "Montenegro", "Чили": "Chile",
+    "Швеция": "Sweden", "Эстония": "Estonia", "ЮАР": "South Africa", "Япония": "Japan",
+    "Вьетнам": "Vietnam", "Азербайджан": "Azerbaijan", "Алжир": "Algeria", "Аргентина": "Argentina",
+    "Австралия": "Australia", "Австрия": "Austria", "Бангладеш": "Bangladesh",
+    "Доминикана": "Dominican Republic", "Израиль": "Israel", "Казахстан": "Kazakhstan",
+    "Катар": "Qatar", "Кувейт": "Kuwait", "Марокко": "Morocco", "Нигерия": "Nigeria",
+    "Пакистан": "Pakistan", "Саудовская Аравия": "Saudi Arabia", "Тунис": "Tunisia",
+    "Уругвай": "Uruguay", "Эквадор": "Ecuador", "Ямайка": "Jamaica", "Гана": "Ghana",
+    "Венесуэла": "Venezuela", "Колумбия": "Colombia", "Куба": "Cuba", "Кения": "Kenya",
+    "Шри-Ланка": "Sri Lanka", "Швейцария": "Switzerland", "Сербия": "Serbia",
+    "Словения": "Slovenia", "Тувалу": "Tuvalu", "Палау": "Palau", "Фиджи": "Fiji",
+    "Самоа": "Samoa", "Тонга": "Tonga", "Науру": "Nauru", "Кирибати": "Kiribati",
+    "Коморы": "Comoros", "Танзания": "Tanzania", "Сьерра-Леоне": "Sierra Leone",
+    "Гвинея": "Guinea", "Сенегал": "Senegal", "Ливия": "Libya", "Ливан": "Lebanon",
+    "Сирия": "Syria", "Ирак": "Iraq", "Иордания": "Jordan", "Йемен": "Yemen",
+}
+
+
+def flag_list() -> list[str]:
+    """Страны регистрации. Берём из таблицы MID (она уже есть для
+    определения флага по MMSI) и дописываем английское название, чтобы
+    искать можно было и как "Мальта", и как "Malta"."""
+    out = []
+    for ru in sorted(set(MID.values())):
+        en = FLAG_EN.get(ru)
+        out.append(f"{ru} ({en})" if en and en.lower() != ru.lower() else ru)
+    return out
+
+
+def suggestion_lists() -> dict:
+    """Справочники для подсказок при вводе.
+
+    Списки заведомо не полные -- это подсказки, чтобы не набирать вручную
+    длинные названия моделей. Любое своё значение вводится как обычный
+    текст, ничего не навязывается.
+    """
+    return {
+        "ship_types": SHIP_TYPES,
+        "flags": flag_list(),
+        "pi_clubs": PI_CLUBS,
+        "class_soc": CLASS_SOCIETIES,
+        "engines": ENGINE_MODELS,
+        "ecdis": ECDIS_MODELS,
+        "radar_x": RADAR_X,
+        "radar_s": RADAR_S,
+        "gyro": GYRO_MODELS,
+        "ais": AIS_MODELS,
+        "bnwas": BNWAS_MODELS,
+        "vdr": VDR_MODELS,
+    }
+
+
 def flag_by_mmsi(mmsi: str | None) -> str | None:
     """Страна регистрации по первым трём цифрам MMSI (код MID)."""
     if not mmsi:
@@ -251,6 +459,7 @@ def vessel_payload(vessels: list[dict], active_id: str | None, docs: list[dict],
     return {
         "sections": SECTIONS,
         "doc_types": DOC_TYPES,
+        "suggestions": suggestion_lists(),
         "vessels": vessels,
         "active": active or {},
         "active_id": (active or {}).get("_id"),
