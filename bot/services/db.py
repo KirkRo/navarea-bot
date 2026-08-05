@@ -239,8 +239,13 @@ class Database:
     def set_premium(self, user_id: int, until_iso: str) -> None:
         with self._conn() as conn:
             conn.execute(
-                "UPDATE users SET is_premium = 1, premium_until = ? WHERE user_id = ?",
-                (until_iso, user_id),
+                """
+                INSERT INTO users (user_id, created_at, is_premium, premium_until)
+                VALUES (?, ?, 1, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    is_premium = 1, premium_until = excluded.premium_until
+                """,
+                (user_id, _now(), until_iso),
             )
 
     def revoke_premium(self, user_id: int) -> None:
@@ -321,8 +326,9 @@ class Database:
     # Предупреждения NAVAREA
     # ------------------------------------------------------------------ #
 
-    def warning_exists(self, raw_text: str) -> bool:
-        h = text_hash(raw_text)
+    def warning_exists(self, area_code: str, raw_text: str) -> bool:
+        # Один и тот же текст может законно встретиться в разных NAVAREA.
+        h = text_hash(f"{area_code}\0{raw_text}")
         with self._conn() as conn:
             row = conn.execute("SELECT 1 FROM warnings WHERE text_hash = ?", (h,)).fetchone()
         return row is not None
@@ -338,7 +344,7 @@ class Database:
         raw_text: str,
         shapes: Optional[list] = None,
     ) -> Optional[int]:
-        h = text_hash(raw_text)
+        h = text_hash(f"{area_code}\0{raw_text}")
         shapes_json = json.dumps(shapes, ensure_ascii=False) if shapes else None
         with self._conn() as conn:
             # Если у сообщения есть номер и для этого района уже есть запись с таким
@@ -381,6 +387,24 @@ class Database:
                 "UPDATE warnings SET is_cancelled = 1 WHERE area_code = ? AND msg_number = ?",
                 (area_code, msg_number),
             )
+
+    def cancel_missing_snapshot_warnings(self, area_code: str, active_msg_numbers: set[str]) -> None:
+        """Отменяет нумерованные сообщения, отсутствующие в полном снимке API."""
+        with self._conn() as conn:
+            if active_msg_numbers:
+                placeholders = ",".join("?" for _ in active_msg_numbers)
+                conn.execute(
+                    f"UPDATE warnings SET is_cancelled = 1 "
+                    f"WHERE area_code = ? AND is_cancelled = 0 AND msg_number IS NOT NULL "
+                    f"AND msg_number NOT IN ({placeholders})",
+                    [area_code, *sorted(active_msg_numbers)],
+                )
+            else:
+                conn.execute(
+                    "UPDATE warnings SET is_cancelled = 1 "
+                    "WHERE area_code = ? AND is_cancelled = 0 AND msg_number IS NOT NULL",
+                    (area_code,),
+                )
 
     def active_warnings(self, area_code: str, limit: int = 20) -> list[sqlite3.Row]:
         with self._conn() as conn:

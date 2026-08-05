@@ -386,9 +386,41 @@ def great_circle_points(a: Port, b: Port, step_nm: float = 60.0) -> list[tuple[f
     return points
 
 
+def _bearing_rad(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Начальный ортодромический пеленг из a в b, в радианах."""
+    lat1, lon1 = map(math.radians, a)
+    lat2, lon2 = map(math.radians, b)
+    return math.atan2(
+        math.sin(lon2 - lon1) * math.cos(lat2),
+        math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(lon2 - lon1),
+    )
+
+
+def _distance_to_segment_nm(point: tuple[float, float], a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Расстояние от точки до ортодромического отрезка a–b в морских милях."""
+    segment = haversine_nm(*a, *b) / EARTH_RADIUS_NM
+    if segment == 0:
+        return haversine_nm(*point, *a)
+
+    d13 = haversine_nm(*a, *point) / EARTH_RADIUS_NM
+    bearing_ab = _bearing_rad(a, b)
+    bearing_ap = _bearing_rad(a, point)
+    delta = bearing_ap - bearing_ab
+    cross_track = math.asin(max(-1.0, min(1.0, math.sin(d13) * math.sin(delta))))
+    along_track = math.atan2(math.sin(d13) * math.cos(delta), math.cos(d13))
+    if along_track <= 0:
+        return haversine_nm(*point, *a)
+    if along_track >= segment:
+        return haversine_nm(*point, *b)
+    return abs(cross_track) * EARTH_RADIUS_NM
+
+
 def distance_to_route(route: list[tuple[float, float]], lat: float, lon: float) -> float:
-    """Минимальное расстояние от точки до маршрута, в морских милях."""
-    return min(haversine_nm(lat, lon, rlat, rlon) for rlat, rlon in route)
+    """Минимальное расстояние от точки до линии маршрута, в морских милях."""
+    point = (lat, lon)
+    if len(route) == 1:
+        return haversine_nm(*point, *route[0])
+    return min(_distance_to_segment_nm(point, a, b) for a, b in zip(route, route[1:]))
 
 
 def warnings_on_route(route: list[tuple[float, float]], warnings: list, corridor_nm: float = 150.0) -> list[dict]:

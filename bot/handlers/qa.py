@@ -13,6 +13,7 @@ async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     db: Database = context.bot_data["db"]
     qa: ClaudeQA = context.bot_data["qa"]
     user_id = update.effective_user.id
+    db.upsert_user(user_id, update.effective_user.username, update.effective_user.first_name)
     question = update.message.text
 
     is_premium = is_effectively_premium(db, user_id)

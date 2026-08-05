@@ -19,6 +19,7 @@ HTTP-сервер бота на стандартной библиотеке (б�
 from __future__ import annotations
 
 import hashlib
+import html
 import hmac
 import json
 import logging
@@ -26,11 +27,14 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from string import Template
-from urllib.parse import parse_qs, quote, unquote, urlparse
+from urllib.parse import parse_qs, parse_qsl, quote, urlparse
 
 logger = logging.getLogger(__name__)
 
 STATS_TTL = 30.0  # секунд, кэш статистики
+# Telegram рекомендует проверять свежесть initData: HMAC сам по себе не
+# запрещает повторно использовать перехваченную подпись.
+INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60
 
 _state: dict = {"db": None, "bot_token": "", "started_at": time.time()}
 _stats_cache: dict = {"data": None, "at": 0.0}
@@ -52,14 +56,11 @@ def validate_init_data(init_data: str, bot_token: str) -> dict | None:
     try:
         received_hash = None
         data_pairs = []
-        for pair in init_data.split("&"):
-            if not pair:
-                continue
-            key, _, value = pair.partition("=")
+        for key, value in parse_qsl(init_data, keep_blank_values=True):
             if key == "hash":
                 received_hash = value
             else:
-                data_pairs.append((key, unquote(value)))
+                data_pairs.append((key, value))
         if not received_hash:
             return None
 
@@ -67,6 +68,13 @@ def validate_init_data(init_data: str, bot_token: str) -> dict | None:
         secret = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
         computed = hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(computed, received_hash):
+            return None
+
+        auth_date = next((v for k, v in data_pairs if k == "auth_date"), None)
+        if auth_date is None:
+            return None
+        age = time.time() - int(auth_date)
+        if age > INIT_DATA_MAX_AGE_SECONDS or age < -300:
             return None
 
         for k, v in data_pairs:
@@ -84,7 +92,15 @@ def _user_id_from_query(query: dict) -> int | None:
     if not user:
         return None
     uid = user.get("id")
-    return int(uid) if uid else None
+    if not uid:
+        return None
+    user_id = int(uid)
+    # Пользователь может открыть Mini App до /start. Фиксируем этот момент
+    # как начало trial, иначе пробный период начинался заново на каждом API-запросе.
+    db = _state.get("db")
+    if db is not None:
+        db.upsert_user(user_id, user.get("username"), user.get("first_name"))
+    return user_id
 
 
 # ---------------------------------------------------------------------- #
@@ -197,7 +213,10 @@ def _api_warnings(query: dict) -> dict:
     q = (query.get("q") or [""])[0].strip()
     areas = [a for a in (query.get("area") or []) if a]
     include_archived = (query.get("archived") or ["0"])[0] == "1"
-    limit = min(int((query.get("limit") or ["500"])[0]), 4000)
+    try:
+        limit = min(max(1, int((query.get("limit") or ["500"])[0])), 4000)
+    except ValueError:
+        return {"error": "limit должен быть целым числом", "results": []}
 
     rows = db.search_warnings(query=q, areas=areas or None,
                               include_archived=include_archived, limit=limit)
@@ -236,7 +255,12 @@ def _api_voyage(query: dict) -> dict:
         return denied
     src = (query.get("from") or [""])[0]
     dst = (query.get("to") or [""])[0]
-    corridor = float((query.get("corridor") or ["150"])[0])
+    try:
+        corridor = float((query.get("corridor") or ["150"])[0])
+    except ValueError:
+        return {"error": "Ширина коридора должна быть числом."}
+    if not 0 < corridor <= 1000:
+        return {"error": "Ширина коридора должна быть от 0 до 1000 морских миль."}
 
     a, b = resolve_point(src), resolve_point(dst)
     if not a or not b:
@@ -504,7 +528,10 @@ def _api_bridge(query: dict) -> dict:
 def _api_history(query: dict) -> dict:
     """График за 30 дней плюс раскладка по районам для тепловой карты."""
     db = _state["db"]
-    days = min(int((query.get("days") or ["30"])[0]), 365)
+    try:
+        days = min(max(1, int((query.get("days") or ["30"])[0])), 365)
+    except ValueError:
+        return {"error": "days должен быть целым числом"}
     hist = db.history(days)
     stats = _cached_stats()
     heat = sorted(
@@ -590,11 +617,18 @@ def _render_map(query: dict) -> bytes:
     if not points:
         return b"<html><body>Coordinates not found for this warning.</body></html>"
 
-    popup = f"<b>{title}</b>"
+    safe_title = html.escape(title)
+    popup = f"<b>{safe_title}</b>"
     if info:
-        popup += f"<br>{info}"
+        popup += f"<br>{html.escape(info)}"
+
+    # JSON находится внутри тега <script>; экранируем закрывающий тег, чтобы
+    # параметр URL не мог завершить скрипт и выполнить произвольный JavaScript.
+    def script_json(value: object) -> str:
+        return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
+
     return _MAP_TEMPLATE.substitute(
-        title=title, points_json=json.dumps(points), popup_json=json.dumps(popup)
+        title=safe_title, points_json=script_json(points), popup_json=script_json(popup)
     ).encode("utf-8")
 
 

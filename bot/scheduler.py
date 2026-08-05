@@ -74,9 +74,18 @@ async def fetch_and_store_area(db, area_code: str) -> tuple[list[int], str | Non
     logger.info("Источник %s для района %s: разобрано %d сообщений в сыром ответе (%d байт)",
                 source.source_id, area_code, len(parsed), len(raw or ""))
 
+    # Sealagom отдаёт полный список действующих сообщений. Без сверки записи,
+    # исчезнувшие после cancel_date, оставались активными в нашей БД навсегда.
+    if getattr(source, "active_snapshot_complete", False):
+        active_numbers = {
+            normalize_msgnum(w.msg_number) or w.msg_number
+            for w in parsed if w.msg_number
+        }
+        db.cancel_missing_snapshot_warnings(area_code, active_numbers)
+
     new_ids: list[int] = []
     for warning in parsed:
-        if db.warning_exists(warning.raw_text):
+        if db.warning_exists(area_code, warning.raw_text):
             continue
         wid = db.insert_warning(
             source=source.source_id,
