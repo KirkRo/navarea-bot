@@ -2234,7 +2234,69 @@ Object.assign(DICT,{
  'Пора заказывать замену':'Time to order a replacement',
  'Планируй замену заранее':'Plan the replacement ahead',
  'Ресурс должен быть больше нуля':'Rated life must be greater than zero',
- 'Внимание':'Attention','Проверка':'Check','Показать все':'Show all','Свернуть':'Collapse','Чаще всего':'Most used','сут':'d','мес':'mo'
+  'Внимание':'Attention','Проверка':'Check','Показать все':'Show all','Свернуть':'Collapse','Чаще всего':'Most used','сут':'d','мес':'mo'
+});
+
+/* Строки, создаваемые динамически после первой отрисовки. Их нельзя
+   оставлять только в статичной разметке: при EN они появлялись уже после
+   applyLang() и поэтому оставались на русском. */
+Object.assign(DICT,{
+  'Спокойной вахты':'Have a safe watch','В эфире':'Live',
+  'действующих предупреждений по твоим районам':'active warnings in your areas',
+  'Открыть карту →':'Open map →','Избранные районы':'Favourite areas',
+  'Все районы':'All areas','По количеству':'By count','По новизне':'By newest',
+  'По номеру':'By number','Найдено:':'Found:',
+  'Отметь районы звёздочкой — они появятся здесь для быстрого доступа.':'Star areas to keep them here for quick access.',
+  'НОВЫХ':'NEW','миль от курса':'NM from route','На карте':'On map','Подробнее':'Details',
+  'Ничего не нашлось. Попробуй номер, часть текста или координаты.':'Nothing found. Try a number, text fragment or position.',
+  'По этому району сейчас нет действующих предупреждений.':'There are no active warnings in this area.',
+  'Показано:':'Shown:','районов и полос':'areas and lines','точечных объектов':'point objects',
+  'из':'from','геометрия источника у':'source geometry for',
+  'Нет предупреждений с координатами для этого выбора.':'No warnings with positions for this selection.',
+  'Укажи оба порта.':'Enter both ports.','На маршруте найдено':'Found on route:',
+  'активных':'active','предупреждение':'warning','предупреждения':'warnings','предупреждений':'warnings',
+  'по маршруту':'on route','коридор':'corridor','По этому маршруту действующих предупреждений с координатами нет.':'No active warnings with positions on this route.',
+  'точка поворота':'waypoint','без номера':'no number','объект':'object','объектов':'objects','точ.':'pts.',
+  'Район':'Area','Линия / полоса':'Line / strip','Точка':'Point','Круг радиусом':'Circle, radius',
+  'Нет связи с сервером. Попробуй позже.':'No connection to the server. Try again later.',
+  'Данные из кэша':'Cached data','Инструменты вахтенного помощника':'Watchkeeping tools',
+  'Действует':'In force','Сегодня':'Today','За 7 дней':'Last 7 days','В архиве':'Archived',
+  'Удалить сохранённые данные с устройства? Настройки и избранное останутся.':'Delete saved device data? Settings and favourites will remain.',
+  'Удалить это судно из профиля?':'Delete this ship from the profile?',
+  'Удалить всю историю чек-листов? Отменить будет нельзя.':'Delete the entire checklist history? This cannot be undone.',
+  'Новый сертификат':'New certificate','Бот напомнит заранее, когда подойдёт срок':'The bot will remind you before it expires.',
+  'Что открыто сейчас и что даёт Premium':'What is available now and what Premium includes',
+  'Мои суда':'My ships','в профиле':'in profile','Типовые серии':'Common ship types',
+  'размерения подставятся':'dimensions will be filled in','шаблон':'template',
+  'Заполняется один раз, подставляется во все расчёты':'Fill it in once; values are used in all calculations.',
+  'Сохранить':'Save','Не удалось сохранить':'Could not save','нет связи':'no connection',
+  'Список судовых документов с номером редакции — чтобы под рукой было, что и когда корректировалось.':'Ship documents and revision numbers, so you always know what changed and when.',
+  'Ключевые правила расхождения, кратко своими словами':'Key collision-avoidance rules in plain language',
+  'Международный свод сигналов, однофлажные значения':'International Code of Signals: single-flag meanings',
+  'Отменённые и снятые с силы, поиск за всё время':'Cancelled warnings: search all records',
+  'Ошибка':'Error','запрос не выполнен:':'request failed:','Сбой в приложении':'Application error',
+  'Часть приложения не загрузилась':'Part of the application did not load','Не определено:':'Undefined:'
+});
+
+/* International Code of Signals: these descriptions are application content,
+   not incoming warning text, so they are safe and necessary to localise. */
+Object.assign(DICT,{
+  'У меня спущен водолаз, держитесь в стороне':'I have a diver down; keep well clear.',
+  'Гружу или выгружаю опасный груз':'I am taking in, discharging, or carrying dangerous goods.',
+  'Да, утверждение':'Yes / affirmative.','Держитесь в стороне, управляюсь с трудом':'Keep clear of me; I am manoeuvring with difficulty.',
+  'Изменяю свой курс вправо':'I am altering my course to starboard.','Я не управляюсь, держите связь':'I am disabled; communicate with me.',
+  'Мне нужен лоцман':'I require a pilot.','У меня на борту лоцман':'I have a pilot on board.',
+  'Изменяю свой курс влево':'I am altering my course to port.','У меня пожар, имею опасный груз':'I am on fire and have dangerous cargo; keep clear.',
+  'Желаю установить связь с вами':'I wish to communicate with you.','Остановите судно немедленно':'Stop carrying out your intentions.',
+  'Моё судно остановлено, хода не имею':'My vessel is stopped and making no way through the water.',
+  'Нет, отрицание':'No / negative.','Человек за бортом':'Man overboard.',
+  'Всем прибыть на борт, судно снимается':'All persons return on board; the vessel is about to proceed to sea.',
+  'Моё судно незаражённое, прошу свободную практику':'My vessel is healthy; I request free pratique.',
+  'Принято':'Received.','Мои движители работают на задний ход':'My engines are going astern.',
+  'Держитесь в стороне, произвожу парное траление':'Keep clear of me; I am engaged in pair trawling.',
+  'Вы идёте к опасности':'You are standing into danger.','Мне требуется помощь':'I require assistance.',
+  'Мне требуется медицинская помощь':'I require medical assistance.','Приостановите ваши намерения':'Stop carrying out your intentions.',
+  'Меня дрейфует на якоре':'I am dragging my anchor.','Мне требуется буксир':'I require a tug.'
 });
 
 /* Перевод одной строки. Раньше перевод делался только обходом готовой
@@ -2329,6 +2391,16 @@ function applyLang(){
   const lb=$('#langBtn'); if(lb) lb.textContent=LANG==='en'?'EN':'RU';
   try{ document.documentElement.lang=LANG; }catch(e){}
 }
+
+/* Рендереры заменяют innerHTML при поиске, открытии инструмента, карточки
+   судна и других действиях. Наблюдатель переводит добавленные узлы сразу,
+   поэтому EN не зависит от того, был ли вручную вызван applyLang(). */
+let langRefreshTimer=null;
+new MutationObserver(records=>{
+  if(LANG!=='en' || !records.some(r=>r.addedNodes.length)) return;
+  clearTimeout(langRefreshTimer);
+  langRefreshTimer=setTimeout(applyLang, 0);
+}).observe(document.body,{childList:true,subtree:true});
 /* Перехват ошибок: если что-то падает, показываем текст прямо на экране,
    иначе с телефона его никак не увидеть. */
 (function(){
@@ -4002,6 +4074,57 @@ function openVesselForm(vid, preset){
     }
   };
   applyLang();
+}
+
+/* Подсказки для карточки судна. Справочники приходят вместе с VES, поэтому
+   поиск работает без сети и не отправляет введённые данные на сервер.
+   Показываем варианты только после трёх символов: короткие запросы вроде
+   "ra" иначе дают длинный и бесполезный список производителей. */
+function bindVesselSuggest(){
+  const lists=(VES&&VES.suggestions)||{};
+  const norm=s=>String(s||'').toLocaleLowerCase().trim();
+
+  document.querySelectorAll('.vinput[data-ref]').forEach(input=>{
+    const box=input.closest('.fld').querySelector('.sugg');
+    const values=Array.isArray(lists[input.dataset.ref]) ? lists[input.dataset.ref] : [];
+    if(!box || !values.length) return;
+
+    const hide=()=>{ box.classList.remove('on'); box.innerHTML=''; };
+    const show=()=>{
+      const query=norm(input.value);
+      if(query.length<3){ hide(); return; }
+
+      const starts=[], contains=[];
+      values.forEach(value=>{
+        const candidate=String(value);
+        const text=norm(candidate);
+        if(text.startsWith(query)) starts.push(candidate);
+        else if(text.includes(query)) contains.push(candidate);
+      });
+      const matches=[...starts,...contains].slice(0,8);
+      if(!matches.length){ hide(); return; }
+
+      box.innerHTML=matches.map(value=>
+        `<div role="button" tabindex="0" data-vsuggest="${esc(value)}">${esc(value)}</div>`
+      ).join('');
+      box.classList.add('on');
+      box.querySelectorAll('[data-vsuggest]').forEach(item=>{
+        const choose=()=>{
+          input.value=item.dataset.vsuggest;
+          hide();
+          input.dispatchEvent(new Event('change',{bubbles:true}));
+          hap('light');
+        };
+        item.onclick=choose;
+        item.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();} };
+      });
+    };
+
+    input.oninput=show;
+    input.onfocus=show;
+    input.onkeydown=e=>{ if(e.key==='Escape') hide(); };
+    input.onblur=()=>setTimeout(hide,160);
+  });
 }
 
 /* --- документы судна --- */
