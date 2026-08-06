@@ -415,6 +415,11 @@ def _api_ship_search(query: dict) -> dict:
         return {"results": [], "providers": [], "error": str(e)}
 
 
+def _api_dsc(query: dict) -> dict:
+    from .services.dsc import dsc_payload
+    return dsc_payload()
+
+
 def _api_stations(query: dict) -> dict:
     from .services.radio import stations_payload
     return stations_payload()
@@ -518,6 +523,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/dsc": _api_dsc,
     "/api/ship-search": _api_ship_search,
     "/api/access": _api_access,
     "/api/vessel": _api_vessel,

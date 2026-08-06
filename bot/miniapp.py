@@ -358,6 +358,115 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
 
+/* ---- Тренажёр ЦИВ: корпус радиостанции ---- */
+.radio{
+  background:linear-gradient(170deg,#2a2f36,#191d23);
+  border:1px solid #3a4048;border-radius:20px;padding:14px;
+  box-shadow:0 18px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  max-width:400px;margin:0 auto;
+}
+.radio .brand{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:10px;font-weight:800;letter-spacing:1.2px;color:#8b939d;margin-bottom:10px;
+}
+.radio .brand b{color:#c9d2dc;font-size:11.5px;letter-spacing:.6px}
+/* экран 4.3 дюйма, 480x272 -- держим те же пропорции */
+.lcd{
+  background:#0a1410;border:2px solid #11161c;border-radius:9px;
+  aspect-ratio:480/272;padding:11px 13px;overflow:hidden;position:relative;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:#7dfca8;text-shadow:0 0 7px rgba(125,252,168,.45);
+  display:flex;flex-direction:column;
+}
+.lcd.alert{color:#ff6b5a;text-shadow:0 0 8px rgba(255,107,90,.5);background:#1a0d0c}
+.lcd .top{display:flex;justify-content:space-between;font-size:9.5px;opacity:.75;
+  border-bottom:1px solid rgba(125,252,168,.22);padding-bottom:5px;margin-bottom:7px}
+.lcd .body{flex:1;font-size:12px;line-height:1.55;overflow-y:auto;white-space:pre-wrap}
+.lcd .body::-webkit-scrollbar{width:0}
+.lcd .foot{font-size:9px;opacity:.6;border-top:1px solid rgba(125,252,168,.22);
+  padding-top:5px;margin-top:6px;display:flex;justify-content:space-between}
+.lcd .sel{background:rgba(125,252,168,.16);border-left:2px solid #7dfca8;padding-left:6px;margin-left:-8px}
+.lcd .blink{animation:lcdblink 1.1s steps(2) infinite}
+@keyframes lcdblink{50%{opacity:.25}}
+
+.radio .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+.rkey{
+  background:linear-gradient(180deg,#3a4149,#252a31);border:1px solid #454c55;
+  border-radius:9px;padding:11px 4px;font-size:11.5px;font-weight:700;color:#dfe6ee;
+  cursor:pointer;font-family:inherit;
+  box-shadow:0 2px 0 #1a1e24, inset 0 1px 0 rgba(255,255,255,.09);
+  transition:transform .08s,box-shadow .08s;
+}
+.rkey:active{transform:translateY(2px);box-shadow:0 0 0 #1a1e24, inset 0 1px 0 rgba(255,255,255,.05)}
+.rkey.num{font-size:14px;font-weight:750}
+.rkey.wide{grid-column:span 2}
+.rkey.ok{background:linear-gradient(180deg,#2f6b46,#1f4a30);border-color:#3d7d54;color:#d8ffe6}
+.rkey.warn{background:linear-gradient(180deg,#7a5a20,#5a4116);border-color:#8d6a28;color:#ffe9c2}
+
+.distressbox{margin-top:12px;position:relative}
+.dlid{
+  background:linear-gradient(180deg,#3a4149,#252a31);border:1px solid #454c55;
+  border-radius:11px;padding:13px;text-align:center;font-size:11.5px;font-weight:750;
+  color:#a8b2bd;cursor:pointer;letter-spacing:.6px;
+}
+.dlid:active{transform:scale(.98)}
+.dbtn{
+  width:100%;background:linear-gradient(180deg,#d8402f,#a02218);border:1px solid #e05a48;
+  border-radius:11px;padding:15px;font-size:14px;font-weight:850;color:#fff;
+  letter-spacing:1.4px;cursor:pointer;font-family:inherit;
+  box-shadow:0 3px 0 #6d160f, 0 0 22px rgba(216,64,47,.35);
+  transition:transform .1s;
+}
+.dbtn:active{transform:translateY(3px);box-shadow:0 0 0 #6d160f, 0 0 26px rgba(216,64,47,.5)}
+.dbtn.arming{animation:armpulse .45s infinite}
+@keyframes armpulse{50%{background:linear-gradient(180deg,#ff5a44,#c02a1e)}}
+.dhold{font-size:10px;color:#ffb3a8;text-align:center;margin-top:7px;letter-spacing:.4px}
+
+.dsctip{
+  background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--amber);
+  border-radius:var(--r-md);padding:12px 14px;margin-top:13px;font-size:12.5px;
+  line-height:1.5;color:var(--muted);
+}
+.dsctip b{color:var(--text);display:block;margin-bottom:4px;font-size:12px}
+.examhead{
+  background:linear-gradient(140deg,rgba(240,160,60,.17),rgba(255,139,61,.04));
+  border:1px solid rgba(240,160,60,.32);border-radius:var(--r-lg);padding:14px;margin-bottom:13px;
+}
+.examhead .q{font-size:14px;font-weight:700;line-height:1.4}
+.examhead .n{font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.7px}
+.verdict{border-radius:var(--r-md);padding:13px 14px;margin-top:12px;font-size:12.5px;line-height:1.5}
+.verdict.ok{background:rgba(63,201,127,.13);border:1px solid rgba(63,201,127,.36)}
+.verdict.no{background:rgba(255,107,74,.13);border:1px solid rgba(255,107,74,.36)}
+.verdict b{display:block;margin-bottom:5px;font-size:13px}
+
+/* ---- Разделы инструментов ---- */
+.catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:640px){.catgrid{grid-template-columns:repeat(3,1fr)}}
+.catcard{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;
+  padding:15px 14px;border-radius:var(--r-lg);cursor:pointer;font-family:inherit;text-align:left;
+  background:var(--surf);border:1px solid var(--line);backdrop-filter:blur(16px);
+  transition:transform .2s cubic-bezier(.34,1.4,.5,1),border-color .2s;
+}
+.catcard:active{transform:scale(.96);border-color:rgba(240,160,60,.45)}
+.catcard .ci{
+  width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  background:var(--amber-soft);border:1px solid rgba(240,160,60,.22);color:var(--amber);
+}
+.catcard .cn{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.25}
+.catcard .cq{
+  position:absolute;top:13px;right:13px;font-size:10px;font-weight:800;
+  color:var(--muted);background:var(--surf2);border:1px solid var(--line);
+  border-radius:8px;padding:2px 7px;
+}
+.backrow{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:9px 13px;
+  border-radius:var(--r-md);cursor:pointer;font-family:inherit;font-size:13px;font-weight:650;
+  background:var(--surf);border:1px solid var(--line);color:var(--muted);
+}
+.backrow:active{border-color:var(--amber);color:var(--amber)}
+.cnt2{font-size:12px;color:var(--muted);font-weight:650}
+
 /* ---- Кнопки-фильтры ---- */
 .chip{
   background:var(--surf);border:1px solid var(--line);color:var(--muted);
@@ -1011,6 +1120,12 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <!-- НАСТРОЙКИ -->
   <section id="v-settings" class="hidden">
     <div id="settingsBox"></div>
+  </section>
+
+  <!-- ТРЕНАЖЁР ЦИВ -->
+  <section id="v-dsc" class="hidden">
+    <div class="sech"><h3>Тренажёр ЦИВ</h3></div>
+    <div id="dscBox"><div class="sk card"></div></div>
   </section>
 
   <!-- РЕЙС -->
@@ -2288,6 +2403,15 @@ Object.assign(DICT,{
  'Исключительно высокие волны':'Exceptionally high waves',
  'Воздух наполнен пеной и брызгами':'Air filled with foam and spray'
 });
+Object.assign(DICT,{
+ 'Тренажёр ЦИВ':'DSC Simulator','ЦИВ':'DSC','Тренажёр':'Simulator',
+ 'Крышка кнопки бедствия — открыть':'Distress button cover — open',
+ 'Удерживай 2 секунды':'Hold for 2 seconds','Режим экзамена':'Exam mode',
+ 'Выйти из экзамена':'Leave exam','Как это работает':'How it works',
+ 'Задание':'Task','верно':'correct','Верно':'Correct','Неверно':'Wrong',
+ 'Экзамен завершён':'Exam finished','Верных ответов':'Correct answers','из':'of',
+ 'Все разделы':'All sections','Под рукой':'At hand','Разделы':'Sections'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -2361,7 +2485,7 @@ function applyLang(){
    причине не догрузилась, панель всё равно переключает разделы. */
 var FALLBACK_GROUPS={
   home:['dash','areas'],
-  tools:['tools','bridge','refs','radio'],
+  tools:['tools','bridge','refs','radio','dsc'],
   map:['map','voy','zones'],
   profile:['ship','settings']
 };
@@ -2950,7 +3074,8 @@ const GROUPS={
     {v:'tools',t:'Расчёты',i:'sliders'},
     {v:'bridge',t:'Чек-листы',i:'flag'},
     {v:'refs',t:'Справка',i:'archive'},
-    {v:'radio',t:'Радио',i:'radar'}]},
+    {v:'radio',t:'Радио',i:'radar'},
+    {v:'dsc',t:'ЦИВ',i:'radar'}]},
   map:{t:'Карта',i:'map',subs:[
     {v:'map',t:'Обстановка',i:'map'},
     {v:'voy',t:'Маршрут',i:'route'},
@@ -2959,7 +3084,7 @@ const GROUPS={
     {v:'ship',t:'Моё судно',i:'ship'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
-const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','ship','settings','voy','zones'];
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','ship','settings','voy','zones'];
 const VIEW_GROUP={};
 Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
 let S_GROUP='home';
@@ -3783,6 +3908,320 @@ function renderSettings(){
 const APP_VERSION='1.0';
 
 /* ---- Моё судно: поиск, профиль, документы ---- */
+
+/* ================= Тренажёр ЦИВ (DSC) =================
+   Экранная копия Furuno FS-1575: дисплей, клавиатура, кнопка бедствия
+   под крышкой. Ничего в эфир не уходит -- вся связь имитируется, включая
+   задержки на подтверждение, как на настоящей станции. */
+let DSC=null, DS={
+  screen:'main',      // что показано на дисплее
+  sel:0,              // выбранная строка меню
+  call:null,          // выбранный вид вызова
+  nature:null,        // вид бедствия
+  mmsi:'',            // набранный MMSI
+  band:3,             // индекс диапазона, по умолчанию 8 МГц
+  log:[],             // строки на дисплее
+  busy:false,
+  armed:false,        // крышка кнопки бедствия открыта
+  hold:0,
+  exam:null, examIdx:0, examScore:0, examTotal:0
+};
+
+async function loadDSC(){
+  if(DSC) return DSC;
+  try{ DSC=await api('/api/dsc'); localStorage.setItem('navarea_dsc',JSON.stringify(DSC)); }
+  catch(e){ try{ DSC=JSON.parse(localStorage.getItem('navarea_dsc')||'null'); }catch(e2){} }
+  return DSC;
+}
+
+const dscBand = ()=> (DSC&&DSC.freqs[DS.band]) || {band:'HF 8',dsc:8414.5,rt:8291.0};
+function dscPrint(line){ DS.log.push(line); if(DS.log.length>14) DS.log.shift(); drawDSC(); }
+function dscClear(){ DS.log=[]; }
+
+/* ---- дисплей ---- */
+function lcdContent(){
+  const b=dscBand();
+  if(DS.screen==='main'){
+    const items=(DSC.calls||[]);
+    return items.map((c,i)=>
+      `<div class="${i===DS.sel?'sel':''}">${i===DS.sel?'>':' '} ${esc(c.t)}</div>`).join('');
+  }
+  if(DS.screen==='nature'){
+    return (DSC.nature||[]).map((n,i)=>
+      `<div class="${i===DS.sel?'sel':''}">${i===DS.sel?'>':' '} ${esc(n.t)}</div>`).join('');
+  }
+  if(DS.screen==='band'){
+    return (DSC.freqs||[]).map((f,i)=>
+      `<div class="${i===DS.sel?'sel':''}">${i===DS.sel?'>':' '} ${f.band}  ${f.dsc} kHz</div>`).join('');
+  }
+  if(DS.screen==='mmsi'){
+    return `ENTER MMSI\n\n  ${DS.mmsi.padEnd(9,'_')}\n\n`+
+           (DS.mmsi.length===9?'<div class="blink">PRESS SEND</div>':'9 digits required');
+  }
+  return DS.log.join('\n');
+}
+
+function drawDSC(){
+  const box=$('#lcd'); if(!box||!DSC) return;
+  const b=dscBand();
+  const alert=DS.screen==='log'&&DS.log.some(l=>/DISTRESS|MAYDAY/.test(l));
+  box.className='lcd'+(alert?' alert':'');
+  const pos=(VES&&VES.active&&VES.active.name)?VES.active.name:'OWN SHIP';
+  box.innerHTML=
+    `<div class="top"><span>${esc(pos).slice(0,18)}</span><span>${b.band} · ${b.dsc} kHz</span></div>
+     <div class="body">${lcdContent()}</div>
+     <div class="foot"><span>${DS.busy?'TX':'RX'}</span><span>DSC WATCH ON</span></div>`;
+}
+
+/* ---- имитация обмена ---- */
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function dscSend(){
+  if(DS.busy||!DSC) return;
+  const b=dscBand();
+
+  if(DS.screen==='main'){
+    const c=DSC.calls[DS.sel];
+    DS.call=c;
+    if(c.needs.includes('nature')){ DS.screen='nature'; DS.sel=0; drawDSC(); showTip(c); return; }
+    if(c.needs.includes('mmsi')){ DS.screen='mmsi'; DS.mmsi=''; drawDSC(); showTip(c); return; }
+    return runCall(c);
+  }
+  if(DS.screen==='nature'){
+    DS.nature=DSC.nature[DS.sel];
+    return runCall(DS.call);
+  }
+  if(DS.screen==='mmsi'){
+    if(DS.mmsi.length!==9) return;
+    return runCall(DS.call);
+  }
+  if(DS.screen==='band'){
+    DS.band=DS.sel; DS.screen='main'; DS.sel=0; drawDSC();
+    showLesson('freq');
+    return;
+  }
+}
+
+async function runCall(c){
+  if(!c) return;
+  DS.busy=true; DS.screen='log'; dscClear();
+  const b=dscBand();
+  hap('medium');
+
+  const isDistress = c.id==='distress';
+  dscPrint(`${c.t.toUpperCase()}`);
+  dscPrint(`FREQ ${b.dsc} kHz`);
+  if(DS.mmsi) dscPrint(`TO   ${DS.mmsi}`);
+  if(DS.nature) dscPrint(`NATURE ${DS.nature.t}`);
+  dscPrint('POS  46-29.4N 030-44.3E');
+  dscPrint('');
+  dscPrint(isDistress?'TRANSMITTING DISTRESS...':'TRANSMITTING...');
+
+  await wait(1200);
+  dscPrint(isDistress?'DISTRESS SENT':'CALL SENT');
+  dscPrint('WAITING FOR ACK...');
+  await wait(isDistress?2200:1600);
+
+  if(c.id==='distress'){
+    dscPrint('');
+    dscPrint('RCC ACK RECEIVED');
+    dscPrint('FROM 002734411 ODESSA RADIO');
+    dscPrint(`SWITCH TO ${b.rt} kHz`);
+    dscPrint('SPEAK: MAYDAY x3, SHIP NAME,');
+    dscPrint('CALLSIGN, MMSI, POSITION,');
+    dscPrint('NATURE, ASSISTANCE, POB');
+    showLesson('rt');
+  } else if(c.id==='relay'){
+    dscPrint('');
+    dscPrint('RELAY ACK RECEIVED');
+    dscPrint('RCC ACKNOWLEDGED');
+    showLesson('ack');
+  } else if(c.id==='test'){
+    dscPrint('');
+    dscPrint('TEST ACK RECEIVED');
+    dscPrint(`FROM ${DS.mmsi||'002371000'}`);
+    dscPrint('DSC OPERATION NORMAL');
+    showLesson('test');
+  } else if(c.id==='position'){
+    dscPrint('');
+    dscPrint('POSITION RECEIVED');
+    dscPrint('44-12.8N 033-51.6E');
+    dscPrint('AT 1420 UTC');
+  } else if(c.id==='polling'){
+    dscPrint('');
+    dscPrint('POLLING ACK RECEIVED');
+    dscPrint('STATION IN RANGE');
+  } else if(c.id==='allships'||c.id==='safety'||c.id==='urgency'){
+    dscPrint('');
+    dscPrint('CALL COMPLETED');
+    dscPrint(`SWITCH TO ${b.rt} kHz`);
+    dscPrint(c.id==='urgency'?'SPEAK: PAN PAN x3':'SPEAK: SECURITE x3');
+    showLesson('rt');
+  } else {
+    dscPrint('');
+    dscPrint('ACK RECEIVED');
+    dscPrint(`SWITCH TO ${b.rt} kHz`);
+    showLesson('rt');
+  }
+
+  DS.busy=false; drawDSC();
+  if(DS.exam) checkExam(c);
+}
+
+/* ---- кнопка бедствия ---- */
+function armDistress(){
+  DS.armed=true; hap('medium'); renderDSC();
+}
+function holdDistress(down){
+  const btn=$('#dbtn'); if(!btn) return;
+  if(down){
+    btn.classList.add('arming');
+    DS.hold=setTimeout(async()=>{
+      btn.classList.remove('arming');
+      DS.call=(DSC.calls||[]).find(c=>c.id==='distress');
+      DS.screen='nature'; DS.sel=0; DS.armed=false;
+      hap('heavy'); renderDSC();
+      showLesson('distress');
+    },1800);
+  } else {
+    clearTimeout(DS.hold); btn.classList.remove('arming');
+  }
+}
+
+/* ---- пояснения ---- */
+function showTip(c){
+  const el=$('#dsctip'); if(!el||!c) return;
+  el.innerHTML=`<b>${esc(c.ru)}</b>${esc(c.why)}`;
+}
+function showLesson(key){
+  const el=$('#dsctip'); if(!el||!DSC) return;
+  const t=(DSC.lessons||{})[key]; if(!t) return;
+  el.innerHTML=`<b>${esc(tr('Как это работает'))}</b>${esc(t)}`;
+}
+
+/* ---- экзамен ---- */
+function startExam(){
+  DS.exam=(DSC.exam||[]).slice().sort(()=>Math.random()-0.5);
+  DS.examIdx=0; DS.examScore=0; DS.examTotal=DS.exam.length;
+  DS.screen='main'; DS.sel=0; dscClear(); hap('medium'); renderDSC();
+}
+function stopExam(){ DS.exam=null; renderDSC(); }
+function checkExam(c){
+  if(!DS.exam) return;
+  const task=DS.exam[DS.examIdx]; if(!task) return;
+  const okCall=c.id===task.expect.call;
+  const okNat=!task.expect.nature||(DS.nature&&DS.nature.id===task.expect.nature);
+  const ok=okCall&&okNat;
+  if(ok) DS.examScore++;
+  const el=$('#examVerdict');
+  if(el){
+    el.className='verdict '+(ok?'ok':'no');
+    el.innerHTML=`<b>${ok?tr('Верно'):tr('Неверно')}</b>${esc(task.explain)}`;
+  }
+  hap(ok?'light':'heavy');
+  setTimeout(()=>{
+    DS.examIdx++;
+    DS.nature=null; DS.mmsi=''; DS.screen='main'; DS.sel=0;
+    renderDSC();
+  },3600);
+}
+
+/* ---- отрисовка раздела ---- */
+function renderDSC(){
+  const box=$('#dscBox'); if(!box) return;
+  if(!DSC){ box.innerHTML='<div class="sk card"></div>'; return; }
+
+  let exam='';
+  if(DS.exam){
+    const task=DS.exam[DS.examIdx];
+    if(task){
+      exam=`<div class="examhead">
+        <div class="n">${esc(tr('Задание'))} ${DS.examIdx+1} / ${DS.examTotal} · ${esc(tr('верно'))}: ${DS.examScore}</div>
+        <div class="q">${esc(task.situation)}</div></div>
+        <div id="examVerdict"></div>`;
+    } else {
+      const pct=Math.round(DS.examScore/DS.examTotal*100);
+      exam=`<div class="examhead"><div class="n">${esc(tr('Экзамен завершён'))}</div>
+        <div class="q">${esc(tr('Верных ответов'))}: ${DS.examScore} ${esc(tr('из'))} ${DS.examTotal} (${pct}%)</div></div>`;
+    }
+  }
+
+  box.innerHTML=exam+`
+    <div class="radio">
+      <div class="brand"><span>FURUNO</span><b>FS-1575</b><span>MF/HF DSC</span></div>
+      <div class="lcd" id="lcd"></div>
+      <div class="keys">
+        <button class="rkey" data-dk="up">▲</button>
+        <button class="rkey" data-dk="down">▼</button>
+        <button class="rkey" data-dk="menu">MENU</button>
+        <button class="rkey" data-dk="band">FREQ</button>
+        <button class="rkey num" data-dk="1">1</button>
+        <button class="rkey num" data-dk="2">2</button>
+        <button class="rkey num" data-dk="3">3</button>
+        <button class="rkey" data-dk="ack">ACK</button>
+        <button class="rkey num" data-dk="4">4</button>
+        <button class="rkey num" data-dk="5">5</button>
+        <button class="rkey num" data-dk="6">6</button>
+        <button class="rkey warn" data-dk="cancel">CANCEL</button>
+        <button class="rkey num" data-dk="7">7</button>
+        <button class="rkey num" data-dk="8">8</button>
+        <button class="rkey num" data-dk="9">9</button>
+        <button class="rkey" data-dk="del">DEL</button>
+        <button class="rkey num" data-dk="0">0</button>
+        <button class="rkey ok wide" data-dk="send">SEND / CALL</button>
+        <button class="rkey" data-dk="home">HOME</button>
+      </div>
+      <div class="distressbox">
+        ${DS.armed
+          ? `<button class="dbtn" id="dbtn">DISTRESS</button>
+             <div class="dhold">${esc(tr('Удерживай 2 секунды'))}</div>`
+          : `<div class="dlid" id="dlid">${esc(tr('Крышка кнопки бедствия — открыть'))}</div>`}
+      </div>
+    </div>
+    <div class="dsctip" id="dsctip"><b>${esc(tr('Тренажёр'))}</b>${esc((DSC.note||''))}</div>
+    <div style="display:flex;gap:9px;margin-top:13px">
+      ${DS.exam
+        ? `<button class="btn g" style="flex:1" id="examStop">${esc(tr('Выйти из экзамена'))}</button>`
+        : `<button class="btn" style="flex:1" id="examStart">${esc(tr('Режим экзамена'))}</button>`}
+    </div>`;
+
+  drawDSC();
+
+  document.querySelectorAll('[data-dk]').forEach(b=>b.onclick=()=>dscKey(b.dataset.dk));
+  const lid=$('#dlid'); if(lid) lid.onclick=armDistress;
+  const db=$('#dbtn');
+  if(db){
+    db.onmousedown=()=>holdDistress(true); db.onmouseup=()=>holdDistress(false);
+    db.ontouchstart=(e)=>{e.preventDefault();holdDistress(true)};
+    db.ontouchend=()=>holdDistress(false);
+    db.onmouseleave=()=>holdDistress(false);
+  }
+  const es=$('#examStart'); if(es) es.onclick=startExam;
+  const ex=$('#examStop'); if(ex) ex.onclick=stopExam;
+  applyLang();
+}
+
+function dscKey(k){
+  if(!DSC) return;
+  hap();
+  const lists={main:(DSC.calls||[]).length,nature:(DSC.nature||[]).length,band:(DSC.freqs||[]).length};
+  const len=lists[DS.screen]||0;
+
+  if(k==='up'){ DS.sel=(DS.sel-1+len)%(len||1); if(DS.screen==='main') showTip(DSC.calls[DS.sel]); drawDSC(); return; }
+  if(k==='down'){ DS.sel=(DS.sel+1)%(len||1); if(DS.screen==='main') showTip(DSC.calls[DS.sel]); drawDSC(); return; }
+  if(k==='menu'||k==='home'){ DS.screen='main'; DS.sel=0; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); return; }
+  if(k==='band'){ DS.screen='band'; DS.sel=DS.band; drawDSC(); return; }
+  if(k==='cancel'){ DS.screen='main'; DS.sel=0; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); showLesson('distress'); return; }
+  if(k==='del'){ if(DS.screen==='mmsi') DS.mmsi=DS.mmsi.slice(0,-1); drawDSC(); return; }
+  if(k==='ack'){ dscPrint('ACK SENT'); showLesson('ack'); return; }
+  if(k==='send'){ dscSend(); return; }
+  if(/^[0-9]$/.test(k)){
+    if(DS.screen!=='mmsi'){ DS.screen='mmsi'; DS.mmsi=''; }
+    if(DS.mmsi.length<9) DS.mmsi+=k;
+    drawDSC(); if(DS.mmsi.length===3) showLesson('mmsi');
+  }
+}
+
 let VES=null, vesSearchTimer=null;
 
 async function loadVessel(){
@@ -4092,26 +4531,64 @@ function saveCalcVals(id,vals){
   }catch(e){}
 }
 
+/* ---- Инструменты: сначала разделы, потом список ----
+   Раньше все категории со всеми плитками шли одной лентой вниз, и до
+   нижних приходилось долго крутить. Теперь сверху компактная сетка
+   разделов, а список открывается внутри выбранного. */
+let TOOL_CAT=null;
+
 function renderTools(){
   const favT=JSON.parse(localStorage.getItem('navarea_favtools')||'[]');
+
+  // выбран раздел -- показываем только его
+  if(TOOL_CAT){
+    const cat=TOOL_CATS[TOOL_CAT]||{t:TOOL_CAT,i:'sliders'};
+    const list=TOOLS.filter(t=>t.cat===TOOL_CAT);
+    $('#toollist').innerHTML=
+      `<button class="backrow" id="toolsBack">${ico('back','sm')}<span>${esc(tr('Все разделы'))}</span></button>
+       <div class="sech"><h3>${esc(tr(cat.t))}</h3><a class="cnt2">${list.length}</a></div>
+       <div class="grid2">${list.map(toolCard).join('')}</div>`;
+    bindToolCards();
+    const b=$('#toolsBack'); if(b) b.onclick=()=>{TOOL_CAT=null;hap();renderTools();};
+    applyLang();
+    return;
+  }
+
   let h='';
-  if(favT.length){
-    const list=TOOLS.filter(t=>favT.includes(t.id));
-    h+=`<div class="sech"><h3>Избранные инструменты</h3></div>`+collapsible('t_fav',list,toolCard);
+
+  // то, что под рукой: избранное и частое -- одной короткой лентой
+  const quick=[];
+  favT.forEach(id=>{ const t=TOOLS.find(x=>x.id===id); if(t&&!quick.includes(t)) quick.push(t); });
+  topUsed('tool',6).forEach(id=>{ const t=TOOLS.find(x=>x.id===id); if(t&&!quick.includes(t)) quick.push(t); });
+  if(quick.length){
+    h+=`<div class="sech"><h3>${esc(tr('Под рукой'))}</h3></div>`+
+       `<div class="grid2">${quick.slice(0,4).map(toolCard).join('')}</div>`;
   }
-  const often=topUsed('tool',4).map(id=>TOOLS.find(t=>t.id===id)).filter(Boolean);
-  if(often.length){
-    h+=`<div class="sech" style="margin-top:17px"><h3>Чаще всего</h3></div>`+
-       `<div class="grid2">${often.map(toolCard).join('')}</div>`;
-  }
+
+  // разделы плитками
+  h+=`<div class="sech" style="margin-top:16px"><h3>${esc(tr('Разделы'))}</h3></div><div class="catgrid">`;
   Object.keys(TOOL_CATS).forEach(ck=>{
     const list=TOOLS.filter(t=>t.cat===ck);
     if(!list.length) return;
-    h+=`<div class="sech" style="margin-top:17px"><h3>${TOOL_CATS[ck].t}</h3></div>`+
-       collapsible('t_'+ck,list,toolCard);
+    const c=TOOL_CATS[ck];
+    h+=`<button class="catcard" data-cat="${ck}">
+          <span class="ci">${ico(c.i)}</span>
+          <span class="cn">${esc(tr(c.t))}</span>
+          <span class="cq">${list.length}</span>
+        </button>`;
   });
+  h+=`</div>`;
+
   $('#toollist').innerHTML=h;
   applyLang();
+  bindToolCards();
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{
+    TOOL_CAT=b.dataset.cat; hap(); renderTools();
+    try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){}
+  });
+}
+
+function bindToolCards(){
   document.querySelectorAll('[data-tool]').forEach(c=>c.onclick=ev=>{
     if(ev.target.closest('.gstar')) return;
     openTool(TOOLS.find(t=>t.id===c.dataset.tool));
@@ -4124,7 +4601,6 @@ function renderTools(){
     localStorage.setItem('navarea_favtools',JSON.stringify(f));
     renderTools();
   });
-  bindExpand(renderTools);
 }
 
 function toolCard(t,i){
