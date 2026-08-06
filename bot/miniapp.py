@@ -565,14 +565,20 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .qbtn .qt{font-size:13px;font-weight:700;line-height:1.25}
 .qbtn .qs{font-size:11px;color:var(--muted);line-height:1.3}
 .subtabs{
-  display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;
+  display:flex;gap:5px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
   margin:0 -15px 14px;padding:0 15px 2px;position:relative;
-  /* справа мягкое затухание -- видно, что лента прокручивается и там
-     есть ещё разделы. Без этого четвёртая вкладка ("Радио") уходила
-     за край экрана и выглядела так, будто её нет вовсе. */
-  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent 100%);
-  mask-image:linear-gradient(90deg,#000 88%,transparent 100%);
+  /* Свойства ниже нужны, чтобы лента таскалась пальцем в мобильном
+     браузере. Раньше здесь стояла маска-градиент по краю: на iOS она
+     создаёт отдельный слой отрисовки и глушит горизонтальный свайп --
+     лента прокручивалась только программно, а рукой нет. */
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x;
+  overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;
+  cursor:grab;
 }
+.subtabs:active{cursor:grabbing}
+.subtab{scroll-snap-align:start}
 .subtabs::-webkit-scrollbar{display:none}
 .subtab{
   flex:none;border:1px solid var(--line);background:var(--surf);color:var(--muted);
@@ -2540,6 +2546,38 @@ document.addEventListener('click', function(ev){
   }
 });
 
+
+/* Перетаскивание лент мышью: на телефоне свайп работает сам, а на
+   компьютере зажатую кнопку браузер не превращает в прокрутку. */
+(function(){
+  function makeDraggable(el){
+    if(!el||el._drag) return; el._drag=true;
+    let down=false, startX=0, startScroll=0, moved=0;
+    el.addEventListener('mousedown', e=>{
+      down=true; moved=0; startX=e.pageX; startScroll=el.scrollLeft;
+      el.style.scrollBehavior='auto';
+    });
+    window.addEventListener('mouseup', ()=>{ down=false; el.style.scrollBehavior=''; });
+    window.addEventListener('mousemove', e=>{
+      if(!down) return;
+      const dx=e.pageX-startX;
+      moved=Math.max(moved,Math.abs(dx));
+      el.scrollLeft=startScroll-dx;
+      if(moved>4) e.preventDefault();
+    });
+    // если тащили, а не кликали -- гасим клик, чтобы не переключился раздел
+    el.addEventListener('click', e=>{ if(moved>6){ e.stopPropagation(); e.preventDefault(); moved=0; } }, true);
+  }
+  function scan(){
+    ['#subtabs','#cats','#rchips','#mapchips','#corr'].forEach(sel=>{
+      const el=document.querySelector(sel); if(el) makeDraggable(el);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', scan);
+  setTimeout(scan, 400);
+  setTimeout(scan, 1500);
+})();
+
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (TG) { TG.ready(); TG.expand(); try{ TG.setHeaderColor('#0a1520'); }catch(e){} }
 const INIT = TG ? (TG.initData || '') : '';
@@ -3141,6 +3179,7 @@ function switchView(v){
   if(v==='bridge'){ if(gate('#bridgeBox','bridge')) loadBridge(); }
   if(v==='ship'){ if(gate('#v-ship','vessel')) loadVessel(); }
   if(v==='settings') renderSettings();
+  if(v==='dsc') loadDSC().then(renderDSC);
   if(v==='radio') setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
   if(v==='dash') loadHistory();
   if(v==='voy') gate('#v-voy','voyage');
