@@ -195,8 +195,6 @@ class SealagomSource:
     всех районов сразу -- см. кэш в _fetch_all."""
 
     source_id = "sealagom"
-    # API возвращает полный список active_messages по району, а не дельту.
-    active_snapshot_complete = True
     covers_areas = list(ROMAN_TO_ID.keys())
 
     _MINIMAL_PARAMS = {"include_messages": "true"}

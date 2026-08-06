@@ -31,9 +31,6 @@ class WarningSource(Protocol):
 
     source_id: str          # короткое имя источника, например "nga"
     covers_areas: list[str]  # какие NAVAREA/HYDRO коды отдаёт этот источник
-    # True, если ответ является полным снимком всех действующих сообщений
-    # района. Тогда записи, которых в снимке больше нет, можно отменять.
-    active_snapshot_complete: bool
 
     async def fetch_raw(self, area_code: str) -> str:
         """Скачать сырой текст для данного района."""
@@ -68,8 +65,3 @@ class FallbackSource:
 
     def parse(self, area_code: str, raw_text: str) -> list[ParsedWarning]:
         return self._last_used.parse(area_code, raw_text)
-
-    @property
-    def active_snapshot_complete(self) -> bool:
-        """Признак зависит от источника, который действительно ответил."""
-        return bool(getattr(self._last_used, "active_snapshot_complete", False))

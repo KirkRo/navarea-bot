@@ -8,7 +8,7 @@ from telegram.ext import ContextTypes
 from ..config import config
 from ..scheduler import fetch_and_store_area, format_warning_message
 from ..services.access import is_effectively_premium
-from ..services.sources import registry
+from ..services.sources.registry import AREAS, POLLABLE_AREAS, area_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,10 @@ CATCHUP_LIMIT = 15  # чтобы не заспамить при районе с 
 
 def _build_keyboard(subscribed: list[str]) -> InlineKeyboardMarkup:
     rows = []
-    for code in registry.POLLABLE_AREAS:
+    for code in POLLABLE_AREAS:
         mark = "✅" if code in subscribed else "▫️"
-        info = registry.AREAS[code]
-        label = f"{mark} {code.replace('COASTAL:', 'Берег ')} — {registry.area_display_name(code)}"
+        info = AREAS[code]
+        label = f"{mark} {code.replace('COASTAL:', 'Берег ')} — {area_display_name(code)}"
         rows.append([InlineKeyboardButton(label[:62], callback_data=f"{CALLBACK_PREFIX}{code}")])
     rows.append([InlineKeyboardButton("Готово", callback_data=f"{CALLBACK_PREFIX}done")])
     return InlineKeyboardMarkup(rows)
@@ -30,7 +30,6 @@ def _build_keyboard(subscribed: list[str]) -> InlineKeyboardMarkup:
 async def cmd_areas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db = context.bot_data["db"]
     user_id = update.effective_user.id
-    db.upsert_user(user_id, update.effective_user.username, update.effective_user.first_name)
     subscribed = db.get_user_areas(user_id)
     is_premium = is_effectively_premium(db, user_id)
     limit = config.premium_areas_limit if is_premium else config.free_areas_limit
@@ -48,7 +47,6 @@ async def on_area_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     db = context.bot_data["db"]
     query = update.callback_query
     user_id = query.from_user.id
-    db.upsert_user(user_id, query.from_user.username, query.from_user.first_name)
     code = query.data[len(CALLBACK_PREFIX):]
 
     if code == "done":

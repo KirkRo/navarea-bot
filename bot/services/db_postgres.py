@@ -254,13 +254,8 @@ class PostgresDatabase:
     def set_premium(self, user_id: int, until_iso: str) -> None:
         with self._conn() as conn, conn.cursor() as cur:
             cur.execute(
-                """
-                INSERT INTO users (user_id, created_at, is_premium, premium_until)
-                VALUES (%s, %s, 1, %s)
-                ON CONFLICT (user_id) DO UPDATE SET
-                    is_premium = 1, premium_until = EXCLUDED.premium_until
-                """,
-                (user_id, _now(), until_iso),
+                "UPDATE users SET is_premium = 1, premium_until = %s WHERE user_id = %s",
+                (until_iso, user_id),
             )
 
     def revoke_premium(self, user_id: int) -> None:
@@ -347,8 +342,8 @@ class PostgresDatabase:
     # Предупреждения NAVAREA
     # ------------------------------------------------------------------ #
 
-    def warning_exists(self, area_code: str, raw_text: str) -> bool:
-        h = text_hash(f"{area_code}\0{raw_text}")
+    def warning_exists(self, raw_text: str) -> bool:
+        h = text_hash(raw_text)
         with self._conn() as conn, conn.cursor() as cur:
             cur.execute("SELECT 1 FROM warnings WHERE text_hash = %s", (h,))
             row = cur.fetchone()
@@ -365,7 +360,7 @@ class PostgresDatabase:
         raw_text: str,
         shapes: Optional[list] = None,
     ) -> Optional[int]:
-        h = text_hash(f"{area_code}\0{raw_text}")
+        h = text_hash(raw_text)
         shapes_json = json.dumps(shapes, ensure_ascii=False) if shapes else None
         with self._conn() as conn, conn.cursor() as cur:
             if msg_number:
@@ -408,23 +403,6 @@ class PostgresDatabase:
                 "UPDATE warnings SET is_cancelled = 1 WHERE area_code = %s AND msg_number = %s",
                 (area_code, msg_number),
             )
-
-    def cancel_missing_snapshot_warnings(self, area_code: str, active_msg_numbers: set[str]) -> None:
-        """Отменяет нумерованные сообщения, отсутствующие в полном снимке API."""
-        with self._conn() as conn, conn.cursor() as cur:
-            if active_msg_numbers:
-                cur.execute(
-                    "UPDATE warnings SET is_cancelled = 1 "
-                    "WHERE area_code = %s AND is_cancelled = 0 AND msg_number IS NOT NULL "
-                    "AND NOT (msg_number = ANY(%s))",
-                    (area_code, sorted(active_msg_numbers)),
-                )
-            else:
-                cur.execute(
-                    "UPDATE warnings SET is_cancelled = 1 "
-                    "WHERE area_code = %s AND is_cancelled = 0 AND msg_number IS NOT NULL",
-                    (area_code,),
-                )
 
     def active_warnings(self, area_code: str, limit: int = 20) -> list[dict]:
         with self._conn() as conn, conn.cursor() as cur:

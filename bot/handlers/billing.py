@@ -27,7 +27,6 @@ INVOICE_PAYLOAD = "navarea_premium_monthly"
 async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     db: Database = context.bot_data["db"]
     user_id = update.effective_user.id
-    db.upsert_user(user_id, update.effective_user.username, update.effective_user.first_name)
 
     if not config.paywall_enabled:
         await update.message.reply_text(
@@ -88,7 +87,6 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
     db: Database = context.bot_data["db"]
     payment = update.message.successful_payment
     user_id = update.effective_user.id
-    db.upsert_user(user_id, update.effective_user.username, update.effective_user.first_name)
 
     until = payment.subscription_expiration_date
     if until is None:
