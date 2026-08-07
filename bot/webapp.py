@@ -486,6 +486,127 @@ def _api_gmdss(query: dict) -> dict:
     }
 
 
+def _api_ask(query: dict) -> dict:
+    """Ask Watchkeeper: понимаем вопрос и говорим, что с ним делать.
+
+    Ответ всегда одного вида: тип действия и данные к нему. Приложение
+    само решает, открыть ли расчёт, увести ли на проверку маршрута или
+    просто показать текст."""
+    from .services.ask import ask_payload, match_route, match_tool, match_watch
+
+    text = (query.get("q") or [""])[0].strip()
+    if not text:
+        return {"kind": "hint", **ask_payload()}
+
+    watch_role = (query.get("watch") or ["2nd"])[0]
+
+    # 1. Расчёт с подставленными числами
+    tool = match_tool(text)
+    if tool:
+        return {"kind": "tool", **tool, "q": text}
+
+    # 2. Проверка маршрута
+    route = match_route(text)
+    if route:
+        return {"kind": "route", **route, "q": text}
+
+    # 3. Вахта
+    w = match_watch(text, schedule=watch_role)
+    if w:
+        nxt = w["next"]
+        return {
+            "kind": "watch",
+            "on_watch": bool(w["now_on_watch"]),
+            "current": list(w["now_on_watch"]) if w["now_on_watch"] else None,
+            "next_at": nxt[0].isoformat() if nxt else None,
+            "next_window": list(nxt[1]) if nxt else None,
+            "schedule": [list(x) for x in w["schedule"]],
+            "q": text,
+        }
+
+    # 4. Всё остальное -- обычный вопрос к Claude.
+    #    Сервер многопоточный, каждый запрос в своём потоке, поэтому
+    #    асинхронный вызов можно выполнить прямо здесь. Ответ может идти
+    #    несколько секунд -- приложение показывает это ожиданием.
+    qa = _state.get("qa")
+    if qa is None:
+        return {"kind": "text", "q": text,
+                "text": "Ассистент не настроен: в .env не задан ключ ANTHROPIC_API_KEY."}
+    try:
+        import asyncio
+        answer = asyncio.run(qa.ask(text))
+        return {"kind": "text", "q": text, "text": answer}
+    except Exception as e:
+        logger.warning("Ассистент не ответил: %s", e)
+        return {"kind": "text", "q": text,
+                "text": "Ассистент сейчас недоступен. Расчёты и справочники работают без связи."}
+
+
+# Сводка циклонов живёт в памяти: источник обновляется раз в несколько
+# часов, дёргать его на каждое открытие вкладки незачем.
+_CYCLONE_CACHE = {"at": 0.0, "storms": None}
+_CYCLONE_TTL = 30 * 60
+
+
+def _api_cyclones(query: dict) -> dict:
+    """Тропические циклоны и их близость к маршруту.
+
+    Если переданы порты, считаем расстояние до линии перехода: расстояние
+    сейчас, наибольшее сближение по прогнозу и когда оно случится."""
+    import asyncio
+    import time as _t
+
+    from .services.cyclone import analyse_route, danger_level, fetch_storms
+
+    now = _t.time()
+    storms = _CYCLONE_CACHE["storms"]
+    if storms is None or (now - _CYCLONE_CACHE["at"]) > _CYCLONE_TTL:
+        try:
+            storms = asyncio.run(fetch_storms())
+            _CYCLONE_CACHE["storms"] = storms
+            _CYCLONE_CACHE["at"] = now
+        except Exception as e:
+            logger.warning("Сводка циклонов недоступна: %s", e)
+            if storms is None:
+                return {"storms": [], "error": "source_unavailable",
+                        "note": "Сводка Национального центра ураганов сейчас недоступна. "
+                                "Попробуй позже, остальные разделы работают."}
+
+    src = (query.get("from") or [""])[0].strip()
+    dst = (query.get("to") or [""])[0].strip()
+    route = []
+    route_label = None
+    if src and dst:
+        from .services.voyage import planned_route, resolve_point
+        a, b = resolve_point(src), resolve_point(dst)
+        if a and b:
+            plan = planned_route(a, b)
+            route = plan["points"]
+            route_label = f"{a.label} → {b.label}"
+
+    out = []
+    for st in storms:
+        item = dict(st)
+        if route:
+            item["route"] = analyse_route(st, route)
+            item["level"] = danger_level(item["route"]["closest_nm"], st.get("wind_kt"))
+        else:
+            item["level"] = "info"
+        out.append(item)
+
+    # сначала то, что ближе к маршруту
+    out.sort(key=lambda x: (x.get("route") or {}).get("closest_nm") or 99999)
+
+    return {
+        "storms": out,
+        "route_label": route_label,
+        "has_route": bool(route),
+        "coverage": "Атлантика и восточная часть Тихого океана (данные NHC). "
+                    "Тайфуны западной части Тихого океана ведёт JTWC, его сводки здесь нет.",
+        "updated": int(_CYCLONE_CACHE["at"]),
+    }
+
+
 def _api_stations(query: dict) -> dict:
     from .services.radio import stations_payload
     return stations_payload()
@@ -589,6 +710,8 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/cyclones": _api_cyclones,
+    "/api/ask": _api_ask,
     "/api/gmdss": _api_gmdss,
     "/api/dsc": _api_dsc,
     "/api/ship-search": _api_ship_search,
@@ -737,8 +860,9 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
 
-def start_web_server(port: int, db=None, bot_token: str = "") -> None:
+def start_web_server(port: int, db=None, bot_token: str = "", qa=None) -> None:
     _state["db"] = db
+    _state["qa"] = qa
     _state["bot_token"] = bot_token
     _state["started_at"] = time.time()
     server = ThreadingHTTPServer(("0.0.0.0", port), _Handler)

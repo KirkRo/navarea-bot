@@ -96,7 +96,7 @@ def build_application() -> Application:
     qa_client = ClaudeQA(config.anthropic_api_key, config.claude_model, config.claude_max_tokens)
 
     # веб-сервер поднимаем после базы -- Mini App обращается к ней через API
-    start_web_server(config.port, db=db, bot_token=config.bot_token)
+    start_web_server(config.port, db=db, bot_token=config.bot_token, qa=qa_client)
     application.bot_data["db"] = db
     application.bot_data["qa"] = qa_client
 

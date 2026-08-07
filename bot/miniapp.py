@@ -770,6 +770,99 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 }
 .vhead .vsub{font-size:11px;color:var(--muted);font-weight:600;flex:none}
 
+/* ---- Тропические циклоны ---- */
+.cycroute{display:flex;align-items:center;gap:7px;padding:10px 13px;margin-bottom:12px;
+  border-radius:var(--r-md);background:var(--surf2);border:1px solid var(--line);
+  font-size:12px;color:var(--muted);font-weight:600}
+.cyccard{
+  background:var(--surf);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:15px;margin-bottom:11px;position:relative;overflow:hidden;
+}
+.cyccard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--muted);opacity:.5}
+.cyccard.critical::before{background:linear-gradient(180deg,#ff6b4a,#d8402f);opacity:1}
+.cyccard.warning::before{background:linear-gradient(180deg,#ff8b3d,#e0701f);opacity:1}
+.cyccard.watch::before{background:linear-gradient(180deg,#f0a03c,#c07a20);opacity:1}
+.cyccard.critical{border-color:rgba(255,107,74,.4)}
+.cychead{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:3px}
+.cycname{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.cyctag{font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;text-transform:uppercase;letter-spacing:.4px}
+.cyctag.critical{background:rgba(255,107,74,.18);color:#ff9080;border:1px solid rgba(255,107,74,.4)}
+.cyctag.warning{background:rgba(255,139,61,.18);color:#ffb066;border:1px solid rgba(255,139,61,.4)}
+.cyctag.watch{background:rgba(240,160,60,.16);color:#ffc372;border:1px solid rgba(240,160,60,.34)}
+.cyctag.info{background:rgba(133,150,172,.14);color:#9aabbd;border:1px solid rgba(133,150,172,.28)}
+.cycsub{font-size:12px;color:var(--muted);margin-bottom:11px}
+.cycdist{background:var(--surf2);border-radius:var(--r-md);padding:11px 12px;margin-bottom:11px}
+.cycdist .cd{display:flex;justify-content:space-between;align-items:baseline;gap:9px;padding:4px 0;font-size:12px;color:var(--muted)}
+.cycdist .cd b{color:var(--text);font-family:ui-monospace,monospace;font-weight:700;white-space:nowrap}
+.cycdist .cd.hi b{color:var(--amber);font-size:15px}
+.cycrows .cr{display:flex;justify-content:space-between;align-items:center;gap:9px;
+  padding:6px 0;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.cycrows .cr:last-child{border-bottom:none}
+.cycrows .cr b{color:var(--text);font-family:ui-monospace,monospace;font-weight:650;font-size:11.5px;text-align:right}
+.cycarrow{display:inline-block;color:var(--amber);margin-right:4px;font-weight:800}
+.cycfc{margin-top:9px;background:var(--surf2);border-radius:var(--r-sm);padding:9px 11px}
+.fcrow{display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:11px;
+  color:var(--muted);font-family:ui-monospace,monospace;border-bottom:1px solid var(--line)}
+.fcrow:last-child{border-bottom:none}
+.fcrow .fp{color:var(--text)}
+.fcrow .fw{color:var(--amber);font-weight:700}
+
+/* ---- Ask Watchkeeper ---- */
+.askbox{
+  min-height:200px;padding-bottom:8px;
+}
+.askintro{text-align:center;padding:26px 14px 18px}
+.askintro .ai{color:var(--amber);margin-bottom:11px}
+.askintro .at{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.askintro .as{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.5;max-width:300px;
+  margin-left:auto;margin-right:auto}
+.askex{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.exbtn{
+  background:var(--surf);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:12px 14px;font-size:12.5px;color:var(--muted);text-align:left;
+  cursor:pointer;font-family:inherit;line-height:1.4;
+}
+.exbtn:active{border-color:var(--amber);color:var(--text)}
+
+.amsg{margin-bottom:11px;font-size:13.5px;line-height:1.5}
+.amsg.me{
+  background:linear-gradient(140deg,var(--amber),var(--amber2));color:var(--accent-text);
+  padding:11px 14px;border-radius:var(--r-md);border-bottom-right-radius:5px;
+  margin-left:auto;max-width:85%;width:fit-content;font-weight:600;
+}
+.amsg.bot{
+  background:var(--surf);border:1px solid var(--line);padding:12px 14px;
+  border-radius:var(--r-md);border-bottom-left-radius:5px;max-width:92%;
+}
+.amsg.bot.card{max-width:100%}
+.amsg .ahead{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:750;
+  color:var(--amber);margin-bottom:9px}
+.amsg .atext{color:var(--text);white-space:pre-wrap}
+.amsg .ahint{font-size:11px;color:var(--muted);margin-top:8px}
+.arows{margin-bottom:11px}
+.arow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;
+  border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.arow:last-child{border-bottom:none}
+.arow b{color:var(--text);font-family:ui-monospace,monospace;font-weight:700}
+
+.askbar{
+  position:sticky;bottom:calc(66px + env(safe-area-inset-bottom));
+  display:flex;gap:8px;padding:9px 0 4px;background:linear-gradient(180deg,transparent,var(--bg) 22%);
+}
+.askinput{
+  flex:1;min-width:0;background:var(--surf);border:1px solid var(--line);color:var(--text);
+  border-radius:var(--r-md);padding:13px 15px;font-size:15px;font-family:inherit;outline:none;
+  -webkit-appearance:none;
+}
+.askinput:focus{border-color:var(--amber)}
+.asksend{
+  width:46px;height:46px;flex:none;border-radius:var(--r-md);cursor:pointer;border:none;
+  background:linear-gradient(140deg,var(--amber),var(--amber2));color:var(--accent-text);
+  display:flex;align-items:center;justify-content:center;font-family:inherit;
+}
+.asksend:active{transform:scale(.94)}
+.tab-ask .ico{color:var(--amber)}
+
 /* ---- Разделы инструментов ---- */
 .catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 @media(min-width:640px){.catgrid{grid-template-columns:repeat(3,1fr)}}
@@ -1466,6 +1559,23 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <div id="settingsBox"></div>
   </section>
 
+  <!-- ЦИКЛОНЫ -->
+  <section id="v-cyc" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Тропические циклоны</h3></div>
+    <div id="cycBox"></div>
+  </section>
+
+  <!-- ASK WATCHKEEPER -->
+  <section id="v-ask" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Ask Watchkeeper</h3>
+      <a id="askClear" class="vsub">Очистить</a></div>
+    <div id="askBox" class="askbox"></div>
+    <div class="askbar">
+      <input id="askInput" class="askinput" placeholder="Спроси про расчёт, маршрут или вахту…" autocomplete="off">
+      <button id="askSend" class="asksend">→</button>
+    </div>
+  </section>
+
   <!-- ТРЕНАЖЁР ЦИВ -->
   <section id="v-dsc" class="hidden">
     <div class="vhead"><button class="vback" data-back></button><h3>Тренажёр ЦИВ</h3></div>
@@ -1560,6 +1670,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 <nav class="tabs">
   <button class="tab on" data-g="home" data-i="gauge">Главная</button>
   <button class="tab" data-g="tools" data-i="sliders">Инструменты</button>
+  <button class="tab tab-ask" data-g="ask" data-i="compass">Ask</button>
   <button class="tab" data-g="map" data-i="map">Карта</button>
   <button class="tab" data-g="profile" data-i="compass">Профиль</button>
 </nav>
@@ -2834,6 +2945,34 @@ Object.assign(DICT,{
 Object.assign(DICT,{
  'Показать остальные':'Show the rest','отмечено':'checked'
 });
+Object.assign(DICT,{
+ 'Ask Watchkeeper':'Ask Watchkeeper','Спроси обычными словами':'Ask in plain words',
+ 'Числа из вопроса подставятся в нужный расчёт. Простые вопросы разбираются без связи.':
+   'Numbers from your question go straight into the right calculator. Simple questions are handled offline.',
+ 'Открыть расчёт':'Open calculator','Открыть с этими числами':'Open with these numbers',
+ 'Заодно посчитать проседание':'Also calculate squat',
+ 'Проверка маршрута':'Route check','Открыть проверку маршрута':'Open route check',
+ 'Откуда':'From','Куда':'To','Вахта':'Watch','Моя вахта':'My watch',
+ 'По ней считается время до заступления':'Used to count time until you go on watch',
+ 'Расписание берётся из настроек профиля':'Schedule comes from profile settings',
+ 'Ты сейчас на вахте':'You are on watch now','Следующая':'Next','Следующая вахта':'Next watch',
+ 'через':'in','в':'at','ч':'h','мин':'min','Думаю…':'Thinking…','Очистить':'Clear',
+ 'Спроси про расчёт, маршрут или вахту…':'Ask about a calculation, route or watch…',
+ 'Не получилось спросить: нет связи. Расчёты и справочники работают без неё.':
+   'Could not ask: no connection. Calculations and references work without it.',
+ 'Стеснённая / канал':'Confined / channel'
+});
+Object.assign(DICT,{
+ 'Тропические циклоны':'Tropical cyclones','Циклоны':'Cyclones',
+ 'Сейчас от маршрута':'From route now','Наибольшее сближение':'Closest approach','Когда':'When',
+ 'Положение':'Position','Ветер':'Wind','порывы':'gusts','Давление в центре':'Central pressure',
+ 'Перемещение':'Moving','Прогноз пути':'Forecast track','Свернуть прогноз':'Hide forecast',
+ 'Обновить сводку':'Refresh','Активных тропических циклонов нет.':'No active tropical cyclones.',
+ 'Сводка циклонов сейчас недоступна. Остальные разделы работают.':'Cyclone data is unavailable right now. Other sections work.',
+ 'Заполни порты в разделе «Рейс», и расстояние будет считаться до линии перехода.':
+   'Fill in the ports in the Voyage section and distances will be measured to your passage line.',
+ 'Опасно':'Dangerous','Близко':'Close','Следить':'Watch','В стороне':'Clear'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -3578,6 +3717,7 @@ const GROUPS={
     {v:'tools',t:'Инструменты',i:'sliders'},
     {v:'bridge',t:'Чек-листы',i:'flag'},
     {v:'refs',t:'Справка',i:'archive'}]},
+  ask:{t:'Ask Watchkeeper',i:'compass',subs:[{v:'ask',t:'Ask Watchkeeper',i:'compass'}]},
   map:{t:'Карта',i:'map',subs:[
     {v:'map',t:'Обстановка',i:'map'},
     {v:'voy',t:'Маршрут',i:'route'},
@@ -3586,7 +3726,7 @@ const GROUPS={
     {v:'ship',t:'Моё судно',i:'ship'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
-const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones'];
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc'];
 const VIEW_GROUP={};
 Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
 // GMDSS-разделы открываются карточками с главного экрана "Инструменты", а не
@@ -3719,6 +3859,8 @@ function switchView(v){
   if(v==='bridge'){ if(gate('#bridgeBox','bridge')) loadBridge(); }
   if(v==='ship'){ if(gate('#v-ship','vessel')) loadVessel(); }
   if(v==='settings') renderSettings();
+  if(v==='cyc'){ renderCyclones(); if(!CYC) loadCyclones(); }
+  if(v==='ask'){ renderAsk(); loadAskHints().then(renderAsk); setTimeout(bindAskInput,60); }
   if(v==='dsc'){ renderDSC(); loadDSC().then(renderDSC); }
   if(v==='epirb'){ if(gate('#epirbBox','bridge')) loadGmdss().then(()=>renderGmdss('epirb')); }
   if(v==='sart'){ if(gate('#sartBox','bridge')) loadGmdss().then(()=>renderGmdss('sart')); }
@@ -4468,6 +4610,14 @@ function renderSettings(){
       ${GEO.acc?`<div class="tres"><span class="tl">Точность</span><span class="tv mono">±${Math.round(GEO.acc)} м</span></div>`:''}
     </div>
 
+    <div class="dpanel"><h4>Вахта</h4>
+      <div class="sw" data-set="watch">
+        <div style="min-width:0"><div class="t">${ico('clock','sm')}Моя вахта</div>
+          <div class="d">По ней считается время до заступления</div></div>
+        <span class="rtag am">${WATCH_ROLE==='2nd'?'00-04 / 12-16':WATCH_ROLE==='3rd'?'08-12 / 20-24':'04-08 / 16-20'}</span>
+      </div>
+    </div>
+
     <div class="dpanel"><h4>Единицы и формат</h4>
       <div class="sw" data-set="coordfmt">
         <div style="min-width:0"><div class="t">${ico('compass','sm')}Формат координат</div>
@@ -4552,6 +4702,11 @@ function renderSettings(){
     if(!GEO_WATCH) stopGeoWatch(); else if(S.view==='map') startGeoWatch();
     renderSettings();
   };
+  const wt=box.querySelector('[data-set="watch"]');
+  if(wt) wt.onclick=()=>{
+    WATCH_ROLE = WATCH_ROLE==='2nd'?'3rd':WATCH_ROLE==='3rd'?'ch':'2nd';
+    localStorage.setItem('navarea_watch',WATCH_ROLE); hap('medium'); renderSettings();
+  };
   const cf=box.querySelector('[data-set="coordfmt"]');
   if(cf) cf.onclick=()=>{
     COORD_FMT=COORD_FMT==='dec'?'dm':'dec';
@@ -4580,6 +4735,296 @@ function renderSettings(){
 const APP_VERSION='1.0';
 
 /* ---- Моё судно: поиск, профиль, документы ---- */
+
+
+
+/* ================= Тропические циклоны =================
+   Смысл раздела не в красивой карте, а в ответе на вопрос вахтенного:
+   мешает ли шторм моему переходу. Поэтому наверху не положение циклона,
+   а расстояние до маршрута и время наибольшего сближения. */
+let CYC=null, CYC_BUSY=false;
+
+const CYC_LEVEL={
+  critical:{t:'Опасно',c:'critical'},
+  warning: {t:'Близко',c:'warning'},
+  watch:   {t:'Следить',c:'watch'},
+  info:    {t:'В стороне',c:'info'}
+};
+
+async function loadCyclones(force){
+  if(CYC_BUSY) return CYC;
+  CYC_BUSY=true; renderCyclones();
+  // маршрут берём из раздела перехода, если он там заполнен
+  const f=($('#voyFrom')&&$('#voyFrom').value)||'';
+  const t=($('#voyTo')&&$('#voyTo').value)||'';
+  let q='/api/cyclones';
+  if(f&&t) q+='?from='+encodeURIComponent(f)+'&to='+encodeURIComponent(t);
+  try{ CYC=await api(q); }
+  catch(e){ CYC={storms:[],error:'net'}; }
+  CYC_BUSY=false; renderCyclones();
+  return CYC;
+}
+
+function cycArrow(deg){
+  if(deg===null||deg===undefined) return '';
+  return `<span class="cycarrow" style="transform:rotate(${deg}deg)">↑</span>`;
+}
+
+function cycWhen(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  const left=Math.round((d-Date.now())/60000);
+  if(left<0) return String(iso).slice(11,16)+' UTC';
+  const hh=Math.floor(left/60), mm=left%60;
+  return String(iso).slice(0,16).replace('T',' ')+' UTC · '+
+    tr('через')+' '+(hh?hh+' '+tr('ч')+' ':'')+mm+' '+tr('мин');
+}
+
+function renderCyclones(){
+  const box=$('#cycBox'); if(!box) return;
+
+  if(CYC_BUSY&&!CYC){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
+  if(!CYC){ box.innerHTML=''; return; }
+
+  let h='';
+
+  if(CYC.error){
+    h+=`<div class="empty">${ico('alert')}${esc(CYC.note||tr('Сводка циклонов сейчас недоступна. Остальные разделы работают.'))}</div>`;
+    box.innerHTML=h; applyLang(); return;
+  }
+
+  if(CYC.route_label){
+    h+=`<div class="cycroute">${ico('ship','xs')} ${esc(CYC.route_label)}</div>`;
+  } else {
+    h+=`<div class="hint">${ico('alert','xs')} ${esc(tr('Заполни порты в разделе «Рейс», и расстояние будет считаться до линии перехода.'))}</div>`;
+  }
+
+  if(!CYC.storms.length){
+    h+=`<div class="empty">${ico('sun')}${esc(tr('Активных тропических циклонов нет.'))}</div>`;
+  }
+
+  CYC.storms.forEach(s=>{
+    const lv=CYC_LEVEL[s.level]||CYC_LEVEL.info;
+    const r=s.route||{};
+    h+=`<div class="cyccard ${lv.c}">
+      <div class="cychead">
+        <div class="cycname">${esc(s.name||s.id)}</div>
+        <span class="cyctag ${lv.c}">${esc(tr(lv.t))}</span>
+      </div>
+      <div class="cycsub">${esc(s.kind)}${s.category?' · '+esc(s.category):''}</div>
+
+      ${r.closest_nm!==undefined&&r.closest_nm!==null?`
+        <div class="cycdist">
+          <div class="cd"><span>${esc(tr('Сейчас от маршрута'))}</span><b>${r.distance_now_nm} ${esc(tr('миль'))}</b></div>
+          <div class="cd hi"><span>${esc(tr('Наибольшее сближение'))}</span><b>${r.closest_nm} ${esc(tr('миль'))}</b></div>
+          ${r.closest_at?`<div class="cd"><span>${esc(tr('Когда'))}</span><b>${esc(cycWhen(r.closest_at))}</b></div>`:''}
+        </div>`:''}
+
+      <div class="cycrows">
+        <div class="cr"><span>${esc(tr('Положение'))}</span>
+          <b>${esc(geoFmtLat(s.lat))} ${esc(geoFmtLon(s.lon))}</b></div>
+        <div class="cr"><span>${esc(tr('Ветер'))}</span>
+          <b>${s.wind_kt||'—'} ${esc(tr('узлов'))}${s.gust_kt?(' · '+esc(tr('порывы'))+' '+s.gust_kt):''}</b></div>
+        <div class="cr"><span>${esc(tr('Давление в центре'))}</span><b>${s.pressure_mb||'—'} мб</b></div>
+        <div class="cr"><span>${esc(tr('Перемещение'))}</span>
+          <b>${cycArrow(s.movement_dir)}${s.movement_dir!==null?Math.round(s.movement_dir)+'° ':''}${s.movement_kt?s.movement_kt+' '+tr('узлов'):'—'}</b></div>
+      </div>
+
+      ${(s.forecast||[]).length?`
+        <button class="showall" data-cycfc="${esc(s.id)}">${CYC_OPEN[s.id]?esc(tr('Свернуть прогноз')):esc(tr('Прогноз пути'))+' · '+s.forecast.length}</button>
+        ${CYC_OPEN[s.id]?`<div class="cycfc">${s.forecast.map(p=>`
+          <div class="fcrow">
+            <span class="ft">${esc(String(p.at||'').slice(5,16).replace('T',' '))}</span>
+            <span class="fp">${esc(geoFmtLat(p.lat))} ${esc(geoFmtLon(p.lon))}</span>
+            <span class="fw">${p.wind_kt?p.wind_kt+' уз':''}</span>
+          </div>`).join('')}</div>`:''}
+      `:''}
+    </div>`;
+  });
+
+  h+=`<div class="hint" style="margin-top:13px">${ico('alert','xs')} ${esc(CYC.coverage||'')}</div>
+      <button class="btn g wide" style="margin-top:11px" id="cycRefresh">${esc(tr('Обновить сводку'))}</button>`;
+
+  box.innerHTML=h;
+  applyLang();
+  document.querySelectorAll('[data-cycfc]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.cycfc; CYC_OPEN[id]=!CYC_OPEN[id]; hap(); renderCyclones();
+  });
+  const rf=$('#cycRefresh'); if(rf) rf.onclick=()=>{ hap('medium'); CYC=null; loadCyclones(true); };
+}
+const CYC_OPEN={};
+
+/* ================= Ask Watchkeeper =================
+   Разговор с приложением обычными словами. Смысл не в переписке, а в том,
+   чтобы вопрос сразу превращался в действие: расчёт с подставленными
+   числами, проверка маршрута, время вахты.
+
+   Простые вопросы разбираются на сервере без обращения к модели -- это
+   мгновенно и работает при дорогом спутниковом канале. К модели уходит
+   только то, что не разобралось. */
+let ASKLOG = [];
+let ASK_BUSY=false;
+let ASK_HINTS=null;
+
+const ASK_TOOL_TITLES={ukc:'Запас воды под килём',squat:'Проседание на ходу',
+  eta:'ETA и скорость',cpa:'CPA и TCPA',dist:'Расстояние и курс'};
+
+async function loadAskHints(){
+  if(ASK_HINTS) return ASK_HINTS;
+  try{ ASK_HINTS=await api('/api/ask?q='); }catch(e){ ASK_HINTS={examples:[]}; }
+  return ASK_HINTS;
+}
+
+function askPush(role, data){
+  ASKLOG.push(Object.assign({role, at:Date.now()}, data));
+  if(ASKLOG.length>40) ASKLOG.shift();
+  renderAsk();
+}
+
+async function askSend(text){
+  text=(text||'').trim();
+  if(!text||ASK_BUSY) return;
+  askPush('me',{text});
+  ASK_BUSY=true; renderAsk();
+  try{
+    const r=await api('/api/ask?q='+encodeURIComponent(text)+'&watch='+encodeURIComponent(WATCH_ROLE));
+    askPush('bot', r);
+  }catch(e){
+    askPush('bot',{kind:'text',text:tr('Не получилось спросить: нет связи. Расчёты и справочники работают без неё.')});
+  }
+  ASK_BUSY=false; renderAsk();
+}
+
+/* Открыть расчёт с числами из вопроса */
+function askOpenTool(tool, values){
+  const t=TOOLS.find(x=>x.id===tool);
+  if(!t){ return; }
+  switchGroup('tools'); switchView('tools');
+  setTimeout(()=>{
+    openTool(t);
+    setTimeout(()=>{
+      Object.keys(values||{}).forEach(k=>{
+        const el=document.querySelector(`[data-k="${k}"]`);
+        if(el){ el.value=values[k]; toolVals[k]=String(values[k]); }
+      });
+      if(typeof saveCalcVals==='function'&&curTool) saveCalcVals(curTool.id,toolVals);
+      if(typeof runTool==='function') runTool();
+      hap('medium');
+    },60);
+  },60);
+}
+
+function askOpenRoute(from,to){
+  switchGroup('map'); switchView('voy');
+  setTimeout(()=>{
+    if(from){ const f=$('#voyFrom'); if(f){ f.value=from; } }
+    if(to){ const t=$('#voyTo'); if(t){ t.value=to; } }
+    hap('medium');
+  },80);
+}
+
+function askWatchText(m){
+  const pad=n=>String(n).padStart(2,'0');
+  const win=(w)=>w?(pad(w[0])+'-'+pad(w[1]%24)):'';
+  if(m.on_watch){
+    return tr('Ты сейчас на вахте')+' ('+win(m.current)+'). '+
+           tr('Следующая')+': '+win(m.next_window)+' '+tr('в')+' '+String(m.next_at).slice(11,16)+' UTC.';
+  }
+  const left=m.next_at?Math.round((new Date(m.next_at)-Date.now())/60000):null;
+  const hh=left!==null?Math.floor(left/60):null, mm=left!==null?left%60:null;
+  // Если до заступления меньше минуты, писать «через 0 мин» бессмысленно
+  const when = (left===null||left<1) ? tr('вот-вот')
+             : tr('через')+' '+(hh?hh+' '+tr('ч')+' ':'')+mm+' '+tr('мин');
+  return tr('Следующая вахта')+': '+win(m.next_window)+', '+when+
+         ' ('+String(m.next_at).slice(11,16)+' UTC).';
+}
+
+function renderAsk(){
+  const box=$('#askBox'); if(!box) return;
+
+  let h='';
+  if(!ASKLOG.length){
+    const ex=(ASK_HINTS&&ASK_HINTS.examples)||[];
+    h+=`<div class="askintro">
+      <div class="ai">${ico('compass','lg')}</div>
+      <div class="at">${esc(tr('Спроси обычными словами'))}</div>
+      <div class="as">${esc(tr('Числа из вопроса подставятся в нужный расчёт. Простые вопросы разбираются без связи.'))}</div>
+    </div>
+    <div class="askex">${ex.map(x=>`<button class="exbtn" data-ex="${esc(x)}">${esc(x)}</button>`).join('')}</div>`;
+  }
+
+  ASKLOG.forEach(m=>{
+    if(m.role==='me'){ h+=`<div class="amsg me">${esc(m.text)}</div>`; return; }
+
+    if(m.kind==='tool'){
+      const title=ASK_TOOL_TITLES[m.tool]||m.tool;
+      const t=TOOLS.find(x=>x.id===m.tool);
+      const rows=Object.keys(m.values||{}).map(k=>{
+        const f=t&&t.fields.find(x=>x.k===k);
+        const lab=f?tr(f.l):k;
+        const val=m.values[k]==='confined'?tr('Стеснённая / канал'):m.values[k];
+        return `<div class="arow"><span>${esc(lab)}</span><b>${esc(String(val))}</b></div>`;
+      }).join('');
+      h+=`<div class="amsg bot card">
+        <div class="ahead">${ico('sliders','sm')}${esc(tr('Открыть расчёт'))}: ${esc(tr(title))}</div>
+        <div class="arows">${rows}</div>
+        <button class="btn wide" data-open="${esc(m.tool)}" data-vals="${esc(JSON.stringify(m.values||{}))}">
+          ${esc(tr('Открыть с этими числами'))}</button>
+        ${m.hint_tool?`<button class="btn g wide" style="margin-top:8px"
+           data-open="${esc(m.hint_tool.tool)}" data-vals="${esc(JSON.stringify(m.hint_tool.values||{}))}">
+           ${esc(tr('Заодно посчитать проседание'))}</button>`:''}
+      </div>`;
+      return;
+    }
+
+    if(m.kind==='route'){
+      h+=`<div class="amsg bot card">
+        <div class="ahead">${ico('ship','sm')}${esc(tr('Проверка маршрута'))}</div>
+        ${(m.from||m.to)?`<div class="arows">
+          <div class="arow"><span>${esc(tr('Откуда'))}</span><b>${esc(m.from||'—')}</b></div>
+          <div class="arow"><span>${esc(tr('Куда'))}</span><b>${esc(m.to||'—')}</b></div></div>`:''}
+        <button class="btn wide" data-route="1" data-from="${esc(m.from||'')}" data-to="${esc(m.to||'')}">
+          ${esc(tr('Открыть проверку маршрута'))}</button>
+      </div>`;
+      return;
+    }
+
+    if(m.kind==='watch'){
+      h+=`<div class="amsg bot card">
+        <div class="ahead">${ico('clock','sm')}${esc(tr('Вахта'))}</div>
+        <div class="atext">${esc(askWatchText(m))}</div>
+        <div class="ahint">${esc(tr('Расписание берётся из настроек профиля'))}</div>
+      </div>`;
+      return;
+    }
+
+    h+=`<div class="amsg bot"><div class="atext">${esc(m.text||'')}</div></div>`;
+  });
+
+  if(ASK_BUSY) h+=`<div class="amsg bot"><div class="atext"><span class="blink">${esc(tr('Думаю…'))}</span></div></div>`;
+
+  box.innerHTML=h;
+  applyLang();
+
+  document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{ hap(); askSend(b.dataset.ex); });
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{
+    let v={}; try{ v=JSON.parse(b.dataset.vals||'{}'); }catch(e){}
+    hap('medium'); askOpenTool(b.dataset.open, v);
+  });
+  document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{
+    hap('medium'); askOpenRoute(b.dataset.from, b.dataset.to);
+  });
+  try{ box.scrollTop=box.scrollHeight; }catch(e){}
+}
+
+function bindAskInput(){
+  const inp=$('#askInput'), btn=$('#askSend');
+  if(btn) btn.onclick=()=>{ const v=inp?inp.value:''; if(inp) inp.value=''; askSend(v); };
+  if(inp) inp.onkeydown=(e)=>{
+    if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); const v=inp.value; inp.value=''; askSend(v); }
+  };
+  const cl=$('#askClear'); if(cl) cl.onclick=()=>{ ASKLOG=[]; hap(); renderAsk(); };
+}
 
 /* ================= Тренажёр ЦИВ (DSC) =================
    Экранная копия Furuno FS-1575: дисплей, клавиатура, кнопка бедствия
@@ -5045,6 +5490,7 @@ let HAPTIC   = localStorage.getItem('navarea_haptic')!=='0';
 let GEO_WATCH= localStorage.getItem('navarea_geowatch')!=='0';
 let COORD_FMT= localStorage.getItem('navarea_coordfmt')||'dm';   // dm | dec
 let TIME_UTC = localStorage.getItem('navarea_timeutc')!=='0';
+let WATCH_ROLE = localStorage.getItem('navarea_watch')||'2nd';
 let NTF = (()=>{ try{ return Object.assign({warn:true,cert:true,gmdss:true},
   JSON.parse(localStorage.getItem('navarea_ntf')||'{}')); }catch(e){ return {warn:true,cert:true,gmdss:true}; } })();
 function saveNtf(){ try{ localStorage.setItem('navarea_ntf',JSON.stringify(NTF)); }catch(e){} }

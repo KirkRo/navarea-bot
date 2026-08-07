@@ -68,7 +68,7 @@ for anim in set(re.findall(r"animation:\s*([a-zA-Z][\w-]*)", css)) - {"none", "i
 
 # 7. каждой вкладке меню должен соответствовать раздел
 groups = set(re.findall(r'data-g="([a-z]+)"', H))
-if groups != {"home", "tools", "map", "profile"}:
+if groups != {"home", "tools", "ask", "map", "profile"}:
     problems.append(f"неожиданный набор вкладок: {sorted(groups)}")
 
 if problems:
