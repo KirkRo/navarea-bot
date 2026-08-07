@@ -373,6 +373,13 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .geobtn.err{color:var(--hot);border-color:rgba(255,107,74,.4)}
 .geobtn.busy{color:var(--amber);border-color:rgba(240,160,60,.4)}
 .geobtn.busy .ico{animation:geospin 1.1s linear infinite}
+.geobtn.off{color:var(--muted);opacity:.5}
+.geobtn.off::after{content:'';position:absolute;width:26px;height:1.5px;background:var(--hot);
+  transform:rotate(-45deg);border-radius:1px}
+.geobtn{position:relative}
+.mypos-ctl a{display:flex!important;align-items:center;justify-content:center;
+  width:30px;height:30px;background:#12202f;color:#cfe0f2;border-radius:4px}
+.mypos-ctl a:hover{background:#1b2f45}
 @keyframes geospin{to{transform:rotate(360deg)}}
 .geoline{
   display:flex;align-items:center;gap:9px;padding:11px 13px;margin-bottom:12px;
@@ -422,6 +429,16 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .rknob{width:32px;height:32px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#54595f,#1c1e20 72%);
   border:1px solid #61656b;position:relative;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.rknob{touch-action:none;user-select:none;-webkit-user-select:none}
+.rknob.turning{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft),0 2px 4px rgba(0,0,0,.5)}
+.rbigknob{touch-action:none;user-select:none;-webkit-user-select:none}
+.rbigknob.turning{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft),0 3px 6px rgba(0,0,0,.5)}
+.knobval{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:10px;font-weight:800;color:var(--amber);pointer-events:none;
+  text-shadow:0 0 4px rgba(0,0,0,.9);opacity:0;transition:opacity .15s;
+}
+.rknob.turning .knobval,.rbigknob.turning .knobval{opacity:1}
 .rknob::after{content:'';position:absolute;top:3px;left:50%;width:2px;height:10px;
   background:#8a9096;transform:translateX(-50%);border-radius:1px}
 .rklabel{font-size:6.3px;color:#a8aeb4;text-align:center;font-weight:700;letter-spacing:.2px;line-height:1.2}
@@ -703,6 +720,33 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   cursor:pointer;font-family:inherit;
 }
 .rngbtn.on{background:linear-gradient(140deg,var(--amber),var(--amber2));color:var(--accent-text);border-color:transparent}
+
+/* ---- Визуализация тракта сигнала ---- */
+.satwrap{background:radial-gradient(ellipse at 50% 120%,#0d2b4a,#040a12 70%);
+  border:1px solid #1a3550;border-radius:var(--r-lg);padding:6px;overflow:hidden;margin-bottom:11px}
+.satwrap svg{width:100%;display:block}
+.vzbeam{animation:vzpulse 1.6s ease-in-out infinite}
+.vzbeam2{animation:vzdash 1.1s linear infinite}
+@keyframes vzpulse{50%{opacity:.35}}
+@keyframes vzdash{to{stroke-dashoffset:-18}}
+.bviewwrap{background:#050d16;border:1px solid #16304a;border-radius:var(--r-lg);
+  padding:8px;overflow:hidden;margin-bottom:11px}
+.bviewwrap svg{width:100%;display:block}
+
+.satchain{display:flex;flex-direction:column;gap:2px}
+.satstep{display:flex;align-items:flex-start;gap:10px;padding:7px 2px;opacity:.42}
+.satstep.done{opacity:1}
+.satstep.now{opacity:1}
+.satstep i{
+  width:9px;height:9px;border-radius:50%;flex:none;margin-top:4px;
+  background:var(--surf2);border:1.5px solid var(--line);
+}
+.satstep.done i{background:var(--ok);border-color:var(--ok)}
+.satstep.now i{background:var(--amber);border-color:var(--amber);
+  box-shadow:0 0 0 4px var(--amber-soft);animation:eqblink .7s steps(2) infinite}
+.satstep .ss{font-size:12.5px;font-weight:650}
+.satstep.now .ss{color:var(--amber)}
+.satstep .sd{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
 
 /* ---- Разделы инструментов ---- */
 .catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -2926,7 +2970,12 @@ let LY={areas:true,points:true,labels:true};
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const hap=t=>{try{TG&&TG.HapticFeedback.impactOccurred(t||'light')}catch(e){}};
+const hap=t=>{
+  // Отдачу можно выключить в настройках: на длинной вахте постоянная
+  // вибрация раздражает, да и батарею тратит.
+  if(typeof HAPTIC!=='undefined' && !HAPTIC) return;
+  try{TG&&TG.HapticFeedback.impactOccurred(t||'light')}catch(e){}
+};
 
 /* тема */
 if(localStorage.getItem(TK)==='light') document.body.classList.add('light');
@@ -3269,6 +3318,37 @@ function fmtPos(lat,lon){
     return `${String(d).padStart(2,'0')}-${m.toFixed(2).padStart(5,'0')}${h}`};
   return f(lat,'N','S')+' '+f(lon,'E','W');
 }
+
+/* ---- Своя позиция на карте ----
+   Кружок точности показывает, насколько уверенно телефон знает место:
+   в рубке погрешность бывает и полсотни метров, и это честнее скрывать
+   не стоит. */
+let myPosLayer=null, myPosAcc=null;
+
+function drawMyPos(){
+  if(typeof map==='undefined'||!map) return;
+  if(myPosLayer){ map.removeLayer(myPosLayer); myPosLayer=null; }
+  if(myPosAcc){ map.removeLayer(myPosAcc); myPosAcc=null; }
+  if(!GEO_ON||GEO.lat===null) return;
+
+  if(GEO.acc&&GEO.acc>20){
+    myPosAcc=L.circle([GEO.lat,GEO.lon],{radius:GEO.acc,color:'#4d93d6',weight:1,
+      fillColor:'#4d93d6',fillOpacity:.12}).addTo(map);
+  }
+  myPosLayer=L.circleMarker([GEO.lat,GEO.lon],{radius:7,color:'#fff',weight:2,
+    fillColor:'#3fc97f',fillOpacity:1})
+    .bindPopup('<b>'+tr('Моя позиция')+'</b><br>'+geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)+
+               (GEO.acc?('<br>'+tr('точность')+' ±'+Math.round(GEO.acc)+' м'):''))
+    .addTo(map);
+  myPosLayer.setZIndex&&myPosLayer.setZIndex(900);
+}
+
+function centerOnMe(){
+  if(typeof map==='undefined'||!map) return;
+  if(GEO.lat===null){ requestPosition().then(p=>{ if(p){ drawMyPos(); map.setView([p.lat,p.lon],9);} }); return; }
+  map.setView([GEO.lat,GEO.lon],9); drawMyPos(); hap();
+}
+
 function initMap(){
   if(map)return;
   map=L.map('map',{worldCopyJump:true,zoomControl:true}).setView([25,-30],3);
@@ -3276,6 +3356,20 @@ function initMap(){
   map.on('mousemove',e=>{$('#curpos').textContent=fmtPos(e.latlng.lat,e.latlng.lng)});
   map.on('click',e=>{$('#curpos').textContent=fmtPos(e.latlng.lat,e.latlng.lng)});
   document.querySelectorAll('input[name=base]').forEach(r=>r.onchange=()=>{setBase(r.value);hap()});
+
+  // кнопка «на мою позицию» поверх карты
+  try{
+    const MyBtn=L.Control.extend({
+      options:{position:'topleft'},
+      onAdd:function(){
+        const b=L.DomUtil.create('div','leaflet-bar mypos-ctl');
+        b.innerHTML='<a href="#" title="'+tr('Моя позиция')+'">'+ico('target','sm')+'</a>';
+        L.DomEvent.on(b,'click',e=>{ L.DomEvent.preventDefault(e); L.DomEvent.stop(e); centerOnMe(); });
+        return b;
+      }
+    });
+    map.addControl(new MyBtn());
+  }catch(e){}
   // Панель настроек занимала четверть карты -- прячем её под иконку
   const gear=$('#mapGear'), ctl=$('#mapCtl');
   if(gear&&ctl){
@@ -4290,6 +4384,58 @@ function renderSettings(){
           <div class="d">Русский или английский</div></div>
         <span class="rtag am">${LANG==='en'?'EN':'RU'}</span>
       </div>
+      <div class="sw" data-set="hap">
+        <div style="min-width:0"><div class="t">${ico('alert','sm')}Отдача при нажатии</div>
+          <div class="d">Лёгкая вибрация на кнопках и ручках</div></div>
+        <div class="toggle ${HAPTIC?'on':''}"></div>
+      </div>
+    </div>
+
+    <div class="dpanel"><h4>Позиция</h4>
+      <div class="sw" data-set="geo">
+        <div style="min-width:0"><div class="t">${ico('target','sm')}Геопозиция</div>
+          <div class="d">${GEO_ON?'Координаты берутся с устройства':'Выключена, координаты вводятся вручную'}</div></div>
+        <div class="toggle ${GEO_ON?'on':''}"></div>
+      </div>
+      <div class="sw" data-set="geowatch">
+        <div style="min-width:0"><div class="t">${ico('map','sm')}Метка на карте</div>
+          <div class="d">Следить за своим местом, пока карта открыта</div></div>
+        <div class="toggle ${GEO_WATCH?'on':''}"></div>
+      </div>
+      <div class="tres"><span class="tl">Текущая позиция</span>
+        <span class="tv mono">${GEO.lat!==null?esc(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):'—'}</span></div>
+      ${GEO.acc?`<div class="tres"><span class="tl">Точность</span><span class="tv mono">±${Math.round(GEO.acc)} м</span></div>`:''}
+    </div>
+
+    <div class="dpanel"><h4>Единицы и формат</h4>
+      <div class="sw" data-set="coordfmt">
+        <div style="min-width:0"><div class="t">${ico('compass','sm')}Формат координат</div>
+          <div class="d">Градусы с минутами или десятичные</div></div>
+        <span class="rtag am">${COORD_FMT==='dec'?'12.3456°':'12-20.7N'}</span>
+      </div>
+      <div class="sw" data-set="tz">
+        <div style="min-width:0"><div class="t">${ico('clock','sm')}Время</div>
+          <div class="d">Судовое или всемирное координированное</div></div>
+        <span class="rtag am">${TIME_UTC?'UTC':'судовое'}</span>
+      </div>
+    </div>
+
+    <div class="dpanel"><h4>Уведомления</h4>
+      <div class="sw" data-set="ntf_new">
+        <div style="min-width:0"><div class="t">${ico('globe','sm')}Новые предупреждения</div>
+          <div class="d">Присылать, как только появятся в твоих районах</div></div>
+        <div class="toggle ${NTF.warn?'on':''}"></div>
+      </div>
+      <div class="sw" data-set="ntf_cert">
+        <div style="min-width:0"><div class="t">${ico('flag','sm')}Сроки сертификатов</div>
+          <div class="d">За 60, 30, 14, 7, 3 и 1 день до истечения</div></div>
+        <div class="toggle ${NTF.cert?'on':''}"></div>
+      </div>
+      <div class="sw" data-set="ntf_gmdss">
+        <div style="min-width:0"><div class="t">${ico('radar','sm')}Батареи EPIRB и SART</div>
+          <div class="d">За 90, 30 и 7 дней до замены</div></div>
+        <div class="toggle ${NTF.gmdss?'on':''}"></div>
+      </div>
     </div>
 
     <div class="dpanel"><h4>Доступ</h4>
@@ -4322,6 +4468,36 @@ function renderSettings(){
     localStorage.setItem('navarea_lang',LANG); hap('medium');
     applyLang(); renderSettings(); applyLang();
   };
+  const hp=box.querySelector('[data-set="hap"]');
+  if(hp) hp.onclick=()=>{
+    HAPTIC=!HAPTIC; localStorage.setItem('navarea_haptic',HAPTIC?'1':'0');
+    if(HAPTIC) hap('medium');
+    renderSettings();
+  };
+  const gs=box.querySelector('[data-set="geo"]');
+  if(gs) gs.onclick=()=>{ hap('medium'); setGeoEnabled(!GEO_ON); renderSettings(); };
+  const gw=box.querySelector('[data-set="geowatch"]');
+  if(gw) gw.onclick=()=>{
+    GEO_WATCH=!GEO_WATCH; localStorage.setItem('navarea_geowatch',GEO_WATCH?'1':'0');
+    hap('medium');
+    if(!GEO_WATCH) stopGeoWatch(); else if(S.view==='map') startGeoWatch();
+    renderSettings();
+  };
+  const cf=box.querySelector('[data-set="coordfmt"]');
+  if(cf) cf.onclick=()=>{
+    COORD_FMT=COORD_FMT==='dec'?'dm':'dec';
+    localStorage.setItem('navarea_coordfmt',COORD_FMT); hap('medium'); renderSettings();
+  };
+  const tz=box.querySelector('[data-set="tz"]');
+  if(tz) tz.onclick=()=>{
+    TIME_UTC=!TIME_UTC; localStorage.setItem('navarea_timeutc',TIME_UTC?'1':'0');
+    hap('medium'); renderSettings();
+  };
+  [['ntf_new','warn'],['ntf_cert','cert'],['ntf_gmdss','gmdss']].forEach(([sel,key])=>{
+    const el=box.querySelector('[data-set="'+sel+'"]');
+    if(el) el.onclick=()=>{ NTF[key]=!NTF[key]; saveNtf(); hap('medium'); renderSettings(); };
+  });
+
   const pl=$('#setPlans'); if(pl) pl.onclick=openPlans;
   const cl=$('#setClear'); if(cl) cl.onclick=()=>{
     hap('medium');
@@ -4787,14 +4963,68 @@ function dscKey(k){
    обычный navigator.geolocation. На судне GPS телефона обычно ловит,
    но в глубине корпуса может и не поймать: тогда честно говорим об этом,
    а не подставляем последнюю известную точку молча. */
-let GEO={lat:null, lon:null, at:0, acc:null, busy:false, err:null};
+
+/* ---- Настройки, живущие на устройстве ----
+   Всё хранится локально: это предпочтения конкретного телефона, а не
+   судовые данные, и синхронизировать их между устройствами незачем. */
+let HAPTIC   = localStorage.getItem('navarea_haptic')!=='0';
+let GEO_WATCH= localStorage.getItem('navarea_geowatch')!=='0';
+let COORD_FMT= localStorage.getItem('navarea_coordfmt')||'dm';   // dm | dec
+let TIME_UTC = localStorage.getItem('navarea_timeutc')!=='0';
+let NTF = (()=>{ try{ return Object.assign({warn:true,cert:true,gmdss:true},
+  JSON.parse(localStorage.getItem('navarea_ntf')||'{}')); }catch(e){ return {warn:true,cert:true,gmdss:true}; } })();
+function saveNtf(){ try{ localStorage.setItem('navarea_ntf',JSON.stringify(NTF)); }catch(e){} }
+
+let GEO={lat:null, lon:null, at:0, acc:null, busy:false, err:null, watchId:null};
+
+/* Слежение за позицией можно выключить совсем: на судне интернет платный,
+   а GPS телефона сажает батарею. Настройка живёт на устройстве. */
+let GEO_ON = localStorage.getItem('navarea_geo_off')!=='1';
+
+function setGeoEnabled(on){
+  GEO_ON=on;
+  localStorage.setItem('navarea_geo_off', on?'0':'1');
+  if(!on){
+    stopGeoWatch();
+    GEO.lat=null; GEO.lon=null; GEO.at=0; GEO.err=null;
+    if(typeof drawDSC==='function'&&typeof DSC!=='undefined'&&DSC) drawDSC();
+    if(typeof map!=='undefined'&&map) drawMyPos();
+  }
+  renderGeoBtn();
+}
+
+/* Непрерывное слежение -- нужно, чтобы метка на карте ехала вместе с судном.
+   Включается только когда карта открыта, чтобы не жечь батарею впустую. */
+function startGeoWatch(){
+  if(!GEO_ON||!GEO_WATCH||GEO.watchId!==null||!navigator.geolocation) return;
+  try{
+    GEO.watchId=navigator.geolocation.watchPosition(
+      p=>{
+        GEO.lat=p.coords.latitude; GEO.lon=p.coords.longitude;
+        GEO.acc=p.coords.accuracy||null; GEO.at=Date.now(); GEO.err=null;
+        renderGeoBtn();
+        if(typeof map!=='undefined'&&map) drawMyPos();
+      },
+      ()=>{},
+      {enableHighAccuracy:true, maximumAge:15000, timeout:20000}
+    );
+  }catch(e){}
+}
+function stopGeoWatch(){
+  if(GEO.watchId!==null&&navigator.geolocation){
+    try{ navigator.geolocation.clearWatch(GEO.watchId); }catch(e){}
+  }
+  GEO.watchId=null;
+}
 
 function geoFmtLat(d){
+  if(typeof COORD_FMT!=='undefined'&&COORD_FMT==='dec') return d.toFixed(4)+'°';
   const s=d<0?'S':'N'; d=Math.abs(d);
   const deg=Math.floor(d), min=(d-deg)*60;
   return String(deg).padStart(2,'0')+'-'+min.toFixed(1).padStart(4,'0')+s;
 }
 function geoFmtLon(d){
+  if(typeof COORD_FMT!=='undefined'&&COORD_FMT==='dec') return d.toFixed(4)+'°';
   const s=d<0?'W':'E'; d=Math.abs(d);
   const deg=Math.floor(d), min=(d-deg)*60;
   return String(deg).padStart(3,'0')+'-'+min.toFixed(1).padStart(4,'0')+s;
@@ -4803,6 +5033,7 @@ const geoFresh = ()=> GEO.lat!==null && (Date.now()-GEO.at) < 5*60*1000;
 
 function requestPosition(){
   return new Promise(resolve=>{
+    if(!GEO_ON){ GEO.err='геопозиция выключена в настройках'; renderGeoBtn(); resolve(null); return; }
     if(GEO.busy){ resolve(null); return; }
     GEO.busy=true; GEO.err=null; renderGeoBtn();
 
@@ -4855,8 +5086,9 @@ function browserGeo(done){
 /* Кнопка позиции в шапке: показывает состояние и текущие координаты */
 function renderGeoBtn(){
   const b=$('#geoBtn'); if(!b) return;
-  b.className='geobtn'+(GEO.busy?' busy':'')+(geoFresh()?' on':'')+(GEO.err?' err':'');
+  b.className='geobtn'+(!GEO_ON?' off':'')+(GEO.busy?' busy':'')+(geoFresh()?' on':'')+(GEO.err?' err':'');
   b.innerHTML=ico('target','sm');
+  b.title=!GEO_ON?tr('Геопозиция выключена'):(geoFresh()?(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):tr('Моя позиция'));
   const t=$('#geoText');
   if(t){
     if(GEO.busy) t.textContent=tr('Определяю…');
@@ -4911,31 +5143,74 @@ function knobAngle(el, x, y){
 function makeKnob(el, opts){
   if(!el||el._knob) return;
   el._knob=true;
-  let prev=null;
+  let prev=null, startY=0, mode=null, lastHap=0;
 
-  const start=(x,y)=>{ prev=knobAngle(el,x,y); };
+  const begin=(x,y)=>{
+    prev=knobAngle(el,x,y); startY=y; mode=null;
+    el.classList.add('turning');
+    if(opts.onStart) opts.onStart();
+  };
+
   const move=(x,y)=>{
     if(prev===null) return;
-    const a=knobAngle(el,x,y);
-    let d=a-prev;
-    if(d>180) d-=360; if(d<-180) d+=360;   // переход через 180 градусов
-    if(Math.abs(d)<1) return;
-    prev=a;
-    opts.onTurn(d);
-  };
-  const end=()=>{ prev=null; };
+    // Определяем, как человек крутит: по кругу или тянет вверх-вниз.
+    // Пальцем на телефоне вертикальное движение выходит естественнее,
+    // мышью удобнее вращать -- поддерживаем оба, выбирая по первому
+    // заметному движению.
+    if(mode===null){
+      const dy=Math.abs(y-startY);
+      const a=knobAngle(el,x,y); let da=a-prev;
+      if(da>180) da-=360; if(da<-180) da+=360;
+      if(dy>10&&Math.abs(da)<12) mode='drag';
+      else if(Math.abs(da)>=6) mode='turn';
+    }
 
-  el.addEventListener('pointerdown',e=>{ e.preventDefault(); el.setPointerCapture&&el.setPointerCapture(e.pointerId); start(e.clientX,e.clientY); },{passive:false});
+    let delta=0;
+    if(mode==='drag'){
+      delta=(startY-y)*1.8;    // вверх -- больше
+      startY=y;
+    } else {
+      const a=knobAngle(el,x,y);
+      let d=a-prev;
+      if(d>180) d-=360; if(d<-180) d+=360;
+      if(Math.abs(d)<1) return;
+      prev=a; delta=d;
+    }
+    if(!delta) return;
+    opts.onTurn(delta);
+
+    // Отдача не чаще, чем раз в 60 мс: иначе на плавном повороте
+    // телефон тарахтит без остановки.
+    const now=Date.now();
+    if(now-lastHap>60){ hap(); lastHap=now; }
+  };
+
+  const end=()=>{
+    prev=null; mode=null;
+    el.classList.remove('turning');
+    if(opts.onEnd) opts.onEnd();
+  };
+
+  el.addEventListener('pointerdown',e=>{ e.preventDefault(); el.setPointerCapture&&el.setPointerCapture(e.pointerId); begin(e.clientX,e.clientY); },{passive:false});
   el.addEventListener('pointermove',e=>{ if(prev!==null){ e.preventDefault(); move(e.clientX,e.clientY); } },{passive:false});
   el.addEventListener('pointerup',end,{passive:true});
   el.addEventListener('pointercancel',end,{passive:true});
-  el.addEventListener('touchstart',e=>{ if(e.touches[0]) start(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  el.addEventListener('touchstart',e=>{ if(e.touches[0]) begin(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
   el.addEventListener('touchmove',e=>{ if(e.touches[0]&&prev!==null){ e.preventDefault(); move(e.touches[0].clientX,e.touches[0].clientY); } },{passive:false});
   el.addEventListener('touchend',end,{passive:true});
+  // колесо мыши -- на настольном браузере привычнее всего
+  el.addEventListener('wheel',e=>{ e.preventDefault(); opts.onTurn(e.deltaY>0?-8:8); },{passive:false});
 }
 
 function knobRotate(el, deg){
   if(el) el.style.transform='rotate('+deg+'deg)';
+}
+
+function knobBubble(el,text){
+  if(!el) return;
+  let b=el.querySelector('.knobval');
+  if(!b){ b=document.createElement('span'); b.className='knobval'; el.appendChild(b); }
+  b.textContent=text;
 }
 
 function bindStationKnobs(){
@@ -4944,7 +5219,7 @@ function bindStationKnobs(){
   makeKnob(vol,{onTurn:d=>{
     KNOB.vol=Math.max(0,Math.min(10,KNOB.vol+d/28));
     knobRotate(vol, (KNOB.vol/10)*270-135);
-    if(Math.random()<0.35) hap();
+    knobBubble(vol, Math.round(KNOB.vol));
     drawDSC();
   }});
   knobRotate(vol,(KNOB.vol/10)*270-135);
@@ -4952,7 +5227,7 @@ function bindStationKnobs(){
   makeKnob(rf,{onTurn:d=>{
     KNOB.rf=Math.max(0,Math.min(99,KNOB.rf+d/3.6));
     knobRotate(rf, (KNOB.rf/99)*270-135);
-    if(Math.random()<0.35) hap();
+    knobBubble(rf, Math.round(KNOB.rf));
     drawDSC();
   }});
   knobRotate(rf,(KNOB.rf/99)*270-135);
@@ -4967,6 +5242,161 @@ function bindStationKnobs(){
   }});
 }
 
+
+
+/* ================= Визуализация тракта сигнала =================
+   Показываем, куда физически уходит сигнал при проверке и при боевом
+   включении. Для EPIRB это спутниковый тракт COSPAS-SARSAT, для SART --
+   вид отметки с мостика проходящего судна.
+
+   Числа не выдуманы: высоты орбит (GEO 35 890 км, MEO около 20 000 км,
+   LEO около 850 км), посылка маяка раз в ~50 секунд, доставка тревоги
+   в спасательный центр в пределах 15 минут -- это требования и параметры
+   системы COSPAS-SARSAT. */
+
+const SAT_STAGES=[
+  {k:'idle',   t:'Маяк в дежурном режиме', d:'Сигнал не излучается'},
+  {k:'burst',  t:'Посылка на 406 МГц',     d:'Маяк передаёт короткими посылками примерно раз в 50 секунд'},
+  {k:'sat',    t:'Принято спутником',      d:'MEOSAR: спутники GPS, Galileo, ГЛОНАСС и BeiDou несут поисковые ретрансляторы'},
+  {k:'lut',    t:'Ретрансляция на MEOLUT', d:'Наземная станция измеряет частоту и время посылок, вычисляет место'},
+  {k:'mcc',    t:'Передано в MCC',         d:'Координационный центр системы сверяет данные и опознаёт маяк по номеру'},
+  {k:'rcc',    t:'Тревога у спасателей',   d:'Норматив системы: тревога доходит до спасательного центра в пределах 15 минут'}
+];
+
+function satSvg(stage, isTest){
+  const on = (k)=> SAT_STAGES.findIndex(s=>s.k===stage) >= SAT_STAGES.findIndex(s=>s.k===k);
+  const beam = on('burst');
+  const relay = on('lut');
+  const col = isTest ? '#5ba6e8' : '#ff8a3d';   // тест синим, боевой оранжевым
+
+  return `<svg viewBox="0 0 340 300">
+    <defs>
+      <radialGradient id="vzEarth" cx="50%" cy="35%">
+        <stop offset="0%" stop-color="#2d7cb8"/><stop offset="60%" stop-color="#154a76"/><stop offset="100%" stop-color="#0a2a45"/>
+      </radialGradient>
+      <linearGradient id="vzUp" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${col}" stop-opacity="0"/>
+        <stop offset="50%" stop-color="${col}" stop-opacity=".9"/>
+        <stop offset="100%" stop-color="${col}" stop-opacity=".2"/>
+      </linearGradient>
+      <linearGradient id="vzDown" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3fc97f" stop-opacity=".15"/>
+        <stop offset="100%" stop-color="#3fc97f" stop-opacity=".85"/>
+      </linearGradient>
+    </defs>
+
+    <ellipse cx="170" cy="330" rx="300" ry="235" fill="none" stroke="#1e4468" stroke-width="1" stroke-dasharray="3 5"/>
+    <ellipse cx="170" cy="330" rx="230" ry="180" fill="none" stroke="#1e4468" stroke-width="1" stroke-dasharray="3 5"/>
+    <ellipse cx="170" cy="330" rx="160" ry="128" fill="none" stroke="#1e4468" stroke-width="1" stroke-dasharray="3 5"/>
+    <text x="12" y="52" font-size="7.5" fill="#4d7ba8" font-family="monospace">GEO 35 890 км</text>
+    <text x="12" y="105" font-size="7.5" fill="#4d7ba8" font-family="monospace">MEO ~20 000 км</text>
+    <text x="12" y="158" font-size="7.5" fill="#4d7ba8" font-family="monospace">LEO ~850 км</text>
+
+    <ellipse cx="170" cy="330" rx="150" ry="118" fill="url(#vzEarth)"/>
+    <path d="M60 268 q40 -14 82 -4 t76 8" fill="none" stroke="#3d8fc9" stroke-width="1" opacity=".4"/>
+    <path d="M45 292 q55 -12 110 -2 t105 6" fill="none" stroke="#3d8fc9" stroke-width="1" opacity=".3"/>
+
+    ${beam?`<path class="vzbeam" d="M150 250 L206 118" stroke="url(#vzUp)" stroke-width="3" fill="none"/>`:''}
+    ${relay?`<path class="vzbeam2" d="M206 118 L272 244" stroke="url(#vzDown)" stroke-width="2.5" fill="none" stroke-dasharray="5 4"/>`:''}
+
+    <g transform="translate(268,60)">
+      <rect x="-9" y="-5" width="18" height="10" rx="2" fill="#c9d2dc"/>
+      <rect x="-19" y="-3" width="8" height="6" fill="#3d6fa5"/><rect x="11" y="-3" width="8" height="6" fill="#3d6fa5"/>
+      <text x="0" y="18" font-size="7" fill="#8fb4d8" text-anchor="middle" font-family="monospace">GEO</text>
+    </g>
+    <g transform="translate(206,118)">
+      ${on('sat')?`<circle r="15" fill="${col}" opacity=".16"><animate attributeName="r" values="12;19;12" dur="1.8s" repeatCount="indefinite"/></circle>`:''}
+      <rect x="-9" y="-5" width="18" height="10" rx="2" fill="${on('sat')?'#ffd8a0':'#c9d2dc'}"/>
+      <rect x="-19" y="-3" width="8" height="6" fill="${on('sat')?'#c07a20':'#3d6fa5'}"/>
+      <rect x="11" y="-3" width="8" height="6" fill="${on('sat')?'#c07a20':'#3d6fa5'}"/>
+      <text x="0" y="20" font-size="7" fill="${on('sat')?'#ffc372':'#8fb4d8'}" text-anchor="middle" font-family="monospace" font-weight="700">MEO</text>
+    </g>
+    <g transform="translate(96,150)">
+      <rect x="-8" y="-4" width="16" height="9" rx="2" fill="#c9d2dc"/>
+      <rect x="-17" y="-2" width="7" height="5" fill="#3d6fa5"/><rect x="10" y="-2" width="7" height="5" fill="#3d6fa5"/>
+      <text x="0" y="17" font-size="7" fill="#8fb4d8" text-anchor="middle" font-family="monospace">LEO</text>
+    </g>
+
+    <g transform="translate(150,250)">
+      ${beam?`<circle r="16" fill="${col}" opacity=".18"><animate attributeName="r" values="10;22;10" dur="1.6s" repeatCount="indefinite"/></circle>`:''}
+      <circle r="9" fill="${col}" opacity=".3"/>
+      <path d="M-9 2 l3 5 h12 l3 -5 z" fill="${col}"/>
+      <rect x="-2" y="-8" width="4" height="10" rx="1" fill="${col}"/>
+      <text x="0" y="24" font-size="7" fill="${col}" text-anchor="middle" font-family="monospace" font-weight="700">EPIRB 406</text>
+    </g>
+
+    <g transform="translate(272,244)">
+      <path d="M-8 6 h16 l-3 -6 h-10 z" fill="#9db6d4"/>
+      <path d="M0 0 a8 8 0 0 1 8 -8" fill="none" stroke="${relay?'#3fc97f':'#4d7ba8'}" stroke-width="2"/>
+      <circle cx="0" cy="0" r="2.5" fill="${relay?'#3fc97f':'#4d7ba8'}"/>
+      <text x="0" y="20" font-size="7" fill="${relay?'#7de3a8':'#6d90b4'}" text-anchor="middle" font-family="monospace" font-weight="700">MEOLUT</text>
+    </g>
+  </svg>`;
+}
+
+/* Цепочка этапов под картинкой */
+function satChain(stage, isTest){
+  const idx=SAT_STAGES.findIndex(s=>s.k===stage);
+  return `<div class="satchain">`+SAT_STAGES.slice(1).map((s,i)=>{
+    const done=idx>=i+1, now=idx===i+1;
+    return `<div class="satstep ${done?'done':''} ${now?'now':''}">
+      <i></i><div><div class="ss">${esc(tr(s.t))}</div>
+      ${now?`<div class="sd">${esc(tr(s.d))}</div>`:''}</div></div>`;
+  }).join('')+`</div>`+
+  (isTest&&idx>0?`<div class="hint" style="margin-top:9px">${ico('alert','xs')} ${esc(tr('При самопроверке сигнал в эту цепочку не уходит: маяк лишь проверяет собственные узлы. Схема показана, чтобы было видно, что происходит при настоящем срабатывании.'))}</div>`:'');
+}
+
+/* ---- Вид с мостика проходящего судна (SART) ---- */
+function bridgeViewSvg(active){
+  const dots = active
+    ? [[4,-6],[7,-10],[10,-14],[13,-18],[16,-22]]
+        .map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.5"/>`).join('')
+    : '';
+  return `<svg viewBox="0 0 340 250">
+   <defs>
+    <linearGradient id="vzSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1c2e"/><stop offset="70%" stop-color="#1a3f5f"/><stop offset="100%" stop-color="#2d6288"/>
+    </linearGradient>
+    <linearGradient id="vzSea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1d4a6e"/><stop offset="100%" stop-color="#0a2338"/>
+    </linearGradient>
+   </defs>
+   <rect x="0" y="0" width="340" height="250" fill="#050d16"/>
+   <rect x="14" y="12" width="312" height="150" rx="4" fill="url(#vzSky)"/>
+   <rect x="14" y="112" width="312" height="50" fill="url(#vzSea)"/>
+   <path d="M14 116 q30 -4 60 0 t60 0 t60 0 t60 0 t62 0 v46 h-312 z" fill="#123a58" opacity=".7"/>
+   <line x1="14" y1="112" x2="326" y2="112" stroke="#4d93d6" stroke-width=".8" opacity=".5"/>
+
+   <g transform="translate(196,104)">
+     <ellipse cx="0" cy="8" rx="11" ry="3" fill="#d9540f" opacity=".85"/>
+     <rect x="-1" y="-9" width="2" height="12" fill="#1c2126"/>
+     <circle cx="0" cy="-11" r="2.5" fill="#ff8a3d"/>
+     ${active?`<circle cx="0" cy="-11" r="7" fill="#ff8a3d" opacity=".25"><animate attributeName="r" values="4;12;4" dur="1.5s" repeatCount="indefinite"/></circle>`:''}
+   </g>
+   <text x="196" y="132" font-size="7" fill="#ffb37a" text-anchor="middle" font-family="monospace">${esc(tr('плот с SART · 4 мили'))}</text>
+
+   <rect x="112" y="12" width="4" height="150" fill="#0a1520"/>
+   <rect x="224" y="12" width="4" height="150" fill="#0a1520"/>
+   <rect x="14" y="12" width="312" height="150" rx="4" fill="none" stroke="#24435f" stroke-width="2"/>
+
+   <rect x="14" y="168" width="312" height="70" rx="6" fill="#161d26" stroke="#2a3540"/>
+   <text x="24" y="182" font-size="7" fill="#7a8fa6" font-family="monospace">RADAR X-BAND · 6 NM</text>
+
+   <g transform="translate(58,208)">
+     <circle r="26" fill="#04140c" stroke="#0e3a22"/>
+     <circle r="17" fill="none" stroke="rgba(70,220,140,.22)"/>
+     <circle r="8.5" fill="none" stroke="rgba(70,220,140,.22)"/>
+     <g fill="#ffb020">${dots}</g>
+     <circle r="1.8" fill="#fff"/>
+   </g>
+   <text x="58" y="243" font-size="6.5" fill="#7a8fa6" text-anchor="middle" font-family="monospace">${esc(tr('своё судно'))}</text>
+
+   <text x="100" y="200" font-size="8" fill="#cfe0f2" font-family="monospace">${esc(tr('Отметка SART:'))}</text>
+   <text x="100" y="212" font-size="7.5" fill="#9db6d4" font-family="monospace">${esc(tr('линия точек от центра'))}</text>
+   <text x="100" y="223" font-size="7.5" fill="#9db6d4" font-family="monospace">${esc(tr('по пеленгу на плот'))}</text>
+   <text x="100" y="234" font-size="7.5" fill="#ffb020" font-family="monospace">${esc(tr('интервал 0.64 мили'))}</text>
+  </svg>`;
+}
 
 /* ================= Живые органы управления EPIRB / SART =================
    Не картинка, а работающий прибор: кнопка TEST нажимается и удерживается,
@@ -5074,6 +5504,16 @@ function sartSetMode(mode){
 }
 
 /* ---- индикаторы: панель состояния прибора ---- */
+/* Соответствие фазы прибора этапу спутникового тракта */
+function satStageOf(){
+  const st=EQLIVE.epirb;
+  if(st.mode==='on') return 'rcc';                 // боевое: тревога идёт до конца
+  if(st.phase==='tx') return 'sat';
+  if(st.phase==='flash'||st.phase==='done') return 'lut';
+  if(st.phase==='gnss') return 'burst';
+  return 'idle';
+}
+
 function eqLedPanel(kind){
   const st=EQLIVE[kind];
   const led=(on,color,label,blink)=>
@@ -5237,6 +5677,21 @@ function renderGmdss(kind){
         </div>`;
   });
   h+=`<button class="btn wide" id="${kind}SaveChk" style="margin-top:6px">${esc(tr('Сохранить отметки'))}</button>`;
+
+  if(kind==='epirb'){
+    const stg=satStageOf(), isTest=live.mode!=='on';
+    h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Куда уходит сигнал'))}</h3></div>
+        <div class="satwrap">${satSvg(stg,isTest)}</div>
+        ${satChain(stg,isTest)}`;
+  }
+  if(kind==='sart'){
+    const act = live.phase==='responding'||live.phase==='active';
+    h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Вид с проходящего судна'))}</h3></div>
+        <div class="bviewwrap">${bridgeViewSvg(act)}</div>
+        <div class="hint" style="margin-top:9px">${ico('alert','xs')} ${esc(tr(act
+          ? 'Так отметку видит вахтенный на мостике проходящего судна: цепочка точек от своего судна в сторону плота.'
+          : 'Переведи переключатель в TEST или ON, чтобы увидеть, как отметка появляется на чужом радаре.'))}</div>`;
+  }
 
   h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Порядок самопроверки'))}</h3></div>
       <div class="hint">${ico('alert','xs')} ${esc(tr(kind==='epirb'
@@ -5963,6 +6418,7 @@ document.querySelectorAll('#corr .cat').forEach((c,i)=>
 const wantTab=(location.hash||'').replace('#','');
 if(['dash','areas','map','tools','radio','voy'].includes(wantTab)) switchView(wantTab);
 
+renderGeoBtn();   // иначе кнопка позиции пустая до первого нажатия
 loadAccess();
 if(loadCache())render();
 setTimeout(applyLang,60);
