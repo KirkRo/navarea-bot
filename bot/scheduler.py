@@ -195,6 +195,7 @@ async def daily_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception:
         logger.exception("Не удалось сохранить дневной снимок статистики")
     await certificates_job(context)
+    await gmdss_job(context)
 
 
 async def certificates_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -236,6 +237,60 @@ async def certificates_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if sent:
         logger.info("Отправлено напоминаний по сертификатам: %d", sent)
+
+
+async def gmdss_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Раз в сутки: напомнить о сроке батареи EPIRB/SART (90/30/7 дней).
+
+    Данные хранятся одной JSON-записью на пользователя (см. get_gmdss),
+    поэтому отметка "уже напомнили" живёт внутри неё же, в поле notified
+    у каждого из двух приборов -- как и с сертификатами, но без отдельной
+    таблицы под это."""
+    db = context.bot_data["db"]
+    from .services.bridge import EPIRB_CHECKLIST, SART_CHECKLIST, gmdss_due_threshold, days_left
+
+    names = {"epirb": "EPIRB", "sart": "SART"}
+    sent = 0
+    try:
+        rows = db.all_gmdss()
+    except Exception:
+        logger.exception("Не удалось получить список GMDSS-оборудования")
+        return
+
+    for row in rows:
+        user_id = row.get("_user_id")
+        if not user_id:
+            continue
+        changed = False
+        for kind, label in names.items():
+            eq = row.get(kind) or {}
+            expires = eq.get("battery_expires")
+            if not expires:
+                continue
+            th = gmdss_due_threshold(expires, eq.get("notified") or "")
+            if not th:
+                continue
+            days, day_label = th
+            left = days_left(expires)
+            head = "‼️ Батарея истекает сегодня" if left == 0 else f"⏳ Батарея {label}: осталось {day_label}"
+            model = eq.get("model") or label
+            text = f"{head}\n\n<b>{model}</b>\nЗамена батареи до {str(expires)[:10]}"
+            try:
+                await context.bot.send_message(user_id, text, parse_mode="HTML")
+                eq["notified"] = ",".join(filter(None, [eq.get("notified", ""), str(days)]))
+                row[kind] = eq
+                changed = True
+                sent += 1
+            except Exception:
+                logger.exception("Не удалось отправить напоминание по %s пользователю %s", kind, user_id)
+        if changed:
+            try:
+                db.save_gmdss(user_id, {k: v for k, v in row.items() if k != "_user_id"})
+            except Exception:
+                logger.exception("Не удалось сохранить отметку напоминания GMDSS для %s", user_id)
+
+    if sent:
+        logger.info("Отправлено напоминаний по GMDSS-оборудованию: %d", sent)
 
 
 async def keep_awake_job(context: ContextTypes.DEFAULT_TYPE) -> None:

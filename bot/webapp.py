@@ -420,6 +420,72 @@ def _api_dsc(query: dict) -> dict:
     return dsc_payload()
 
 
+def _now_iso() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _api_gmdss(query: dict) -> dict:
+    """EPIRB и SART: оборудование пользователя, чек-листы, история проверок.
+    Привязано к человеку, поэтому только с проверенной подписью Telegram."""
+    from .services.bridge import (EPIRB_CHECKLIST, EPIRB_SELFTEST_STEPS,
+                                  SART_CHECKLIST, SART_TEST_STEPS,
+                                  gmdss_due_threshold, gmdss_status)
+
+    db = _state["db"]
+    user_id, denied = _require("bridge", query)
+    if denied:
+        return denied
+
+    data = db.get_gmdss(user_id) or {}
+    data.setdefault("epirb", {})
+    data.setdefault("sart", {})
+
+    action = (query.get("action") or [""])[0]
+    kind = (query.get("kind") or [""])[0]
+
+    if action == "save_equipment" and kind in ("epirb", "sart"):
+        eq = data[kind]
+        for f in ("model", "mmsi_hex", "battery_expires", "notes"):
+            v = (query.get(f) or [""])[0].strip()
+            if v:
+                eq[f] = v
+        db.save_gmdss(user_id, data)
+
+    elif action == "save_checklist" and kind in ("epirb", "sart"):
+        try:
+            checked = json.loads((query.get("checked") or ["[]"])[0])
+        except ValueError:
+            checked = []
+        data[kind]["checklist"] = checked
+        data[kind]["checklist_at"] = _now_iso()
+        db.save_gmdss(user_id, data)
+
+    elif action == "log_test" and kind in ("epirb", "sart"):
+        result = (query.get("result") or ["pass"])[0]
+        entry = {"at": _now_iso(), "result": result}
+        data[kind].setdefault("history", [])
+        data[kind]["history"].insert(0, entry)
+        data[kind]["history"] = data[kind]["history"][:30]
+        db.save_gmdss(user_id, data)
+
+    elif action == "clear_history" and kind in ("epirb", "sart"):
+        data[kind]["history"] = []
+        db.save_gmdss(user_id, data)
+
+    for k in ("epirb", "sart"):
+        eq = data.get(k, {})
+        eq["status"] = gmdss_status(eq.get("battery_expires"))
+
+    return {
+        "equipment": data,
+        "epirb_checklist": EPIRB_CHECKLIST,
+        "sart_checklist": SART_CHECKLIST,
+        "epirb_steps": EPIRB_SELFTEST_STEPS,
+        "sart_steps": SART_TEST_STEPS,
+    }
+
+
 def _api_stations(query: dict) -> dict:
     from .services.radio import stations_payload
     return stations_payload()
@@ -523,6 +589,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/gmdss": _api_gmdss,
     "/api/dsc": _api_dsc,
     "/api/ship-search": _api_ship_search,
     "/api/access": _api_access,

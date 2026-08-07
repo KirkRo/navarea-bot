@@ -75,6 +75,12 @@ CREATE TABLE IF NOT EXISTS vessels (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gmdss (
+    user_id INTEGER PRIMARY KEY,
+    data_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS favorites (
     user_id INTEGER NOT NULL,
     area_code TEXT NOT NULL,
@@ -698,3 +704,34 @@ class Database:
     def get_vessel_docs(self, user_id: int) -> list:
         raw = self.get_vessel(user_id)
         return raw.get("docs", []) if isinstance(raw, dict) else []
+
+    def get_gmdss(self, user_id: int) -> dict:
+        with self._conn() as conn:
+            row = conn.execute("SELECT data_json FROM gmdss WHERE user_id = ?", (user_id,)).fetchone()
+        if not row:
+            return {}
+        try:
+            return json.loads(row["data_json"])
+        except (ValueError, TypeError):
+            return {}
+
+    def save_gmdss(self, user_id: int, data: dict) -> None:
+        payload = json.dumps(data, ensure_ascii=False)
+        with self._conn() as conn:
+            conn.execute("""
+                INSERT INTO gmdss (user_id, data_json, updated_at) VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET data_json = excluded.data_json,
+                                                   updated_at = excluded.updated_at
+            """, (user_id, payload, _now()))
+
+    def all_gmdss(self) -> list[dict]:
+        """Для ежедневной проверки напоминаний по батарее -- по всем пользователям."""
+        with self._conn() as conn:
+            rows = conn.execute("SELECT user_id, data_json FROM gmdss").fetchall()
+        out = []
+        for r in rows:
+            try:
+                d = json.loads(r["data_json"]); d["_user_id"] = r["user_id"]; out.append(d)
+            except (ValueError, TypeError):
+                pass
+        return out

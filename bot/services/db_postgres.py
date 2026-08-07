@@ -79,6 +79,12 @@ CREATE TABLE IF NOT EXISTS vessels (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gmdss (
+    user_id BIGINT PRIMARY KEY,
+    data_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS favorites (
     user_id BIGINT NOT NULL,
     area_code TEXT NOT NULL,
@@ -716,3 +722,35 @@ class PostgresDatabase:
     def get_vessel_docs(self, user_id: int) -> list:
         raw = self.get_vessel(user_id)
         return raw.get("docs", []) if isinstance(raw, dict) else []
+
+    def get_gmdss(self, user_id: int) -> dict:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT data_json FROM gmdss WHERE user_id = %s", (user_id,))
+            row = cur.fetchone()
+        if not row:
+            return {}
+        try:
+            return json.loads(row["data_json"])
+        except (ValueError, TypeError):
+            return {}
+
+    def save_gmdss(self, user_id: int, data: dict) -> None:
+        payload = json.dumps(data, ensure_ascii=False)
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO gmdss (user_id, data_json, updated_at) VALUES (%s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET data_json = EXCLUDED.data_json,
+                                                    updated_at = EXCLUDED.updated_at
+            """, (user_id, payload, _now()))
+
+    def all_gmdss(self) -> list[dict]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT user_id, data_json FROM gmdss")
+            rows = cur.fetchall()
+        out = []
+        for r in rows:
+            try:
+                d = json.loads(r["data_json"]); d["_user_id"] = r["user_id"]; out.append(d)
+            except (ValueError, TypeError):
+                pass
+        return out

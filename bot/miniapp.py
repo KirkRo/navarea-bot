@@ -100,11 +100,15 @@ body::before{
 .fbtn:active{transform:scale(.9)}
 
 /* ---- Плитки-категории ---- */
-.cats,.chips{display:flex;gap:9px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none;scroll-snap-type:x proximity}
+.cats,.chips{
+  display:flex;gap:9px;overflow-x:auto;overflow-y:hidden;padding:2px 0 12px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  touch-action:pan-x;overscroll-behavior-x:contain;
+}
 .cats::-webkit-scrollbar,.chips::-webkit-scrollbar{display:none}
 .cat{
   flex:none;width:74px;padding:11px 6px 9px;border-radius:var(--r-md);cursor:pointer;
-  background:var(--surf);border:1px solid var(--line);text-align:center;scroll-snap-align:start;
+  background:var(--surf);border:1px solid var(--line);text-align:center;
   transition:all .25s cubic-bezier(.34,1.4,.5,1);backdrop-filter:blur(12px);
 }
 .cat:active{transform:scale(.93)}
@@ -358,69 +362,164 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
 
-/* ---- Тренажёр ЦИВ: корпус радиостанции ---- */
+/* ---- Тренажёр ЦИВ: корпус Furuno FS-2575C ----
+   Проверено рендером в headless-браузере и сверено с фото реальной
+   station. Сетка на клавиатуре -- flexbox, не CSS grid: так надёжнее
+   на разных WebView внутри Telegram. */
 .radio{
-  background:linear-gradient(170deg,#2a2f36,#191d23);
-  border:1px solid #3a4048;border-radius:20px;padding:14px;
-  box-shadow:0 18px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  background:linear-gradient(155deg,#48463f,#282621);
+  border:1px solid #55534b;border-radius:12px;padding:12px 12px 14px;
+  box-shadow:0 20px 46px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
   max-width:400px;margin:0 auto;
 }
-.radio .brand{
-  display:flex;align-items:center;justify-content:space-between;
-  font-size:10px;font-weight:800;letter-spacing:1.2px;color:#8b939d;margin-bottom:10px;
+.rplates{display:flex;justify-content:center;gap:8px;margin:0 0 9px;flex-wrap:wrap}
+.rplate{
+  background:#e9ecef;color:#15181c;font-size:9px;font-weight:800;letter-spacing:.3px;
+  border-radius:3px;padding:5px 9px;text-align:center;line-height:1.25;
+  border:1px solid #b8bec4;box-shadow:0 1px 2px rgba(0,0,0,.3);
 }
-.radio .brand b{color:#c9d2dc;font-size:11.5px;letter-spacing:.6px}
-/* экран 4.3 дюйма, 480x272 -- держим те же пропорции */
+.rhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px;gap:8px}
+.rnameplate{
+  background:#dfe3e6;color:#1a1d20;font-size:6.6px;font-weight:700;line-height:1.35;
+  border-radius:2px;padding:3px 6px;border:1px solid #aab0b6;flex:1;min-width:0;
+}
+.rfuruno{
+  flex:none;font-weight:800;font-size:13px;letter-spacing:1px;font-style:italic;
+  background-image:linear-gradient(180deg,#e8ebee,#9ba1a8);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+.rbody{display:flex;gap:8px}
+.rleft{width:70px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.rspeaker{width:100%;background:#1a1c1e;border-radius:5px;padding:6px 8px}
+.rspeaker i{display:block;height:2.6px;background:#000;border-radius:2px;margin:2.6px 0}
+.rknob{width:32px;height:32px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#54595f,#1c1e20 72%);
+  border:1px solid #61656b;position:relative;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.rknob::after{content:'';position:absolute;top:3px;left:50%;width:2px;height:10px;
+  background:#8a9096;transform:translateX(-50%);border-radius:1px}
+.rklabel{font-size:6.3px;color:#a8aeb4;text-align:center;font-weight:700;letter-spacing:.2px;line-height:1.2}
+.rleds{display:flex;flex-direction:column;gap:4px;align-items:center;margin-top:1px}
+.rled{display:flex;align-items:center;gap:4px}
+.rled i{width:5.5px;height:5.5px;border-radius:50%;background:#3a3d40;flex:none}
+.rled i.amber{background:#ffb020;box-shadow:0 0 5px #ffb020}
+.rled i.green{background:#3fc97f;box-shadow:0 0 5px #3fc97f}
+.rled span{font-size:6px;color:#a8aeb4;font-weight:700}
+
+.rdistwrap{width:100%;text-align:center;margin-top:2px}
+.rdistcover{
+  width:44px;height:32px;margin:0 auto;position:relative;cursor:pointer;
+  background:linear-gradient(160deg,rgba(220,230,240,.1),rgba(220,230,240,.02));
+  border:1.5px solid #62666c;border-radius:5px;
+}
+.rdistbtn{position:absolute;inset:5px;border-radius:3px;
+  background:linear-gradient(160deg,#f0503e,#b8281a);border:1px solid #ff7a68;
+  box-shadow:0 0 6px rgba(240,80,62,.55), inset 0 1px 1px rgba(255,255,255,.3)}
+.rdistbtn.arming{animation:rarmpulse .45s infinite}
+@keyframes rarmpulse{50%{background:linear-gradient(160deg,#ff7a68,#e0402c);box-shadow:0 0 14px rgba(255,90,68,.85)}}
+.rpwroff{font-size:6px;color:#a8aeb4;font-weight:700;margin-top:4px;letter-spacing:.3px}
+.rdistcap{font-size:5.6px;color:#8a9098;text-align:center;line-height:1.35;margin-top:4px;padding:0 1px}
+
+/* --- экран --- */
+.rscreen{flex:1;min-width:0}
 .lcd{
-  background:#0a1410;border:2px solid #11161c;border-radius:9px;
-  aspect-ratio:480/272;padding:11px 13px;overflow:hidden;position:relative;
+  background:linear-gradient(175deg,#0f2440,#0a1a30);
+  border:2px solid #05070a;border-radius:5px;padding:6px 7px;
+  min-height:172px;display:flex;flex-direction:column;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  color:#7dfca8;text-shadow:0 0 7px rgba(125,252,168,.45);
-  display:flex;flex-direction:column;
+  color:#dce8f4;font-size:8.4px;position:relative;overflow:hidden;
 }
-.lcd.alert{color:#ff6b5a;text-shadow:0 0 8px rgba(255,107,90,.5);background:#1a0d0c}
-.lcd .top{display:flex;justify-content:space-between;font-size:9.5px;opacity:.75;
-  border-bottom:1px solid rgba(125,252,168,.22);padding-bottom:5px;margin-bottom:7px}
-.lcd .body{flex:1;font-size:12px;line-height:1.55;overflow-y:auto;white-space:pre-wrap}
-.lcd .body::-webkit-scrollbar{width:0}
-.lcd .foot{font-size:9px;opacity:.6;border-top:1px solid rgba(125,252,168,.22);
-  padding-top:5px;margin-top:6px;display:flex;justify-content:space-between}
-.lcd .sel{background:rgba(125,252,168,.16);border-left:2px solid #7dfca8;padding-left:6px;margin-left:-8px}
-.lcd .blink{animation:lcdblink 1.1s steps(2) infinite}
+.lcd.alert{background:linear-gradient(175deg,#3a1210,#280a08)}
+.lcdtop{display:flex;justify-content:space-between;align-items:center;font-size:6.8px;
+  color:#8fa8c4;margin-bottom:3px;flex:none}
+.lrow1{display:flex;gap:4px;align-items:stretch;margin-bottom:3px;flex:none}
+.ldist{
+  background:#1a2c48;color:#e8eef5;font-size:6.4px;font-weight:800;text-align:center;
+  border-radius:2px;padding:3px 3px;line-height:1.2;flex:none;width:26px;
+  display:flex;align-items:center;justify-content:center;border:1px solid #2c4468;
+}
+.ldist.alert{background:#c0281c;animation:rdblink 1s steps(2) infinite}
+@keyframes rdblink{50%{opacity:.4}}
+.lch{
+  flex:1;min-width:0;background:linear-gradient(180deg,#e9dfc4,#d8cba4);color:#1a1408;
+  border-radius:2px;padding:2px 6px;display:flex;align-items:baseline;gap:4px;
+}
+.lch .l{font-size:6.6px;font-weight:800}
+.lch .n{font-size:16px;font-weight:800;letter-spacing:.3px}
+.lnb{flex:none;width:15px;display:flex;align-items:center;justify-content:center;
+  font-size:5.6px;font-weight:800;color:#9db6d4;border:1px solid #2c4468;border-radius:50%;}
+.lmenu{flex:none;width:44px;display:flex;flex-direction:column;justify-content:space-around;gap:1px}
+.lmenu .mi{display:flex;align-items:center;gap:2px;font-size:5.3px;color:#c2d4e8;line-height:1.05}
+.lmenu .mi b{color:#fff;font-weight:800}
+.lfreq{font-size:7.6px;display:flex;gap:5px;margin:2px 0;flex:none}
+.lfreq .lb{color:#8fa8c4;width:15px}
+.lfreq .v{color:#fff;font-weight:700}
+.lfreq .u{color:#8fa8c4}
+.lmode{font-size:6.1px;color:#9db6d4;display:flex;gap:6px;margin:3px 0 2px;font-weight:700;flex:none}
+.lmeter{font-size:5.7px;color:#8fa8c4;display:flex;align-items:center;gap:3px;margin-bottom:2px;flex:none}
+.lbars{display:flex;gap:1px}
+.lbars i{width:2.4px;height:5.5px;background:#274568;border-radius:.5px;display:block}
+.lbars i.on{background:#5ba6e8}
+.lag{display:flex;justify-content:space-between;align-items:center;font-size:5.7px;color:#9db6d4;margin-bottom:3px;flex:none}
+.lag .attb{border:1px solid #2c4468;border-radius:8px;padding:1px 6px;font-weight:800}
+.lgps{background:#152540;border:1px solid #24406a;border-radius:2px;padding:3px 5px;
+  display:flex;justify-content:space-between;font-size:5.9px;color:#cfe0f2;margin-bottom:3px;flex:none}
+.lgps b{color:#fff;font-weight:800;display:block;font-size:5.7px;text-align:right;opacity:.85}
+.lmem{display:flex;gap:2px;flex:none;margin-top:auto}
+.lmem i{flex:1;height:7px;border:1px solid #24406a;border-radius:1px;display:block}
+
+/* --- меню/список поверх того же экрана (навигация по MENU) --- */
+.lmenuscreen{flex:1;overflow-y:auto;font-size:9.5px;line-height:1.7}
+.lmenuscreen::-webkit-scrollbar{width:0}
+.lmenuscreen .it{padding-left:2px}
+.lmenuscreen .it.sel{background:rgba(93,166,232,.18);border-left:2px solid #5ba6e8;padding-left:6px;margin-left:-8px;color:#fff}
+.llog{flex:1;overflow-y:auto;font-size:9px;line-height:1.6;white-space:pre-wrap;color:#dce8f4}
+.llog::-webkit-scrollbar{width:0}
+.blink{animation:lcdblink 1.1s steps(2) infinite}
 @keyframes lcdblink{50%{opacity:.25}}
 
-.radio .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+/* --- правая колонка: клавиатура --- */
+.rright{width:126px;flex:none;display:flex;flex-direction:column;gap:5px}
+.rkgrid{display:flex;flex-wrap:wrap;gap:4px}
+.rkgrid .rkey{width:calc((100% - 8px)/3)}
+.rfngrid{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.rfngrid .rkey{width:calc((100% - 4px)/2)}
 .rkey{
-  background:linear-gradient(180deg,#3a4149,#252a31);border:1px solid #454c55;
-  border-radius:9px;padding:11px 4px;font-size:11.5px;font-weight:700;color:#dfe6ee;
-  cursor:pointer;font-family:inherit;
-  box-shadow:0 2px 0 #1a1e24, inset 0 1px 0 rgba(255,255,255,.09);
-  transition:transform .08s,box-shadow .08s;
+  background:linear-gradient(180deg,#3d4249,#26292d);border:1px solid #4a4f55;border-radius:5px;
+  padding:5px 2px;text-align:center;box-shadow:0 1.5px 0 #17181a, inset 0 1px 0 rgba(255,255,255,.08);
+  cursor:pointer;transition:transform .08s;box-sizing:border-box;
 }
-.rkey:active{transform:translateY(2px);box-shadow:0 0 0 #1a1e24, inset 0 1px 0 rgba(255,255,255,.05)}
-.rkey.num{font-size:14px;font-weight:750}
-.rkey.wide{grid-column:span 2}
-.rkey.ok{background:linear-gradient(180deg,#2f6b46,#1f4a30);border-color:#3d7d54;color:#d8ffe6}
-.rkey.warn{background:linear-gradient(180deg,#7a5a20,#5a4116);border-color:#8d6a28;color:#ffe9c2}
+.rkey:active{transform:translateY(1.5px);box-shadow:0 0 0 #17181a, inset 0 1px 0 rgba(255,255,255,.05)}
+.rkey .kt{font-size:7.2px;font-weight:800;color:#e6eaee;line-height:1}
+.rkey .ks{font-size:4.8px;font-weight:700;color:#8a9098;margin-top:1px}
+.rkey.ok{background:linear-gradient(180deg,#2f6b46,#1f4a30);border-color:#3d7d54}
+.rkey.ok .kt{color:#d8ffe6}
+.rkey.warn{background:linear-gradient(180deg,#7a5a20,#5a4116);border-color:#8d6a28}
+.rkey.warn .kt{color:#ffe9c2}
+.rbigknob{
+  width:48px;height:48px;border-radius:50%;margin:4px auto 0;cursor:pointer;
+  background:radial-gradient(circle at 32% 28%,#565b62,#1c1e20 70%);
+  border:1px solid #63686e;box-shadow:0 3px 6px rgba(0,0,0,.5);position:relative;
+}
+.rbigknob::after{content:'';position:absolute;top:5px;left:50%;width:3px;height:14px;
+  background:#a2a8ae;transform:translateX(-50%);border-radius:1.5px}
+.rbigknob .cap{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+  font-size:5.1px;color:#a8aeb4;font-weight:700;white-space:nowrap}
 
-.distressbox{margin-top:12px;position:relative}
-.dlid{
-  background:linear-gradient(180deg,#3a4149,#252a31);border:1px solid #454c55;
-  border-radius:11px;padding:13px;text-align:center;font-size:11.5px;font-weight:750;
-  color:#a8b2bd;cursor:pointer;letter-spacing:.6px;
+.rcompose{display:flex;gap:7px;align-items:flex-end;margin-top:16px}
+.rcbtn{
+  flex:1;background:linear-gradient(180deg,#3d4249,#26292d);border:1px solid #4a4f55;border-radius:5px;
+  padding:7px 3px;font-size:6.2px;font-weight:800;color:#dfe4e8;text-align:center;line-height:1.15;
+  cursor:pointer;
 }
-.dlid:active{transform:scale(.98)}
-.dbtn{
-  width:100%;background:linear-gradient(180deg,#d8402f,#a02218);border:1px solid #e05a48;
-  border-radius:11px;padding:15px;font-size:14px;font-weight:850;color:#fff;
-  letter-spacing:1.4px;cursor:pointer;font-family:inherit;
-  box-shadow:0 3px 0 #6d160f, 0 0 22px rgba(216,64,47,.35);
-  transition:transform .1s;
+.rbracket{border-top:1px solid #4a4f55;margin-top:3px;padding-top:2px;font-size:4.8px;
+  color:#8a9098;text-align:center;font-weight:700;letter-spacing:.2px}
+
+.rfooter{
+  background:#e9ecef;color:#15181c;font-size:8px;font-weight:800;letter-spacing:.3px;
+  border-radius:3px;padding:6px 12px;text-align:center;margin:10px auto 0;max-width:180px;
+  border:1px solid #b8bec4;box-shadow:0 1px 2px rgba(0,0,0,.3);
 }
-.dbtn:active{transform:translateY(3px);box-shadow:0 0 0 #6d160f, 0 0 26px rgba(216,64,47,.5)}
-.dbtn.arming{animation:armpulse .45s infinite}
-@keyframes armpulse{50%{background:linear-gradient(180deg,#ff5a44,#c02a1e)}}
-.dhold{font-size:10px;color:#ffb3a8;text-align:center;margin-top:7px;letter-spacing:.4px}
 
 .dsctip{
   background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--amber);
@@ -438,6 +537,95 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .verdict.ok{background:rgba(63,201,127,.13);border:1px solid rgba(63,201,127,.36)}
 .verdict.no{background:rgba(255,107,74,.13);border:1px solid rgba(255,107,74,.36)}
 .verdict b{display:block;margin-bottom:5px;font-size:13px}
+
+/* ---- EPIRB / SART: карточка оборудования ----
+   Силуэты проверены рендером в headless-браузере: узнаваемый оранжевый
+   корпус, антенна, купол/строб у EPIRB, поворотный переключатель у SART. */
+.eqhero{
+  background:linear-gradient(160deg,#153c60,#0c2138);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:18px 15px;display:flex;align-items:center;gap:16px;
+  box-shadow:var(--sh);
+}
+.eqhero svg{width:76px;flex:none}
+.eqinfo{flex:1;min-width:0}
+.eqinfo .nm{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.eqinfo .md{font-size:11px;color:#9db6d4;margin-top:2px}
+.eqstatus{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:750;
+  border-radius:20px;padding:4px 10px;margin-top:8px}
+.eqstatus.ok{background:rgba(63,201,127,.16);color:#6fe3a6;border:1px solid rgba(63,201,127,.34)}
+.eqstatus.watch{background:rgba(240,160,60,.16);color:#ffc372;border:1px solid rgba(240,160,60,.34)}
+.eqstatus.soon{background:rgba(255,139,61,.18);color:#ffb066;border:1px solid rgba(255,139,61,.4)}
+.eqstatus.expired{background:rgba(255,107,74,.18);color:#ff9080;border:1px solid rgba(255,107,74,.4)}
+.eqstatus.unknown{background:rgba(133,150,172,.14);color:#9aabbd;border:1px solid rgba(133,150,172,.28)}
+
+.eqchk{
+  display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:var(--r-md);
+  background:var(--surf);border:1px solid var(--line);margin-bottom:8px;cursor:pointer;
+}
+.eqchk .box{
+  width:21px;height:21px;flex:none;border-radius:6px;border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;transition:all .18s;
+}
+.eqchk.on .box{background:var(--ok);border-color:var(--ok);color:#0b1e14}
+.eqchk .t{font-size:12.5px;font-weight:600;flex:1}
+.eqchk.on .t{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(133,150,172,.5)}
+.eqprogress{
+  height:5px;border-radius:3px;background:var(--surf2);overflow:hidden;margin:11px 0 15px;
+}
+.eqprogress i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));
+  border-radius:3px;transition:width .3s}
+
+.eqsteps{counter-reset:step}
+.eqstep{
+  display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);
+}
+.eqstep:last-child{border-bottom:none}
+.eqstep .num{
+  counter-increment:step;flex:none;width:26px;height:26px;border-radius:50%;
+  background:var(--amber-soft);color:var(--amber);font-weight:800;font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+}
+.eqstep .num::before{content:counter(step)}
+.eqstep .txt{flex:1;min-width:0}
+.eqstep .txt .st{font-size:13px;font-weight:700}
+.eqstep .txt .sd{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+
+.eqhist{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--surf2);margin-bottom:7px}
+.eqhist .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.eqhist .dot.pass{background:var(--ok);box-shadow:0 0 6px rgba(63,201,127,.6)}
+.eqhist .dot.fail{background:var(--hot);box-shadow:0 0 6px rgba(255,107,74,.6)}
+.eqhist .dt{flex:1;font-size:12px;color:var(--text)}
+.eqhist .rs{font-size:10.5px;font-weight:750;text-transform:uppercase;letter-spacing:.4px}
+.eqhist .rs.pass{color:var(--ok)}
+.eqhist .rs.fail{color:var(--hot)}
+
+.eqfield{margin-bottom:11px}
+.eqfield label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.5px}
+.eqfield input{
+  width:100%;background:var(--surf);border:1px solid var(--line);color:var(--text);
+  border-radius:var(--r-sm);padding:11px 13px;font-size:14px;font-family:inherit;outline:none;
+}
+.eqfield input:focus{border-color:var(--amber)}
+
+/* ---- Радарная отметка SART ---- */
+.ppiwrap{background:#04140c;border:2px solid #0a2818;border-radius:var(--r-lg);padding:8px;
+  box-shadow:var(--sh);margin-bottom:11px}
+/* Квадрат гарантированной пропорции через padding-top, а не только через
+   viewBox у самого svg -- на части WebView без явной высоты контейнер
+   схлопывается в полоску, даже если у svg есть viewBox. */
+.ppiratio{width:100%;padding-top:100%;position:relative}
+.ppiratio svg{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:block}
+.sweepline{animation:sartsweep 4s linear infinite;transform-origin:150px 150px}
+@keyframes sartsweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.rngbtns{display:flex;gap:7px;margin-bottom:15px}
+.rngbtn{
+  flex:1;background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:10px 4px;text-align:center;font-size:11.5px;font-weight:700;color:var(--muted);
+  cursor:pointer;font-family:inherit;
+}
+.rngbtn.on{background:linear-gradient(140deg,var(--amber),var(--amber2));color:var(--accent-text);border-color:transparent}
 
 /* ---- Разделы инструментов ---- */
 .catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -574,11 +762,10 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   -webkit-overflow-scrolling:touch;
   touch-action:pan-x;
   overscroll-behavior-x:contain;
-  scroll-snap-type:x proximity;
   cursor:grab;
 }
 .subtabs:active{cursor:grabbing}
-.subtab{scroll-snap-align:start}
+
 .subtabs::-webkit-scrollbar{display:none}
 .subtab{
   flex:none;border:1px solid var(--line);background:var(--surf);color:var(--muted);
@@ -1132,6 +1319,18 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <section id="v-dsc" class="hidden">
     <div class="sech"><h3>Тренажёр ЦИВ</h3></div>
     <div id="dscBox"><div class="sk card"></div></div>
+  </section>
+
+  <!-- EPIRB TEST -->
+  <section id="v-epirb" class="hidden">
+    <div class="sech"><h3>EPIRB Test</h3></div>
+    <div id="epirbBox"><div class="sk card"></div></div>
+  </section>
+
+  <!-- SART TEST -->
+  <section id="v-sart" class="hidden">
+    <div class="sech"><h3>SART Test</h3></div>
+    <div id="sartBox"><div class="sk card"></div></div>
   </section>
 
   <!-- РЕЙС -->
@@ -2418,6 +2617,55 @@ Object.assign(DICT,{
  'Экзамен завершён':'Exam finished','Верных ответов':'Correct answers','из':'of',
  'Все разделы':'All sections','Под рукой':'At hand','Разделы':'Sections'
 });
+Object.assign(DICT,{
+ 'EPIRB Test':'EPIRB Test','SART Test':'SART Test',
+ 'Дата замены батареи':'Battery replacement date',
+ 'Ежемесячная проверка':'Monthly inspection','Сохранить отметки':'Save checklist',
+ 'Self-Test':'Self-Test','Начать самопроверку':'Start self-test',
+ 'Пошагово, как по руководству. Ничего не передаётся по-настоящему.':'Step by step, as in the manual. Nothing is actually transmitted.',
+ 'Самопроверка пройдена. Отметка добавлена в историю.':'Self-test passed. Logged to history.',
+ 'Пройти ещё раз':'Test again','Шаг':'Step','Следующий шаг':'Next step',
+ 'Завершить: PASS':'Finish: PASS','Обнаружена неисправность':'Fault detected',
+ 'Линия из 12 точек с интервалом 0.64 мили. Ближе 1 мили точки становятся дугами, затем полными окружностями.':
+   '12 dots spaced 0.64 NM apart. Inside 1 NM they turn into arcs, then full circles.',
+ 'миль':'NM','мили':'NM','История проверок':'Test history','Очистить':'Clear',
+ 'Проверок пока нет':'No tests yet','Удалить всю историю проверок?':'Delete the whole test history?',
+ 'В порядке':'OK','Планируй замену':'Plan replacement','Скоро истекает':'Expiring soon',
+ 'Просрочено':'Expired','Срок не указан':'Not set',
+ 'Навигация и расчёты':'Navigation and tools',
+ 'Корпус: трещин и повреждений нет':'Housing: no cracks or damage',
+ 'Антенна не повреждена, вращается свободно':'Antenna undamaged, rotates freely',
+ 'Крепление (бракет) исправно, не заклинило':'Bracket sound, not jammed',
+ 'Гидростатический разъединитель (HRU) в пределах срока':'Hydrostatic release (HRU) within date',
+ 'Срок годности батареи не истёк':'Battery not expired',
+ 'Линь (lanyard) на месте, не перетёрт':'Lanyard present, not frayed',
+ 'Строб-маяк исправен':'Strobe light working','Самопроверка пройдена':'Self-test passed',
+ 'GPS определяет позицию':'GPS acquires position',
+ 'Батарея в пределах срока':'Battery within date','Дата замены батареи не подошла':'Replacement date not due',
+ 'Крепление (бракет) исправно':'Bracket sound','Антенна не повреждена, штырь раскладывается':'Antenna undamaged, rod extends',
+ 'Внешний осмотр: корпус, крышка, индикатор':'Visual check: housing, cap, indicator',
+ 'Нажать и удерживать TEST':'Press and hold TEST',
+ 'Кнопка самопроверки, не активации. Обычно 1-2 секунды.':'Self-test button, not activation. Usually 1-2 seconds.',
+ 'EPIRB ищет спутниковую позицию':'EPIRB searches for satellite position',
+ 'Индикатор GNSS (зелёный) горит около 1 секунды, когда позиция определена.':'Green GNSS indicator lights for about 1 second once a position is found.',
+ 'Передаётся тестовый сигнал':'Test signal is transmitted',
+ 'На всех частотах: 121.5 МГц, AIS и 406 МГц. Это тестовый, а не аварийный сигнал -- на спасательные службы он не поступает.':
+   'On all frequencies: 121.5 MHz, AIS and 406 MHz. This is a test signal, not a distress alert -- it does not reach rescue services.',
+ 'Индикатор мигает по итогу':'Indicator flashes at the end',
+ 'Один раз -- тест пройден. Продолжает мигать -- обнаружена неисправность, смотри код ошибки в руководстве.':
+   'Once -- test passed. Keeps flashing -- a fault was found, check the error code in the manual.',
+ 'Снять транспондер с крепления':'Remove the transponder from its bracket',
+ 'Тест выполняется вне бракета, с реальным излучением в эфир.':'The test is performed outside the bracket, with real emission into the air.',
+ 'Перевести в режим TEST':'Switch to TEST mode',
+ 'Обычно поворотом переключателя в положение TEST (не ON/DISTRESS) -- у Tron SART20 отдельное положение переключателя для теста.':
+   'Usually by turning the switch to TEST (not ON/DISTRESS) -- Tron SART20 has a dedicated test position.',
+ 'Включить судовой X-диапазонный радар':'Turn on the ship\'s X-band radar',
+ 'На шкале 6-12 миль, чтобы интервал между точками 0.64 мили был различим.':'On the 6-12 NM range, so the 0.64 NM dot spacing is distinguishable.',
+ 'Наблюдать отклик на экране радара':'Watch the response on the radar display',
+ 'Линия из 12 точек, расходящаяся от места установки радара по пеленгу на SART.':'A line of 12 dots extending from own ship along the bearing to the SART.',
+ 'Вернуть в дежурный режим':'Return to standby',
+ 'Тест не дольше 5 минут: расходует батарею и создаёт помехи чужим радарам в зоне видимости.':'Keep the test under 5 minutes: it drains the battery and interferes with other radars in range.'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -3109,11 +3357,9 @@ const GROUPS={
     {v:'dash',t:'Обзор',i:'gauge'},
     {v:'areas',t:'Районы',i:'globe'}]},
   tools:{t:'Инструменты',i:'sliders',subs:[
-    {v:'tools',t:'Расчёты',i:'sliders'},
+    {v:'tools',t:'Инструменты',i:'sliders'},
     {v:'bridge',t:'Чек-листы',i:'flag'},
-    {v:'refs',t:'Справка',i:'archive'},
-    {v:'radio',t:'Радио',i:'radar'},
-    {v:'dsc',t:'ЦИВ',i:'radar'}]},
+    {v:'refs',t:'Справка',i:'archive'}]},
   map:{t:'Карта',i:'map',subs:[
     {v:'map',t:'Обстановка',i:'map'},
     {v:'voy',t:'Маршрут',i:'route'},
@@ -3122,10 +3368,60 @@ const GROUPS={
     {v:'ship',t:'Моё судно',i:'ship'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
-const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','ship','settings','voy','zones'];
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones'];
 const VIEW_GROUP={};
 Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
+// GMDSS-разделы открываются карточками с главного экрана "Инструменты", а не
+// отдельными вкладками сверху -- так их не пять в ряд, а по категориям, как
+// просили: сначала общий раздел, оборудование ГМССБ внутри него отдельным блоком.
+['radio','dsc','epirb','sart'].forEach(v=>VIEW_GROUP[v]='tools');
 let S_GROUP='home';
+
+
+/* ---- Перетаскивание горизонтальных лент пальцем ----
+   Нативная прокрутка в WebView Telegram местами не срабатывает: лента
+   двигалась только программно, а рукой стояла на месте. Поэтому таскаем
+   сами -- слушаем указатель и двигаем scrollLeft. Обычную прокрутку это
+   не ломает: если она работает, наш обработчик просто дублирует её. */
+function makeDraggable(el){
+  if(!el||el._drag) return;
+  el._drag=true;
+  let down=false, startX=0, startLeft=0, moved=0;
+
+  const start=(x)=>{ down=true; moved=0; startX=x; startLeft=el.scrollLeft; };
+  const move=(x)=>{
+    if(!down) return;
+    const dx=startX-x;
+    moved=Math.abs(dx);
+    el.scrollLeft=startLeft+dx;
+  };
+  const end=()=>{ down=false; };
+
+  el.addEventListener('pointerdown',e=>{ start(e.clientX); },{passive:true});
+  el.addEventListener('pointermove',e=>{
+    if(!down) return;
+    move(e.clientX);
+    // как только палец реально поехал -- гасим нажатие на кнопке под ним
+    if(moved>6&&e.cancelable) e.preventDefault();
+  },{passive:false});
+  el.addEventListener('pointerup',end,{passive:true});
+  el.addEventListener('pointercancel',end,{passive:true});
+  el.addEventListener('pointerleave',end,{passive:true});
+
+  // если ленту протащили, нажатие по кнопке не должно срабатывать
+  el.addEventListener('click',e=>{
+    if(moved>6){ e.stopPropagation(); e.preventDefault(); moved=0; }
+  },true);
+
+  // запасной путь для старых движков без указателей
+  el.addEventListener('touchstart',e=>{ if(e.touches[0]) start(e.touches[0].clientX); },{passive:true});
+  el.addEventListener('touchmove',e=>{ if(e.touches[0]) move(e.touches[0].clientX); },{passive:true});
+  el.addEventListener('touchend',end,{passive:true});
+}
+
+function bindDraggableRows(){
+  document.querySelectorAll('.subtabs,.cats,.chips').forEach(makeDraggable);
+}
 
 function renderSubtabs(){
   const el=$('#subtabs'); if(!el) return;
@@ -3149,6 +3445,8 @@ function renderSubtabs(){
     return `<button class="subtab ${S.view===x.v?'on':''}" data-sv="${x.v}">${ico(x.i,'sm')}${esc(tr(x.t))}${cnt}</button>`;
   }).join('');
   document.querySelectorAll('[data-sv]').forEach(b=>b.onclick=()=>{hap();switchView(b.dataset.sv)});
+
+  bindDraggableRows();
 
   // подводим активную вкладку в видимую часть ленты
   try{
@@ -3179,7 +3477,9 @@ function switchView(v){
   if(v==='bridge'){ if(gate('#bridgeBox','bridge')) loadBridge(); }
   if(v==='ship'){ if(gate('#v-ship','vessel')) loadVessel(); }
   if(v==='settings') renderSettings();
-  if(v==='dsc') loadDSC().then(renderDSC);
+  if(v==='dsc'){ renderDSC(); loadDSC().then(renderDSC); }
+  if(v==='epirb'){ if(gate('#epirbBox','bridge')) loadGmdss().then(()=>renderGmdss('epirb')); }
+  if(v==='sart'){ if(gate('#sartBox','bridge')) loadGmdss().then(()=>renderGmdss('sart')); }
   if(v==='radio') setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
   if(v==='dash') loadHistory();
   if(v==='voy') gate('#v-voy','voyage');
@@ -3952,8 +4252,13 @@ const APP_VERSION='1.0';
    Экранная копия Furuno FS-1575: дисплей, клавиатура, кнопка бедствия
    под крышкой. Ничего в эфир не уходит -- вся связь имитируется, включая
    задержки на подтверждение, как на настоящей станции. */
-let DSC=null, DS={
-  screen:'main',      // что показано на дисплее
+/* Справочник ЦИВ зашит в приложение: тренажёр статичен, ходить за ним на
+   сервер незачем -- и он продолжает работать в рейсе без связи. С сервера
+   данные подхватываются только если там окажется более свежая версия. */
+const DSC_BUILTIN={"freqs":[{"band":"MF","dsc":2187.5,"rt":2182.0,"nbdp":2174.5,"note":"Средние волны. Дальность порядка 150 миль днём, ночью больше."},{"band":"HF 4","dsc":4207.5,"rt":4125.0,"nbdp":4177.5,"note":"Ночью и на рассвете, дальность до 300 миль."},{"band":"HF 6","dsc":6312.0,"rt":6215.0,"nbdp":6268.0,"note":"Круглосуточно, средние дистанции."},{"band":"HF 8","dsc":8414.5,"rt":8291.0,"nbdp":8376.5,"note":"Самый универсальный диапазон, работает днём и ночью."},{"band":"HF 12","dsc":12577.0,"rt":12290.0,"nbdp":12520.0,"note":"День, большие дистанции."},{"band":"HF 16","dsc":16804.5,"rt":16420.0,"nbdp":16695.0,"note":"День, максимальная дальность."}],"nature":[{"id":"fire","t":"Fire, explosion","ru":"Пожар, взрыв"},{"id":"flooding","t":"Flooding","ru":"Поступление воды"},{"id":"collision","t":"Collision","ru":"Столкновение"},{"id":"grounding","t":"Grounding","ru":"Посадка на мель"},{"id":"listing","t":"Listing, danger of capsizing","ru":"Крен, опасность опрокидывания"},{"id":"sinking","t":"Sinking","ru":"Затопление"},{"id":"adrift","t":"Disabled and adrift","ru":"Потеря хода, дрейф"},{"id":"undesign","t":"Undesignated distress","ru":"Бедствие без уточнения"},{"id":"abandon","t":"Abandoning ship","ru":"Оставление судна"},{"id":"piracy","t":"Piracy / armed robbery","ru":"Пиратское нападение"},{"id":"mob","t":"Man overboard","ru":"Человек за бортом"}],"calls":[{"id":"distress","t":"Distress Alert","ru":"Вызов бедствия","cat":"Distress","needs":["nature","position"],"why":"Подаётся только при непосредственной опасности для судна или людей. Станция сама подставляет позицию от приёмника и передаёт по всем диапазонам. Ждём подтверждения от берегового центра, не от судов."},{"id":"relay","t":"Distress Relay","ru":"Ретрансляция бедствия","cat":"Distress","needs":["nature","position","mmsi_opt"],"why":"Передаём за другое судно: приняли сигнал бедствия, а берег его не подтвердил. Свой сигнал бедствия при этом не подаём -- иначе спасатели будут искать нас, а не терпящего бедствие."},{"id":"urgency","t":"Urgency Call","ru":"Срочность (PAN PAN)","cat":"Urgency","needs":[],"why":"Серьёзная ситуация, но непосредственной опасности гибели нет: потеря хода в стороне от судоходства, тяжёлый больной на борту."},{"id":"safety","t":"Safety Call","ru":"Безопасность (SECURITE)","cat":"Safety","needs":[],"why":"Навигационные и метеорологические предупреждения: плавающий объект, неработающий буй, шторм."},{"id":"individual","t":"Individual Call","ru":"Индивидуальный вызов","cat":"Routine","needs":["mmsi","freq"],"why":"Вызов конкретного судна или береговой станции по её MMSI. Указываем рабочую частоту, на которой будем говорить."},{"id":"allships","t":"All Ships Call","ru":"Вызов всем судам","cat":"Safety","needs":["freq"],"why":"Всем, кто в зоне слышимости. В обычной обстановке применяется только с категорией срочности или безопасности."},{"id":"group","t":"Group Call","ru":"Групповой вызов","cat":"Routine","needs":["mmsi","freq"],"why":"Судам одной группы: флот компании, суда в конвое. Групповой MMSI начинается с нуля и заранее прописан в станции."},{"id":"test","t":"Test Call","ru":"Тестовый вызов","cat":"Safety","needs":["mmsi"],"why":"Проверка работоспособности ЦИВ на ВЧ и ПВ. Направляется береговой станции, она отвечает подтверждением. На 2187.5 кГц проверка делается именно тестовым вызовом, а не вызовом бедствия."},{"id":"position","t":"Position Request","ru":"Запрос позиции","cat":"Routine","needs":["mmsi"],"why":"Запрос координат другого судна. Оно может ответить автоматически или отклонить запрос -- это его право."},{"id":"polling","t":"Polling","ru":"Опрос присутствия","cat":"Routine","needs":["mmsi"],"why":"Проверка, находится ли станция в зоне связи. Ответ приходит автоматически, без участия вахтенного на той стороне."}],"lessons":{"ack":"Подтверждение (ACK) означает, что вызов принят. При бедствии подтверждать имеет право береговой центр -- судно подтверждает только если берег молчит и судно способно помочь.","freq":"Диапазон выбирают по дальности и времени суток. Ночью проходят низкие частоты (2, 4 МГц), днём высокие (12, 16 МГц). 8 МГц работает почти всегда -- с него и начинают.","rt":"После вызова ЦИВ переходим на парную радиотелефонную частоту того же диапазона и говорим уже голосом. ЦИВ -- только для того, чтобы привлечь внимание.","distress":"Кнопка бедствия закрыта крышкой и требует удержания около пяти секунд -- защита от случайного нажатия. Если подал по ошибке, не выключай станцию: сообщи голосом на 2182 кГц, что тревога ложная, и отмени её.","mmsi":"MMSI из девяти цифр. У судна первые три -- код страны, у береговой станции первые две цифры нули, у группы -- один ноль в начале.","test":"Тестовый вызов не тревожит спасателей и не поднимает никого по тревоге. Именно им проверяют ЦИВ, как требует ежедневная проверка по ГМССБ."},"exam":[{"id":"e1","situation":"В машинном отделении пожар, экипаж не справляется, судно теряет ход. Твои действия по ЦИВ.","expect":{"call":"distress","nature":"fire"},"explain":"Непосредственная опасность для судна и людей -- это вызов бедствия с указанием характера «пожар, взрыв»."},{"id":"e2","situation":"Судно село на мель, поступления воды нет, крена нет, опасности для людей нет, но сняться самостоятельно не можешь.","expect":{"call":"urgency"},"explain":"Прямой угрозы гибели нет, значит бедствие подавать рано. Это срочность (PAN PAN). Если начнёт поступать вода или появится крен -- переходим на бедствие."},{"id":"e3","situation":"Приняли вызов бедствия с соседнего судна на 8414.5 кГц. Прошло пять минут, береговая станция не подтвердила приём.","expect":{"call":"relay"},"explain":"Передаём ретрансляцию бедствия. Свой вызов бедствия подавать нельзя -- у нас самих ничего не случилось, и спасатели пойдут не туда."},{"id":"e4","situation":"Обнаружили в море полузатопленный контейнер, представляющий опасность для судоходства.","expect":{"call":"safety"},"explain":"Навигационная опасность для других судов -- категория безопасности (SECURITE), обычно вызовом всем судам."},{"id":"e5","situation":"Нужно проверить работу ЦИВ на ПВ, как того требует ежедневная проверка ГМССБ.","expect":{"call":"test"},"explain":"Для этого есть тестовый вызов береговой станции. Вызов бедствия для проверки не применяют ни при каких обстоятельствах."},{"id":"e6","situation":"Человек упал за борт, судно развернулось на циркуляции, идёт поиск.","expect":{"call":"distress","nature":"mob"},"explain":"Жизни человека угрожает непосредственная опасность -- вызов бедствия с характером «человек за бортом»."},{"id":"e7","situation":"Нужно связаться с агентом через береговую станцию Lyngby Radio для передачи заявки на снабжение.","expect":{"call":"individual"},"explain":"Обычная деловая связь -- индивидуальный вызов береговой станции с указанием рабочей частоты."},{"id":"e8","situation":"На борту тяжелобольной, нужна консультация врача, но судно на ходу и опасности нет.","expect":{"call":"urgency"},"explain":"Медицинская консультация без угрозы гибели судна -- срочность (PAN PAN), обычно с пометкой MEDICO."},{"id":"e9","situation":"Судно атаковано вооружёнными лицами при подходе к якорной стоянке.","expect":{"call":"distress","nature":"piracy"},"explain":"Пиратское нападение -- отдельный вид бедствия по ITU-R M.493, подаётся вызов бедствия."},{"id":"e10","situation":"Нужно узнать, где сейчас находится судно компании, идущее тем же районом.","expect":{"call":"position"},"explain":"Запрос позиции. Судно вправе отклонить запрос, это нормально."}],"note":"Тренажёр. Ничего в эфир не уходит. Перед экзаменом и работой на судне сверяйся с ALRS Volume 5 и инструкцией своей станции."};
+let DSC=DSC_BUILTIN, DS={
+  screen:'home',       // 'home' -- дежурный экран (как в жизни), 'main' -- меню видов вызова,
+                       // 'nature'/'band'/'mmsi' -- списки выбора, 'log' -- ход вызова
   sel:0,              // выбранная строка меню
   call:null,          // выбранный вид вызова
   nature:null,        // вид бедствия
@@ -3967,9 +4272,12 @@ let DSC=null, DS={
 };
 
 async function loadDSC(){
-  if(DSC) return DSC;
-  try{ DSC=await api('/api/dsc'); localStorage.setItem('navarea_dsc',JSON.stringify(DSC)); }
-  catch(e){ try{ DSC=JSON.parse(localStorage.getItem('navarea_dsc')||'null'); }catch(e2){} }
+  // Данные уже есть (зашиты), поэтому запрос к серверу необязателен:
+  // если он не отвечает или файла там нет -- работаем на встроенных.
+  try{
+    const fresh=await api('/api/dsc');
+    if(fresh&&Array.isArray(fresh.calls)&&fresh.calls.length) DSC=fresh;
+  }catch(e){}
   return DSC;
 }
 
@@ -3977,27 +4285,25 @@ const dscBand = ()=> (DSC&&DSC.freqs[DS.band]) || {band:'HF 8',dsc:8414.5,rt:829
 function dscPrint(line){ DS.log.push(line); if(DS.log.length>14) DS.log.shift(); drawDSC(); }
 function dscClear(){ DS.log=[]; }
 
-/* ---- дисплей ---- */
-function lcdContent(){
-  const b=dscBand();
+/* ---- дисплей ----
+   Дежурный экран ('home') собран по фото настоящей FS-2575C: рамка CH,
+   строки TX/RX, GPS DATA и так далее. Остальные экраны -- меню выбора,
+   ввод MMSI, ход вызова -- используют ту же рамку, но простое содержимое
+   списком, как оно и есть на реальной станции при заходе в MENU. */
+function lcdMenuList(){
   if(DS.screen==='main'){
-    const items=(DSC.calls||[]);
-    return items.map((c,i)=>
-      `<div class="${i===DS.sel?'sel':''}">${i===DS.sel?'>':' '} ${esc(c.t)}</div>`).join('');
+    return (DSC.calls||[]).map((c,i)=>
+      `<div class="it ${i===DS.sel?'sel':''}">${i===DS.sel?'▸':' '} ${esc(c.t)}</div>`).join('');
   }
   if(DS.screen==='nature'){
     return (DSC.nature||[]).map((n,i)=>
-      `<div class="${i===DS.sel?'sel':''}">${i===DS.sel?'>':' '} ${esc(n.t)}</div>`).join('');
+      `<div class="it ${i===DS.sel?'sel':''}">${i===DS.sel?'▸':' '} ${esc(n.t)}</div>`).join('');
   }
   if(DS.screen==='band'){
     return (DSC.freqs||[]).map((f,i)=>
-      `<div class="${i===DS.sel?'sel':''}">${i===DS.sel?'>':' '} ${f.band}  ${f.dsc} kHz</div>`).join('');
+      `<div class="it ${i===DS.sel?'sel':''}">${i===DS.sel?'▸':' '} ${f.band}  ${f.dsc} kHz</div>`).join('');
   }
-  if(DS.screen==='mmsi'){
-    return `ENTER MMSI\n\n  ${DS.mmsi.padEnd(9,'_')}\n\n`+
-           (DS.mmsi.length===9?'<div class="blink">PRESS SEND</div>':'9 digits required');
-  }
-  return DS.log.join('\n');
+  return '';
 }
 
 function drawDSC(){
@@ -4005,11 +4311,57 @@ function drawDSC(){
   const b=dscBand();
   const alert=DS.screen==='log'&&DS.log.some(l=>/DISTRESS|MAYDAY/.test(l));
   box.className='lcd'+(alert?' alert':'');
-  const pos=(VES&&VES.active&&VES.active.name)?VES.active.name:'OWN SHIP';
-  box.innerHTML=
-    `<div class="top"><span>${esc(pos).slice(0,18)}</span><span>${b.band} · ${b.dsc} kHz</span></div>
-     <div class="body">${lcdContent()}</div>
-     <div class="foot"><span>${DS.busy?'TX':'RX'}</span><span>DSC WATCH ON</span></div>`;
+
+  const mmsi=(VES&&VES.active&&VES.active.mmsi)?VES.active.mmsi:'210210000';
+  const now=new Date(), hh=String(now.getUTCHours()).padStart(2,'0'), mm=String(now.getUTCMinutes()).padStart(2,'0');
+  const lat=(VES&&VES.active&&VES.active.lat)||'46-29.4N', lon=(VES&&VES.active&&VES.active.lon)||'030-44.3E';
+
+  if(DS.screen==='home'){
+    box.innerHTML=`
+      <div class="lcdtop"><span>⚓ ✉ ✉</span><span>MMSI:${esc(mmsi)}</span></div>
+      <div class="lrow1">
+        <div class="ldist">DIST-<br>RESS</div>
+        <div class="lch"><span class="l">CH</span><span class="n">200</span></div>
+        <div class="lnb">NB</div>
+        <div class="lmenu">
+          <div class="mi"><b>1</b>RX FREQ</div>
+          <div class="mi"><b>4</b>DAILY TEST</div>
+          <div class="mi"><b>7</b>TEST CALL</div>
+        </div>
+      </div>
+      <div class="lfreq"><span class="lb">TX</span><span class="v">${b.dsc.toFixed(1)}</span><span class="u">kHz</span></div>
+      <div class="lfreq"><span class="lb">RX</span><span class="v">${b.rt.toFixed(2)}</span><span class="u">kHz</span></div>
+      <div class="lmode"><span>SSB</span><span>MID</span><span>FAST</span><span>SIMP</span></div>
+      <div class="lmeter">S<div class="lbars">${[1,1,0,0,0,0,0,0].map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div></div>
+      <div class="lmeter">IC<div class="lbars">${[1,1,1,0,0,0,0,0].map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div><span style="margin-left:3px">0.0A</span></div>
+      <div class="lag"><span class="attb">ATT</span><span>RF GAIN 28</span></div>
+      <div class="lgps"><span>LAT ${esc(String(lat))}<br>LON ${esc(String(lon))}</span><b>GPS DATA<br>${hh}:${mm} UTC</b></div>
+      <div class="lmem">${Array(8).fill('<i></i>').join('')}</div>`;
+    return;
+  }
+
+  if(DS.screen==='mmsi'){
+    box.innerHTML=`
+      <div class="lcdtop"><span>ENTER MMSI</span><span>${b.band}</span></div>
+      <div class="llog" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+        <div style="font-size:15px;letter-spacing:2px;color:#fff">${esc(DS.mmsi.padEnd(9,'_'))}</div>
+        <div style="opacity:.8">${DS.mmsi.length===9?'<span class="blink">PRESS SEND</span>':'9 digits required'}</div>
+      </div>`;
+    return;
+  }
+
+  if(DS.screen==='log'){
+    box.innerHTML=`
+      <div class="lcdtop"><span>${DS.busy?'TX':'RX'}</span><span>${b.band} · ${b.dsc} kHz</span></div>
+      <div class="llog">${DS.log.map(esc).join('\n')}</div>`;
+    return;
+  }
+
+  // main / nature / band -- списки меню в той же рамке
+  const titles={main:'SELECT CALL TYPE',nature:'NATURE OF DISTRESS',band:'SELECT FREQUENCY'};
+  box.innerHTML=`
+    <div class="lcdtop"><span>${titles[DS.screen]||'MENU'}</span><span>${b.band}</span></div>
+    <div class="lmenuscreen">${lcdMenuList()}</div>`;
 }
 
 /* ---- имитация обмена ---- */
@@ -4187,36 +4539,76 @@ function renderDSC(){
 
   box.innerHTML=exam+`
     <div class="radio">
-      <div class="brand"><span>FURUNO</span><b>FS-1575</b><span>MF/HF DSC</span></div>
-      <div class="lcd" id="lcd"></div>
-      <div class="keys">
-        <button class="rkey" data-dk="up">▲</button>
-        <button class="rkey" data-dk="down">▼</button>
-        <button class="rkey" data-dk="menu">MENU</button>
-        <button class="rkey" data-dk="band">FREQ</button>
-        <button class="rkey num" data-dk="1">1</button>
-        <button class="rkey num" data-dk="2">2</button>
-        <button class="rkey num" data-dk="3">3</button>
-        <button class="rkey" data-dk="ack">ACK</button>
-        <button class="rkey num" data-dk="4">4</button>
-        <button class="rkey num" data-dk="5">5</button>
-        <button class="rkey num" data-dk="6">6</button>
-        <button class="rkey warn" data-dk="cancel">CANCEL</button>
-        <button class="rkey num" data-dk="7">7</button>
-        <button class="rkey num" data-dk="8">8</button>
-        <button class="rkey num" data-dk="9">9</button>
-        <button class="rkey" data-dk="del">DEL</button>
-        <button class="rkey num" data-dk="0">0</button>
-        <button class="rkey ok wide" data-dk="send">SEND / CALL</button>
-        <button class="rkey" data-dk="home">HOME</button>
+      <div class="rplates">
+        <div class="rplate">MF/HF<br>CONTROL UNIT</div>
+        <div class="rplate">MMSI ${esc((VES&&VES.active&&VES.active.mmsi)||'210210000')}</div>
       </div>
-      <div class="distressbox">
-        ${DS.armed
-          ? `<button class="dbtn" id="dbtn">DISTRESS</button>
-             <div class="dhold">${esc(tr('Удерживай 2 секунды'))}</div>`
-          : `<div class="dlid" id="dlid">${esc(tr('Крышка кнопки бедствия — открыть'))}</div>`}
+      <div class="rhdr">
+        <div class="rnameplate">CONTROL UNIT TYPE FS-2575C<br>SER.NO. 106667</div>
+        <div class="rfuruno">FURUNO</div>
       </div>
+      <div class="rbody">
+        <div class="rleft">
+          <div class="rspeaker"><i></i><i></i><i></i><i></i></div>
+          <div class="rklabel">HANDSET</div>
+          <div class="rknob"></div>
+          <div class="rklabel">VOLUME</div>
+          <div class="rknob"></div>
+          <div class="rklabel">RF GAIN<br>PUSH TO ATT</div>
+          <div class="rleds">
+            <div class="rled"><i class="amber"></i><span>ALARM</span></div>
+            <div class="rled"><i class="${DS.busy?'green':''}"></i><span>OVEN</span></div>
+          </div>
+          <div class="rdistwrap">
+            ${DS.armed
+              ? `<div class="rdistcover"><div class="rdistbtn arming" id="dbtn"></div></div>
+                 <div class="rpwroff">PWR OFF</div>
+                 <div class="rdistcap">${esc(tr('Удерживай 2 секунды'))}</div>`
+              : `<div class="rdistcover" id="dlid"><div class="rdistbtn" style="opacity:.45"></div></div>
+                 <div class="rpwroff">PWR OFF</div>
+                 <div class="rdistcap">${esc(tr('Keep pressed 4 sec for DISTRESS'))}</div>`}
+          </div>
+        </div>
+
+        <div class="rscreen"><div class="lcd" id="lcd"></div></div>
+
+        <div class="rright">
+          <div class="rkgrid">
+            <button class="rkey" data-dk="scan"><div class="kt">SCAN</div></button>
+            <button class="rkey" data-dk="2182"><div class="kt">2182</div></button>
+            <button class="rkey" data-dk="band"><div class="kt">RT/CH</div></button>
+            <button class="rkey" data-dk="1"><div class="kt">1</div></button>
+            <button class="rkey" data-dk="2"><div class="kt">2</div><div class="ks">NB</div></button>
+            <button class="rkey" data-dk="3"><div class="kt">3</div><div class="ks">SQ</div></button>
+            <button class="rkey" data-dk="4"><div class="kt">4</div></button>
+            <button class="rkey" data-dk="5"><div class="kt">5</div><div class="ks">NR</div></button>
+            <button class="rkey" data-dk="6"><div class="kt">6</div></button>
+            <button class="rkey" data-dk="7"><div class="kt">7</div></button>
+            <button class="rkey" data-dk="8"><div class="kt">8</div><div class="ks">NF</div></button>
+            <button class="rkey" data-dk="9"><div class="kt">9</div></button>
+            <button class="rkey" data-dk="up"><div class="kt">◄</div></button>
+            <button class="rkey" data-dk="0"><div class="kt">0</div><div class="ks">TUNE</div></button>
+            <button class="rkey" data-dk="down"><div class="kt">►</div></button>
+          </div>
+          <div class="rfngrid">
+            <button class="rkey" data-dk="tab"><div class="kt">TAB</div></button>
+            <button class="rkey" data-dk="menu"><div class="kt">MENU</div></button>
+            <button class="rkey" data-dk="mute"><div class="kt">🔇</div></button>
+            <button class="rkey warn" data-dk="cancel"><div class="kt">CANCEL</div></button>
+          </div>
+          <div class="rbigknob" id="dkEnter"><span class="cap">PUSH TO ENTER</span></div>
+        </div>
+      </div>
+
+      <div class="rcompose">
+        <button class="rcbtn" data-dk="distmsg">DISTRESS<br>MSG</button>
+        <button class="rcbtn" data-dk="othermsg">OTHER<br>DSC MSG</button>
+        <button class="rcbtn" data-dk="brill">BRILL</button>
+      </div>
+      <div class="rbracket">COMPOSE DSC MSG</div>
     </div>
+    <div class="rfooter">BATTERY MONITOR</div>
+
     <div class="dsctip" id="dsctip"><b>${esc(tr('Тренажёр'))}</b>${esc((DSC.note||''))}</div>
     <div style="display:flex;gap:9px;margin-top:13px">
       ${DS.exam
@@ -4228,6 +4620,7 @@ function renderDSC(){
 
   document.querySelectorAll('[data-dk]').forEach(b=>b.onclick=()=>dscKey(b.dataset.dk));
   const lid=$('#dlid'); if(lid) lid.onclick=armDistress;
+  const ent=$('#dkEnter'); if(ent) ent.onclick=()=>dscKey('send');
   const db=$('#dbtn');
   if(db){
     db.onmousedown=()=>holdDistress(true); db.onmouseup=()=>holdDistress(false);
@@ -4246,19 +4639,281 @@ function dscKey(k){
   const lists={main:(DSC.calls||[]).length,nature:(DSC.nature||[]).length,band:(DSC.freqs||[]).length};
   const len=lists[DS.screen]||0;
 
+  // На дежурном экране цифры 1/4/7 -- те же ярлыки, что подписаны на
+  // самом экране (RX FREQ / DAILY TEST / TEST CALL), как на настоящей
+  // станции. Остальные цифры уводят в набор MMSI, как обычно.
+  if(DS.screen==='home'){
+    if(k==='1'){ DS.screen='band'; DS.sel=DS.band; drawDSC(); return; }
+    if(k==='4'||k==='7'){
+      const t=(DSC.calls||[]).find(c=>c.id==='test');
+      if(t){ DS.call=t; DS.screen='mmsi'; DS.mmsi=''; drawDSC(); showTip(t); return; }
+    }
+    if(k==='menu'||k==='2182'){ DS.screen='main'; DS.sel=0; drawDSC(); return; }
+  }
+
   if(k==='up'){ DS.sel=(DS.sel-1+len)%(len||1); if(DS.screen==='main') showTip(DSC.calls[DS.sel]); drawDSC(); return; }
   if(k==='down'){ DS.sel=(DS.sel+1)%(len||1); if(DS.screen==='main') showTip(DSC.calls[DS.sel]); drawDSC(); return; }
-  if(k==='menu'||k==='home'){ DS.screen='main'; DS.sel=0; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); return; }
-  if(k==='band'){ DS.screen='band'; DS.sel=DS.band; drawDSC(); return; }
-  if(k==='cancel'){ DS.screen='main'; DS.sel=0; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); showLesson('distress'); return; }
+  if(k==='menu'){ DS.screen='main'; DS.sel=0; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); return; }
+  if(k==='home'||k==='mute'||k==='tab'||k==='brill'){ DS.screen='home'; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); return; }
+  if(k==='band'||k==='2182'||k==='scan'){ DS.screen='band'; DS.sel=DS.band; drawDSC(); return; }
+  if(k==='cancel'){
+    DS.screen='home';
+    DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); showLesson('distress'); return;
+  }
   if(k==='del'){ if(DS.screen==='mmsi') DS.mmsi=DS.mmsi.slice(0,-1); drawDSC(); return; }
-  if(k==='ack'){ dscPrint('ACK SENT'); showLesson('ack'); return; }
+  if(k==='distmsg'){
+    const dcall=(DSC.calls||[]).find(c=>c.id==='distress');
+    if(dcall){ DS.call=dcall; DS.screen='nature'; DS.sel=0; drawDSC(); showTip(dcall); }
+    return;
+  }
+  if(k==='othermsg'){ DS.screen='main'; DS.sel=0; drawDSC(); return; }
   if(k==='send'){ dscSend(); return; }
   if(/^[0-9]$/.test(k)){
     if(DS.screen!=='mmsi'){ DS.screen='mmsi'; DS.mmsi=''; }
     if(DS.mmsi.length<9) DS.mmsi+=k;
     drawDSC(); if(DS.mmsi.length===3) showLesson('mmsi');
   }
+}
+
+
+/* ================= EPIRB / SART: проверка оборудования =================
+   Чек-лист, пошаговая самопроверка (по руководству Jotron), история с
+   PASS/FAIL и напоминание о сроке батареи. Данные лежат на сервере (см.
+   /api/gmdss), потому что это не личные настройки телефона, а судовой
+   журнал проверок -- должен остаться, даже если человек сменит телефон. */
+let GMEQ=null;
+let EQSTEP={epirb:-1, sart:-1};   // текущий шаг самопроверки, -1 = не начата
+let EQCHECK={epirb:[], sart:[]};  // отмеченные пункты чек-листа (несохранённые)
+
+async function loadGmdss(){
+  try{
+    GMEQ=await api('/api/gmdss');
+    localStorage.setItem('navarea_gmdss_cache', JSON.stringify(GMEQ));
+  }catch(e){
+    try{ GMEQ=JSON.parse(localStorage.getItem('navarea_gmdss_cache')||'null'); }catch(e2){}
+  }
+  if(GMEQ&&GMEQ.equipment){
+    EQCHECK.epirb=(GMEQ.equipment.epirb&&GMEQ.equipment.epirb.checklist)||[];
+    EQCHECK.sart=(GMEQ.equipment.sart&&GMEQ.equipment.sart.checklist)||[];
+  }
+  return GMEQ;
+}
+
+const EQ_META={
+  epirb:{name:'Tron 60AIS', sub:'EPIRB · float-free bracket',
+    svg:`<svg viewBox="0 0 100 150"><defs>
+      <linearGradient id="eqbody" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#ff8a3d"/><stop offset="50%" stop-color="#ff6a1f"/><stop offset="100%" stop-color="#d9540f"/>
+      </linearGradient>
+      <linearGradient id="eqdome" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#eef2f5"/><stop offset="100%" stop-color="#c3cdd6"/>
+      </linearGradient></defs>
+      <rect x="47" y="6" width="6" height="34" rx="3" fill="#1c2126"/><circle cx="50" cy="6" r="4" fill="#2a3038"/>
+      <path d="M32 46 Q32 30 50 30 Q68 30 68 46 Z" fill="url(#eqdome)" stroke="#9aa5b0" stroke-width="1"/>
+      <circle cx="50" cy="38" r="5" fill="#ffd23d" opacity=".9"/>
+      <rect x="28" y="46" width="44" height="80" rx="10" fill="url(#eqbody)" stroke="#b4430a" stroke-width="1.5"/>
+      <rect x="28" y="70" width="44" height="10" fill="#111417"/>
+      <text x="50" y="78" font-size="6" fill="#fff" text-anchor="middle" font-family="monospace" font-weight="700">SOLAS</text>
+      <circle cx="50" cy="98" r="9" fill="#1c2126"/><circle cx="50" cy="98" r="6.5" fill="#3a4148"/>
+      <text x="50" y="100" font-size="5" fill="#dfe4e8" text-anchor="middle" font-family="monospace" font-weight="700">TEST</text>
+      <circle cx="50" cy="114" r="3" fill="#3fc97f"/>
+      <rect x="20" y="126" width="60" height="10" rx="4" fill="#1c2126"/>
+      <rect x="22" y="120" width="8" height="14" rx="2" fill="#2a3038"/><rect x="70" y="120" width="8" height="14" rx="2" fill="#2a3038"/>
+    </svg>`},
+  sart:{name:'Tron SART20', sub:'Radar SART · X-диапазон',
+    svg:`<svg viewBox="0 0 90 190"><defs>
+      <linearGradient id="sqbody" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#ff8a3d"/><stop offset="50%" stop-color="#ff6a1f"/><stop offset="100%" stop-color="#d9540f"/>
+      </linearGradient></defs>
+      <rect x="41" y="4" width="4" height="60" rx="2" fill="#1c2126"/><circle cx="43" cy="4" r="3.5" fill="#2a3038"/>
+      <path d="M25 64 Q25 44 43 44 Q61 44 61 64 Z" fill="#e8ecef" stroke="#9aa5b0" stroke-width="1"/>
+      <rect x="21" y="64" width="44" height="88" rx="8" fill="url(#sqbody)" stroke="#b4430a" stroke-width="1.5"/>
+      <circle cx="43" cy="96" r="15" fill="#161a1e" stroke="#000" stroke-width="1"/><circle cx="43" cy="96" r="11" fill="#2a3038"/>
+      <rect x="41" y="86" width="4" height="10" rx="2" fill="#ffb020"/>
+      <text x="43" y="118" font-size="5.5" fill="#dfe4e8" text-anchor="middle" font-family="monospace" font-weight="700">OFF·TEST·ON</text>
+      <rect x="21" y="128" width="44" height="9" fill="#111417"/>
+      <text x="43" y="135" font-size="5.5" fill="#fff" text-anchor="middle" font-family="monospace" font-weight="700">X-BAND</text>
+      <rect x="15" y="152" width="56" height="9" rx="4" fill="#1c2126"/>
+    </svg>`}
+};
+const EQ_STATUS_LABEL={ok:'В порядке',watch:'Планируй замену',soon:'Скоро истекает',expired:'Просрочено',unknown:'Срок не указан'};
+
+function renderGmdss(kind){
+  const box=$('#'+kind+'Box'); if(!box||!GMEQ) return;
+  const eq=(GMEQ.equipment&&GMEQ.equipment[kind])||{};
+  const meta=EQ_META[kind];
+  const checklist=GMEQ[kind+'_checklist']||[];
+  const steps=GMEQ[kind+'_steps']||[];
+  const history=eq.history||[];
+  const done=EQCHECK[kind]||[];
+  const pct=checklist.length?Math.round(done.length/checklist.length*100):0;
+  const status=eq.status||'unknown';
+
+  let h=`<div class="eqhero">
+      ${meta.svg}
+      <div class="eqinfo">
+        <div class="nm">${esc(meta.name)}</div>
+        <div class="md">${esc(tr(meta.sub))}</div>
+        <div class="eqstatus ${status}">● ${esc(tr(EQ_STATUS_LABEL[status]))}${eq.battery_expires?' · '+esc(String(eq.battery_expires).slice(0,10)):''}</div>
+      </div>
+    </div>
+
+    <div class="eqfield" style="margin-top:15px">
+      <label>${esc(tr('Дата замены батареи'))}</label>
+      <input type="date" id="${kind}Expires" value="${esc(eq.battery_expires||'')}">
+    </div>
+
+    <div class="sech" style="margin-top:15px"><h3>${esc(tr('Ежемесячная проверка'))}</h3><a class="cnt2">${done.length}/${checklist.length}</a></div>
+    <div class="eqprogress"><i style="width:${pct}%"></i></div>`;
+
+  checklist.forEach(it=>{
+    const on=done.includes(it.k);
+    h+=`<div class="eqchk ${on?'on':''}" data-chk="${it.k}">
+          <div class="box">${on?ico('back','sm'):''}</div>
+          <div class="t">${esc(tr(it.t))}</div>
+        </div>`;
+  });
+  h+=`<button class="btn wide" id="${kind}SaveChk" style="margin-top:6px">${esc(tr('Сохранить отметки'))}</button>`;
+
+  h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Self-Test'))}</h3></div>`;
+  if(EQSTEP[kind]<0){
+    h+=`<div class="hint">${ico('alert','xs')} ${esc(tr('Пошагово, как по руководству. Ничего не передаётся по-настоящему.'))}</div>
+        <button class="btn wide" id="${kind}StartTest">${esc(tr('Начать самопроверку'))}</button>`;
+  } else if(EQSTEP[kind]>=steps.length){
+    h+=`<div class="verdict ok"><b>PASS</b>${esc(tr('Самопроверка пройдена. Отметка добавлена в историю.'))}</div>
+        <button class="btn g wide" style="margin-top:10px" id="${kind}TestAgain">${esc(tr('Пройти ещё раз'))}</button>`;
+  } else {
+    const s=steps[EQSTEP[kind]];
+    h+=`<div class="examhead"><div class="n">${esc(tr('Шаг'))} ${EQSTEP[kind]+1} / ${steps.length}</div>
+          <div class="q">${esc(tr(s.t))}</div></div>
+        <div class="dsctip">${esc(tr(s.d))}</div>
+        <button class="btn wide" style="margin-top:11px" id="${kind}NextStep">
+          ${EQSTEP[kind]+1<steps.length?esc(tr('Следующий шаг')):esc(tr('Завершить: PASS'))}</button>
+        <button class="btn g wide" style="margin-top:8px" id="${kind}FailStep">${esc(tr('Обнаружена неисправность'))}</button>`;
+  }
+
+  if(kind==='sart'){
+    h+=`<div class="sech" style="margin-top:19px"><h3>Radar Preview</h3></div>
+        <div class="hint">${ico('alert','xs')} ${esc(tr('Линия из 12 точек с интервалом 0.64 мили. Ближе 1 мили точки становятся дугами, затем полными окружностями.'))}</div>
+        <div class="ppiwrap"><div class="ppiratio"><svg id="sartPpi" viewBox="0 0 300 300"></svg></div></div>
+        <div class="rngbtns">
+          <button class="rngbtn" data-rng="far">6-8 ${esc(tr('миль'))}</button>
+          <button class="rngbtn on" data-rng="mid">1-2 ${esc(tr('мили'))}</button>
+          <button class="rngbtn" data-rng="close">&lt;0.2 ${esc(tr('мили'))}</button>
+        </div>`;
+  }
+
+  h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('История проверок'))}</h3>
+        ${history.length?`<a id="${kind}ClearHist">${esc(tr('Очистить'))}</a>`:''}</div>`;
+  h+= history.length
+    ? history.slice(0,15).map(x=>`<div class="eqhist">
+          <span class="dot ${x.result}"></span>
+          <span class="dt">${esc(String(x.at).slice(0,16).replace('T',' '))}</span>
+          <span class="rs ${x.result}">${x.result==='pass'?'PASS':'FAIL'}</span>
+        </div>`).join('')
+    : `<div class="empty">${ico('clock')}${esc(tr('Проверок пока нет'))}</div>`;
+
+  box.innerHTML=h;
+  applyLang();
+  bindGmdssEvents(kind);
+  if(kind==='sart') drawSartPpi('mid');
+}
+
+function bindGmdssEvents(kind){
+  document.querySelectorAll('[data-chk]').forEach(el=>el.onclick=()=>{
+    hap(); const k=el.dataset.chk;
+    EQCHECK[kind]=EQCHECK[kind].includes(k)?EQCHECK[kind].filter(x=>x!==k):EQCHECK[kind].concat([k]);
+    renderGmdss(kind);
+  });
+
+  const sv=$('#'+kind+'SaveChk');
+  if(sv) sv.onclick=async()=>{
+    hap('medium');
+    try{ GMEQ=await api('/api/gmdss?action=save_checklist&kind='+kind+'&checked='+encodeURIComponent(JSON.stringify(EQCHECK[kind]))); renderGmdss(kind); }
+    catch(e){}
+  };
+
+  const exp=$('#'+kind+'Expires');
+  if(exp) exp.onchange=async()=>{
+    hap('medium');
+    try{ GMEQ=await api('/api/gmdss?action=save_equipment&kind='+kind+'&battery_expires='+encodeURIComponent(exp.value)); renderGmdss(kind); }
+    catch(e){}
+  };
+
+  const st=$('#'+kind+'StartTest');
+  if(st) st.onclick=()=>{ hap('medium'); EQSTEP[kind]=0; renderGmdss(kind); };
+
+  const nx=$('#'+kind+'NextStep');
+  if(nx) nx.onclick=async()=>{
+    hap('medium');
+    const steps=(GMEQ[kind+'_steps']||[]).length;
+    EQSTEP[kind]++;
+    if(EQSTEP[kind]>=steps){
+      try{ GMEQ=await api('/api/gmdss?action=log_test&kind='+kind+'&result=pass'); }catch(e){}
+    }
+    renderGmdss(kind);
+  };
+  const fl=$('#'+kind+'FailStep');
+  if(fl) fl.onclick=async()=>{
+    hap('heavy');
+    try{ GMEQ=await api('/api/gmdss?action=log_test&kind='+kind+'&result=fail'); }catch(e){}
+    EQSTEP[kind]=-1; renderGmdss(kind);
+  };
+  const ta=$('#'+kind+'TestAgain');
+  if(ta) ta.onclick=()=>{ hap(); EQSTEP[kind]=-1; renderGmdss(kind); };
+
+  const ch=$('#'+kind+'ClearHist');
+  if(ch) ch.onclick=async()=>{
+    hap('medium');
+    if(!confirm(tr('Удалить всю историю проверок?'))) return;
+    try{ GMEQ=await api('/api/gmdss?action=clear_history&kind='+kind); renderGmdss(kind); }catch(e){}
+  };
+
+  document.querySelectorAll('[data-rng]').forEach(b=>b.onclick=()=>{
+    hap();
+    document.querySelectorAll('[data-rng]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); drawSartPpi(b.dataset.rng);
+  });
+}
+
+/* ---- радарная отметка SART: проверено рендером, соответствует
+   IMO SN.1/Circ.197 -- 12 точек с интервалом 0.64 мили вдоль пеленга,
+   переходящие в дуги и окружности ближе одной мили. ---- */
+function sartPolar(cx,cy,r,angleDeg){
+  const a=(angleDeg-90)*Math.PI/180;
+  return [cx+r*Math.cos(a), cy+r*Math.sin(a)];
+}
+function drawSartPpi(mode){
+  const svg=$('#sartPpi'); if(!svg) return;
+  const cx=150, cy=150, R=140, bearing=35;
+  const maxNm = mode==='far'?8:(mode==='mid'?2:0.3);
+  let rings='';
+  [0.25,0.5,0.75,1].forEach(f=>{ rings+=`<circle cx="${cx}" cy="${cy}" r="${R*f}" fill="none" stroke="rgba(70,220,140,.22)"/>`; });
+  let blips='';
+  if(mode==='far'||mode==='mid'){
+    for(let i=1;i<=12;i++){
+      const nm=i*0.64;
+      if(nm>maxNm+0.01) continue;
+      const r=(nm/maxNm)*R*0.94;
+      const [x,y]=sartPolar(cx,cy,r,bearing);
+      const sz = mode==='far' ? 3.2 : (3.5+i*0.55);
+      blips+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${sz}" fill="#ffb020" style="filter:drop-shadow(0 0 4px rgba(255,176,32,.8))"/>`;
+    }
+  } else {
+    const r=R*0.32; const [x,y]=sartPolar(cx,cy,r,bearing);
+    [10,20,30].forEach(sz=>{
+      blips+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${sz}" fill="none" stroke="#ffb020" stroke-width="2.4" style="filter:drop-shadow(0 0 4px rgba(255,176,32,.7))"/>`;
+    });
+  }
+  svg.innerHTML=`
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none"/>
+    ${rings}
+    <defs><linearGradient id="sartsweepg" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="rgba(70,220,140,0)"/><stop offset="100%" stop-color="rgba(70,220,140,.9)"/>
+    </linearGradient></defs>
+    <line class="sweepline" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-R}" stroke="url(#sartsweepg)" stroke-width="2"/>
+    ${blips}
+    <circle cx="${cx}" cy="${cy}" r="3" fill="#fff" style="filter:drop-shadow(0 0 5px #fff)"/>`;
 }
 
 let VES=null, vesSearchTimer=null;
@@ -4604,8 +5259,20 @@ function renderTools(){
        `<div class="grid2">${quick.slice(0,4).map(toolCard).join('')}</div>`;
   }
 
-  // разделы плитками
-  h+=`<div class="sech" style="margin-top:16px"><h3>${esc(tr('Разделы'))}</h3></div><div class="catgrid">`;
+  // GMDSS -- отдельной категорией, как просили: тренажёр ЦИВ, проверка
+  // EPIRB и SART, справочник радиостанций MF/HF собраны вместе, а не
+  // раскиданы отдельными вкладками сверху.
+  h+=`<div class="sech" style="margin-top:16px"><h3>GMDSS</h3></div><div class="catgrid">`;
+  GMDSS_CARDS.forEach(c=>{
+    h+=`<button class="catcard" data-gview="${c.v}">
+          <span class="ci">${ico(c.i)}</span>
+          <span class="cn">${esc(tr(c.t))}</span>
+        </button>`;
+  });
+  h+=`</div>`;
+
+  // разделы-расчёты плитками
+  h+=`<div class="sech" style="margin-top:16px"><h3>${esc(tr('Навигация и расчёты'))}</h3></div><div class="catgrid">`;
   Object.keys(TOOL_CATS).forEach(ck=>{
     const list=TOOLS.filter(t=>t.cat===ck);
     if(!list.length) return;
@@ -4621,11 +5288,21 @@ function renderTools(){
   $('#toollist').innerHTML=h;
   applyLang();
   bindToolCards();
+  bindDraggableRows();
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{
     TOOL_CAT=b.dataset.cat; hap(); renderTools();
     try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){}
   });
+  document.querySelectorAll('[data-gview]').forEach(b=>b.onclick=()=>{
+    hap(); switchView(b.dataset.gview);
+  });
 }
+const GMDSS_CARDS=[
+  {v:'dsc',t:'Тренажёр ЦИВ',i:'radar'},
+  {v:'epirb',t:'EPIRB Test',i:'buoy'},
+  {v:'sart',t:'SART Test',i:'radar'},
+  {v:'radio',t:'Радиостанции MF/HF',i:'radar'}
+];
 
 function bindToolCards(){
   document.querySelectorAll('[data-tool]').forEach(c=>c.onclick=ev=>{
