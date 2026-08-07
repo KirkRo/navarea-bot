@@ -544,7 +544,11 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   background:radial-gradient(circle at 32% 28%,#565b62,#1c1e20 70%);
   border:1px solid #63686e;box-shadow:0 3px 6px rgba(0,0,0,.5);position:relative;
 }
-.rbigknob::after{content:'';position:absolute;top:5px;left:50%;width:3px;height:14px;
+.rbigknob .kdial{
+  position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;
+  transition:none;pointer-events:none;
+}
+.rbigknob .kdial::after{content:'';position:absolute;top:5px;left:50%;width:3px;height:14px;
   background:#a2a8ae;transform:translateX(-50%);border-radius:1.5px}
 .rbigknob .cap{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
   font-size:5.1px;color:#a8aeb4;font-weight:700;white-space:nowrap}
@@ -747,6 +751,24 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .satstep .ss{font-size:12.5px;font-weight:650}
 .satstep.now .ss{color:var(--amber)}
 .satstep .sd{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+
+/* ---- Шапка раздела: кнопка назад и название в одной строке ---- */
+.vhead{
+  display:flex;align-items:center;gap:11px;margin:0 0 14px;
+  padding-top:2px;
+}
+.vhead .vback{
+  width:38px;height:38px;flex:none;border-radius:12px;cursor:pointer;
+  background:var(--surf);border:1px solid var(--line);color:var(--text);
+  display:flex;align-items:center;justify-content:center;font-family:inherit;
+  transition:transform .2s cubic-bezier(.34,1.6,.5,1),border-color .2s;
+}
+.vhead .vback:active{transform:scale(.9);border-color:var(--amber)}
+.vhead h3{
+  margin:0;font-size:19px;font-weight:800;letter-spacing:-.4px;
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.vhead .vsub{font-size:11px;color:var(--muted);font-weight:600;flex:none}
 
 /* ---- Разделы инструментов ---- */
 .catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -1358,12 +1380,14 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- РАЙОНЫ -->
   <section id="v-areas" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Районы</h3></div>
     <div class="sech"><h3 id="areasTitle">Все районы</h3><a id="sortBtn">По количеству ⇅</a></div>
     <div id="arealist"><div class="sk card"></div><div class="sk card"></div><div class="sk card"></div></div>
   </section>
 
   <!-- КАРТА -->
   <section id="v-map" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Обстановка</h3></div>
     <div class="chips" id="mapchips"></div>
     <div class="mapwrap">
       <div id="map"></div>
@@ -1393,18 +1417,21 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- СПРАВОЧНЫЕ ЗОНЫ -->
   <section id="v-zones" class="hidden">
-    <div class="sech"><h3>Справочные зоны</h3></div>
+    <div class="vhead"><button class="vback" data-back></button><h3>Справочные зоны</h3></div>
+    <div class="sech" style="display:none"><h3>Справочные зоны</h3></div>
     <div id="zonelist"></div>
   </section>
 
   <!-- ИНСТРУМЕНТЫ -->
   <section id="v-tools" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Инструменты</h3></div>
     <div class="hint" id="toolsHint"></div>
     <div id="toollist"></div>
   </section>
 
   <!-- ЧЕК-ЛИСТЫ И СЕРТИФИКАТЫ -->
   <section id="v-bridge" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Чек-листы</h3></div>
     <div id="bridgeBox"></div>
   </section>
 
@@ -1415,7 +1442,8 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- РАДИО -->
   <section id="v-radio" class="hidden">
-    <div class="sech"><h3>Тест MF/HF DSC</h3></div>
+    <div class="vhead"><button class="vback" data-back></button><h3>Тест MF/HF DSC</h3></div>
+    <div class="sech" style="display:none"><h3>Тест MF/HF DSC</h3></div>
     <div class="hint" id="radioHint"></div>
     <div class="chips" id="rchips"></div>
     <div class="rmapwrap"><div id="rmap"></div></div>
@@ -1429,6 +1457,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- МОЁ СУДНО -->
   <section id="v-ship" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Моё судно</h3></div>
     <div id="vesselBox"><div class="sk card"></div><div class="sk card"></div></div>
   </section>
 
@@ -1439,25 +1468,29 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- ТРЕНАЖЁР ЦИВ -->
   <section id="v-dsc" class="hidden">
-    <div class="sech"><h3>Тренажёр ЦИВ</h3></div>
+    <div class="vhead"><button class="vback" data-back></button><h3>Тренажёр ЦИВ</h3></div>
+    <div class="sech" style="display:none"><h3>Тренажёр ЦИВ</h3></div>
     <div id="dscBox"><div class="sk card"></div></div>
   </section>
 
   <!-- EPIRB TEST -->
   <section id="v-epirb" class="hidden">
-    <div class="sech"><h3>EPIRB Test</h3></div>
+    <div class="vhead"><button class="vback" data-back></button><h3>EPIRB Test</h3></div>
+    <div class="sech" style="display:none"><h3>EPIRB Test</h3></div>
     <div id="epirbBox"><div class="sk card"></div></div>
   </section>
 
   <!-- SART TEST -->
   <section id="v-sart" class="hidden">
-    <div class="sech"><h3>SART Test</h3></div>
+    <div class="vhead"><button class="vback" data-back></button><h3>SART Test</h3></div>
+    <div class="sech" style="display:none"><h3>SART Test</h3></div>
     <div id="sartBox"><div class="sk card"></div></div>
   </section>
 
   <!-- РЕЙС -->
   <section id="v-voy" class="hidden">
-    <div class="sech"><h3>Планирование перехода</h3></div>
+    <div class="vhead"><button class="vback" data-back></button><h3>Планирование перехода</h3></div>
+    <div class="sech" style="display:none"><h3>Планирование перехода</h3></div>
     <div class="fld">
       <label>Порт отправления</label>
       <div class="sbox" id="pfromBox"><input id="pfrom" placeholder="Например Constanta" autocomplete="off"></div>
@@ -2798,6 +2831,9 @@ Object.assign(DICT,{
  'устройство не отдаёт позицию':'device does not provide position',
  'Моя позиция':'My position'
 });
+Object.assign(DICT,{
+ 'Показать остальные':'Show the rest','отмечено':'checked'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -3637,6 +3673,29 @@ function renderSubtabs(){
   }catch(e){}
 }
 
+
+/* ---- Возврат из раздела ----
+   Кнопка ведёт на первый подраздел своей группы, а если человек уже там --
+   на главный экран. Так «назад» всегда означает шаг вверх, а не выход из
+   приложения. */
+function goBack(){
+  hap();
+  const g=VIEW_GROUP[S.view]||S_GROUP;
+  const subs=(GROUPS[g]||{}).subs||[];
+  const first=subs[0]&&subs[0].v;
+  if(TOOL_CAT){ TOOL_CAT=null; renderTools(); return; }     // внутри раздела расчётов
+  if(first&&S.view!==first){ switchView(first); return; }
+  if(g!=='home'){ switchGroup('home'); return; }
+  switchView('dash');
+}
+
+function bindBackButtons(){
+  document.querySelectorAll('[data-back]').forEach(b=>{
+    if(!b.innerHTML) b.innerHTML=ico('back','sm');
+    b.onclick=goBack;
+  });
+}
+
 function switchView(v){
   S.view=v;
   bump('view',v);
@@ -3649,6 +3708,7 @@ function switchView(v){
   });
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.g===S_GROUP));
   try{ renderSubtabs(); }catch(e){ console.warn('подвкладки:',e); }
+  try{ bindBackButtons(); }catch(e){}
 
   const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='dash');
   const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='dash'&&v!=='areas');
@@ -4403,7 +4463,8 @@ function renderSettings(){
         <div class="toggle ${GEO_WATCH?'on':''}"></div>
       </div>
       <div class="tres"><span class="tl">Текущая позиция</span>
-        <span class="tv mono">${GEO.lat!==null?esc(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):'—'}</span></div>
+        <span class="tv mono">${GEO.busy?esc(tr('Определяю…')):(GEO.lat!==null?esc(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):(GEO.err?esc(GEO.err):'—'))}</span></div>
+      ${GEO_ON?`<button class="btn g wide" id="setGeoNow" style="margin-top:9px">${GEO.busy?esc(tr('Отменить запрос')):esc(tr('Обновить позицию'))}</button>`:''}
       ${GEO.acc?`<div class="tres"><span class="tl">Точность</span><span class="tv mono">±${Math.round(GEO.acc)} м</span></div>`:''}
     </div>
 
@@ -4472,6 +4533,14 @@ function renderSettings(){
   if(hp) hp.onclick=()=>{
     HAPTIC=!HAPTIC; localStorage.setItem('navarea_haptic',HAPTIC?'1':'0');
     if(HAPTIC) hap('medium');
+    renderSettings();
+  };
+  const gn=$('#setGeoNow');
+  if(gn) gn.onclick=async()=>{
+    hap('medium');
+    if(GEO.busy){ cancelPositionRequest(); renderSettings(); return; }
+    renderSettings();
+    await requestPosition();
     renderSettings();
   };
   const gs=box.querySelector('[data-set="geo"]');
@@ -4874,7 +4943,7 @@ function renderDSC(){
             <button class="rkey" data-dk="mute"><div class="kt">🔇</div></button>
             <button class="rkey warn" data-dk="cancel"><div class="kt">CANCEL</div></button>
           </div>
-          <div class="rbigknob" id="dkEnter"><span class="cap">PUSH TO ENTER</span></div>
+          <div class="rbigknob" id="dkEnter"><span class="kdial"></span><span class="cap">PUSH TO ENTER</span></div>
         </div>
       </div>
 
@@ -4898,7 +4967,12 @@ function renderDSC(){
 
   document.querySelectorAll('[data-dk]').forEach(b=>b.onclick=()=>dscKey(b.dataset.dk));
   const lid=$('#dlid'); if(lid) lid.onclick=armDistress;
-  const ent=$('#dkEnter'); if(ent) ent.onclick=()=>dscKey('send');
+  const ent=$('#dkEnter');
+  if(ent) ent.onclick=()=>{
+    // если ручку крутили, это было листание, а не нажатие
+    if(ent._turned){ ent._turned=false; return; }
+    dscKey('send');
+  };
   const db=$('#dbtn');
   if(db){
     db.onmousedown=()=>holdDistress(true); db.onmouseup=()=>holdDistress(false);
@@ -4975,7 +5049,7 @@ let NTF = (()=>{ try{ return Object.assign({warn:true,cert:true,gmdss:true},
   JSON.parse(localStorage.getItem('navarea_ntf')||'{}')); }catch(e){ return {warn:true,cert:true,gmdss:true}; } })();
 function saveNtf(){ try{ localStorage.setItem('navarea_ntf',JSON.stringify(NTF)); }catch(e){} }
 
-let GEO={lat:null, lon:null, at:0, acc:null, busy:false, err:null, watchId:null};
+let GEO={lat:null, lon:null, at:0, acc:null, busy:false, err:null, watchId:null, guard:null, cancel:null};
 
 /* Слежение за позицией можно выключить совсем: на судне интернет платный,
    а GPS телефона сажает батарею. Настройка живёт на устройстве. */
@@ -5034,14 +5108,29 @@ const geoFresh = ()=> GEO.lat!==null && (Date.now()-GEO.at) < 5*60*1000;
 function requestPosition(){
   return new Promise(resolve=>{
     if(!GEO_ON){ GEO.err='геопозиция выключена в настройках'; renderGeoBtn(); resolve(null); return; }
-    if(GEO.busy){ resolve(null); return; }
+
+    // Повторное нажатие отменяет незавершённый запрос. Раньше кнопка
+    // крутилась бесконечно: если система так и не ответила (например,
+    // человек не решил, дать ли доступ), busy никто не сбрасывал.
+    if(GEO.busy){ cancelPositionRequest(); resolve(null); return; }
+
     GEO.busy=true; GEO.err=null; renderGeoBtn();
 
+    let finished=false;
     const done=(ok,err)=>{
+      if(finished) return;
+      finished=true;
+      if(GEO.guard){ clearTimeout(GEO.guard); GEO.guard=null; }
       GEO.busy=false; GEO.err=ok?null:(err||'нет данных');
       renderGeoBtn();
+      if(typeof renderSettings==='function'&&S.view==='settings') renderSettings();
+      if(typeof map!=='undefined'&&map&&ok) drawMyPos();
       resolve(ok?{lat:GEO.lat,lon:GEO.lon}:null);
     };
+    GEO.cancel=()=>done(false,'запрос отменён');
+
+    // Страховка: система иногда не отвечает вовсе, ни успехом, ни отказом
+    GEO.guard=setTimeout(()=>done(false,'устройство не ответило, попробуй ещё раз'), 20000);
 
     // 1. Telegram LocationManager (Bot API 8.0+)
     try{
@@ -5063,6 +5152,12 @@ function requestPosition(){
 
     browserGeo(done);
   });
+}
+
+function cancelPositionRequest(){
+  if(GEO.guard){ clearTimeout(GEO.guard); GEO.guard=null; }
+  if(typeof GEO.cancel==='function'){ const c=GEO.cancel; GEO.cancel=null; c(); }
+  else { GEO.busy=false; renderGeoBtn(); }
 }
 
 function browserGeo(done){
@@ -5133,7 +5228,7 @@ function coordPairsOf(tool){
    двигает S-метр), большая ручка -- энкодер выбора пунктов меню.
    Считаем угол от центра ручки до пальца, поэтому крутить можно с любой
    стороны, а не только тянуть вверх-вниз. */
-const KNOB={vol:5, rf:28, ent:0};   // ent -- накопленный поворот энкодера
+const KNOB={vol:5, rf:28, ent:0, entAngle:0};   // ent -- накопленный поворот энкодера
 
 function knobAngle(el, x, y){
   const r=el.getBoundingClientRect();
@@ -5233,13 +5328,22 @@ function bindStationKnobs(){
   knobRotate(rf,(KNOB.rf/99)*270-135);
 
   // Большая ручка: поворот листает список, нажатие -- подтверждение.
+  // Большая ручка -- энкодер без упоров: крутится сколько угодно, а список
+  // листается щелчками. Раньше угол поворота и счётчик щелчков были одной
+  // переменной, поэтому ручка возвращалась назад после каждого щелчка и
+  // выглядела заклинившей.
   makeKnob(ent,{onTurn:d=>{
-    KNOB.ent+=d;
+    KNOB.entAngle=(KNOB.entAngle||0)+d;
+    KNOB.ent=(KNOB.ent||0)+d;
     const step=22;                       // столько градусов на один щелчок
     while(KNOB.ent>=step){ KNOB.ent-=step; dscKey('down'); }
     while(KNOB.ent<=-step){ KNOB.ent+=step; dscKey('up'); }
-    knobRotate(ent, (KNOB.ent||0));
+    ent._turned=true;
+    const dial=ent.querySelector('.kdial');
+    knobRotate(dial||ent, KNOB.entAngle);
   }});
+  { const dial=ent&&ent.querySelector('.kdial');
+    if(dial) knobRotate(dial, KNOB.entAngle||0); }
 }
 
 
@@ -5348,53 +5452,124 @@ function satChain(stage, isTest){
 
 /* ---- Вид с мостика проходящего судна (SART) ---- */
 function bridgeViewSvg(active){
-  const dots = active
-    ? [[4,-6],[7,-10],[10,-14],[13,-18],[16,-22]]
-        .map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.5"/>`).join('')
+  // Вид с настоящего судового мостика: подволок с плафонами, репитеры над
+  // окнами, панорамное остекление со стойками и дворниками, наклонный пульт
+  // с ЭКНИС, радаром, коннингом и станцией ГМССБ, телеграф и штурвал.
+  const sartDots = active
+    ? `<g fill="#ffb020">
+         <circle cx="136" cy="170" r="1.1"/><circle cx="139" cy="166.5" r="1.1"/>
+         <circle cx="142" cy="163" r="1.1"/><circle cx="144.5" cy="160" r="1.1"/>
+       </g>`
     : '';
-  return `<svg viewBox="0 0 340 250">
+  const raftGlow = active
+    ? `<circle cx="0" cy="-10" r="6" fill="#ff8a3d" opacity=".25">
+         <animate attributeName="r" values="3;9;3" dur="1.6s" repeatCount="indefinite"/></circle>`
+    : '';
+
+  return `<svg viewBox="0 0 340 260">
    <defs>
-    <linearGradient id="vzSky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0a1c2e"/><stop offset="70%" stop-color="#1a3f5f"/><stop offset="100%" stop-color="#2d6288"/>
-    </linearGradient>
-    <linearGradient id="vzSea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1d4a6e"/><stop offset="100%" stop-color="#0a2338"/>
-    </linearGradient>
+     <linearGradient id="bvSky" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#8fb8d8"/><stop offset="55%" stop-color="#cfe0ee"/><stop offset="100%" stop-color="#e8f0f6"/>
+     </linearGradient>
+     <linearGradient id="bvSea" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#3f7ba8"/><stop offset="100%" stop-color="#1d4a6e"/>
+     </linearGradient>
+     <linearGradient id="bvDeck" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#3a444e"/><stop offset="100%" stop-color="#222a32"/>
+     </linearGradient>
    </defs>
-   <rect x="0" y="0" width="340" height="250" fill="#050d16"/>
-   <rect x="14" y="12" width="312" height="150" rx="4" fill="url(#vzSky)"/>
-   <rect x="14" y="112" width="312" height="50" fill="url(#vzSea)"/>
-   <path d="M14 116 q30 -4 60 0 t60 0 t60 0 t60 0 t62 0 v46 h-312 z" fill="#123a58" opacity=".7"/>
-   <line x1="14" y1="112" x2="326" y2="112" stroke="#4d93d6" stroke-width=".8" opacity=".5"/>
 
-   <g transform="translate(196,104)">
-     <ellipse cx="0" cy="8" rx="11" ry="3" fill="#d9540f" opacity=".85"/>
-     <rect x="-1" y="-9" width="2" height="12" fill="#1c2126"/>
-     <circle cx="0" cy="-11" r="2.5" fill="#ff8a3d"/>
-     ${active?`<circle cx="0" cy="-11" r="7" fill="#ff8a3d" opacity=".25"><animate attributeName="r" values="4;12;4" dur="1.5s" repeatCount="indefinite"/></circle>`:''}
+   <rect x="0" y="0" width="340" height="26" fill="#dfe4e8"/>
+   <line x1="0" y1="26" x2="340" y2="26" stroke="#b8c0c8"/>
+   <g fill="#f4f7f9" stroke="#c4ccd4" stroke-width=".6">
+     <rect x="34" y="7" width="34" height="7" rx="1.5"/>
+     <rect x="152" y="7" width="34" height="7" rx="1.5"/>
+     <rect x="270" y="7" width="34" height="7" rx="1.5"/>
    </g>
-   <text x="196" y="132" font-size="7" fill="#ffb37a" text-anchor="middle" font-family="monospace">${esc(tr('плот с SART · 4 мили'))}</text>
-
-   <rect x="112" y="12" width="4" height="150" fill="#0a1520"/>
-   <rect x="224" y="12" width="4" height="150" fill="#0a1520"/>
-   <rect x="14" y="12" width="312" height="150" rx="4" fill="none" stroke="#24435f" stroke-width="2"/>
-
-   <rect x="14" y="168" width="312" height="70" rx="6" fill="#161d26" stroke="#2a3540"/>
-   <text x="24" y="182" font-size="7" fill="#7a8fa6" font-family="monospace">RADAR X-BAND · 6 NM</text>
-
-   <g transform="translate(58,208)">
-     <circle r="26" fill="#04140c" stroke="#0e3a22"/>
-     <circle r="17" fill="none" stroke="rgba(70,220,140,.22)"/>
-     <circle r="8.5" fill="none" stroke="rgba(70,220,140,.22)"/>
-     <g fill="#ffb020">${dots}</g>
-     <circle r="1.8" fill="#fff"/>
+   <g>
+     <rect x="120" y="16" width="96" height="12" rx="1.5" fill="#2a333c"/>
+     <circle cx="136" cy="22" r="4.2" fill="#e8ecef" stroke="#8a939c" stroke-width=".6"/>
+     <circle cx="156" cy="22" r="4.2" fill="#e8ecef" stroke="#8a939c" stroke-width=".6"/>
+     <rect x="170" y="18" width="14" height="8" rx="1" fill="#1a1f25"/>
+     <text x="177" y="24.5" font-size="4.5" fill="#ff8a3d" text-anchor="middle" font-family="monospace">14.2</text>
+     <circle cx="200" cy="22" r="4.2" fill="#e8ecef" stroke="#8a939c" stroke-width=".6"/>
    </g>
-   <text x="58" y="243" font-size="6.5" fill="#7a8fa6" text-anchor="middle" font-family="monospace">${esc(tr('своё судно'))}</text>
 
-   <text x="100" y="200" font-size="8" fill="#cfe0f2" font-family="monospace">${esc(tr('Отметка SART:'))}</text>
-   <text x="100" y="212" font-size="7.5" fill="#9db6d4" font-family="monospace">${esc(tr('линия точек от центра'))}</text>
-   <text x="100" y="223" font-size="7.5" fill="#9db6d4" font-family="monospace">${esc(tr('по пеленгу на плот'))}</text>
-   <text x="100" y="234" font-size="7.5" fill="#ffb020" font-family="monospace">${esc(tr('интервал 0.64 мили'))}</text>
+   <path d="M8 30 h324 v98 h-324 z" fill="url(#bvSky)"/>
+   <rect x="8" y="92" width="324" height="36" fill="url(#bvSea)"/>
+   <line x1="8" y1="92" x2="332" y2="92" stroke="#6d9dc0" stroke-width=".8"/>
+   <path d="M8 100 q26 -3 52 0 t52 0 t52 0 t52 0 t52 0 t56 0 v28 h-324 z" fill="#2f6b96" opacity=".45"/>
+   <path d="M8 112 q30 -3 60 0 t60 0 t60 0 t60 0 t76 0 v16 h-324 z" fill="#24587e" opacity=".5"/>
+
+   <g transform="translate(214,86)">
+     <ellipse cx="0" cy="7" rx="9" ry="2.6" fill="#e0611a"/>
+     <path d="M-9 7 q9 -7 18 0" fill="#ff8a3d"/>
+     <rect x="-.8" y="-8" width="1.6" height="11" fill="#1c2126"/>
+     <circle cx="0" cy="-10" r="2.2" fill="#ff8a3d"/>
+     ${raftGlow}
+   </g>
+   <text x="214" y="108" font-size="6" fill="#0d3350" text-anchor="middle" font-family="monospace">${esc(tr('плот · 4 мили'))}</text>
+
+   <g fill="#c8d0d6">
+     <rect x="72" y="28" width="7" height="102"/>
+     <rect x="150" y="28" width="7" height="102"/>
+     <rect x="228" y="28" width="7" height="102"/>
+   </g>
+   <rect x="8" y="28" width="324" height="102" fill="none" stroke="#b0b9c1" stroke-width="3"/>
+   <g stroke="#5a646e" stroke-width="1.2" fill="none">
+     <path d="M30 126 l14 -30"/><path d="M108 126 l14 -30"/><path d="M186 126 l14 -30"/><path d="M264 126 l14 -30"/>
+   </g>
+
+   <path d="M0 130 L340 130 L340 152 L0 152 Z" fill="#5a6a78"/>
+   <path d="M0 152 L340 152 L340 260 L0 260 Z" fill="url(#bvDeck)"/>
+   <path d="M14 152 L326 152 L318 196 L22 196 Z" fill="#2c4a68"/>
+
+   <rect x="30" y="158" width="58" height="32" rx="2" fill="#0d1c2a" stroke="#7f8b96"/>
+   <rect x="33" y="161" width="52" height="26" fill="#16304a"/>
+   <path d="M36 182 q12 -8 24 -3 t22 -6" stroke="#5ba6e8" stroke-width=".8" fill="none"/>
+   <text x="59" y="194.5" font-size="4.6" fill="#9db6d4" text-anchor="middle" font-family="monospace">ECDIS</text>
+
+   <rect x="100" y="156" width="66" height="36" rx="2" fill="#0a1410" stroke="#7f8b96"/>
+   <circle cx="133" cy="174" r="15.5" fill="#04140c"/>
+   <circle cx="133" cy="174" r="10.5" fill="none" stroke="rgba(70,220,140,.28)" stroke-width=".6"/>
+   <circle cx="133" cy="174" r="5.5" fill="none" stroke="rgba(70,220,140,.28)" stroke-width=".6"/>
+   ${sartDots}
+   <circle cx="133" cy="174" r="1.3" fill="#fff"/>
+   <text x="133" y="195" font-size="4.6" fill="#9db6d4" text-anchor="middle" font-family="monospace">RADAR X</text>
+
+   <rect x="178" y="158" width="52" height="32" rx="2" fill="#0d1c2a" stroke="#7f8b96"/>
+   <rect x="181" y="161" width="46" height="26" fill="#122a3f"/>
+   <text x="204" y="194.5" font-size="4.6" fill="#9db6d4" text-anchor="middle" font-family="monospace">CONNING</text>
+
+   <rect x="242" y="156" width="72" height="36" rx="2" fill="#3a4650" stroke="#7f8b96"/>
+   <g fill="#1e262e">
+     <rect x="247" y="160" width="28" height="9" rx="1"/>
+     <rect x="247" y="172" width="28" height="9" rx="1"/>
+   </g>
+   <circle cx="292" cy="164" r="3.4" fill="#e8503a"/>
+   <g fill="#8a939c">
+     <rect x="282" y="172" width="7" height="5" rx="1"/><rect x="292" y="172" width="7" height="5" rx="1"/>
+     <rect x="302" y="172" width="7" height="5" rx="1"/>
+   </g>
+   <text x="278" y="188" font-size="4.4" fill="#cfd6dc" text-anchor="middle" font-family="monospace">GMDSS</text>
+
+   <g transform="translate(60,214)">
+     <rect x="-16" y="-8" width="32" height="30" rx="3" fill="#4a5560"/>
+     <circle cx="0" cy="2" r="9" fill="#2a333c" stroke="#7f8b96"/>
+     <rect x="-2" y="-5" width="4" height="10" rx="1.5" fill="#c8d0d6"/>
+     <text x="0" y="27" font-size="4.6" fill="#9aa5ae" text-anchor="middle" font-family="monospace">TELEGRAPH</text>
+   </g>
+   <g transform="translate(170,216)">
+     <circle r="14" fill="none" stroke="#5a646e" stroke-width="3.5"/>
+     <circle r="4" fill="#4a5560"/>
+     <g stroke="#5a646e" stroke-width="2">
+       <line x1="0" y1="-14" x2="0" y2="-18"/><line x1="0" y1="14" x2="0" y2="18"/>
+       <line x1="-14" y1="0" x2="-18" y2="0"/><line x1="14" y1="0" x2="18" y2="0"/>
+     </g>
+     <text x="0" y="30" font-size="4.6" fill="#9aa5ae" text-anchor="middle" font-family="monospace">HELM</text>
+   </g>
+   <path d="M250 200 q16 -6 22 8" stroke="#2a333c" stroke-width="1.6" fill="none"/>
+   <circle cx="272" cy="209" r="3" fill="#1a1f25"/>
   </svg>`;
 }
 
@@ -5561,7 +5736,8 @@ const EQ_PHASE_TEXT={
    журнал проверок -- должен остаться, даже если человек сменит телефон. */
 let GMEQ=null;
 let EQSTEP={epirb:-1, sart:-1};   // текущий шаг самопроверки, -1 = не начата
-let EQCHECK={epirb:[], sart:[]};  // отмеченные пункты чек-листа (несохранённые)
+let EQCHECK={epirb:[], sart:[]};
+let EQCHK_OPEN={epirb:false, sart:false};  // отмеченные пункты чек-листа (несохранённые)
 
 async function loadGmdss(){
   try{
@@ -5666,31 +5842,33 @@ function renderGmdss(kind){
       <input type="date" id="${kind}Expires" value="${esc(eq.battery_expires||'')}">
     </div>
 
-    <div class="sech" style="margin-top:15px"><h3>${esc(tr('Ежемесячная проверка'))}</h3><a class="cnt2">${done.length}/${checklist.length}</a></div>
-    <div class="eqprogress"><i style="width:${pct}%"></i></div>`;
+    `;
 
-  checklist.forEach(it=>{
-    const on=done.includes(it.k);
-    h+=`<div class="eqchk ${on?'on':''}" data-chk="${it.k}">
-          <div class="box">${on?ico('back','sm'):''}</div>
-          <div class="t">${esc(tr(it.t))}</div>
-        </div>`;
-  });
-  h+=`<button class="btn wide" id="${kind}SaveChk" style="margin-top:6px">${esc(tr('Сохранить отметки'))}</button>`;
-
+  // ---- Сначала визуализация, потом порядок проверки, потом чек-лист ----
+  // Так человек сперва видит, что вообще происходит с сигналом, и только
+  // затем идёт по пунктам осмотра.
   if(kind==='epirb'){
     const stg=satStageOf(), isTest=live.mode!=='on';
-    h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Куда уходит сигнал'))}</h3></div>
+    h+=`<div class="sech" style="margin-top:17px"><h3>${esc(tr('Куда уходит сигнал'))}</h3></div>
         <div class="satwrap">${satSvg(stg,isTest)}</div>
         ${satChain(stg,isTest)}`;
   }
   if(kind==='sart'){
     const act = live.phase==='responding'||live.phase==='active';
-    h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Вид с проходящего судна'))}</h3></div>
+    h+=`<div class="sech" style="margin-top:17px"><h3>${esc(tr('Вид с проходящего судна'))}</h3></div>
         <div class="bviewwrap">${bridgeViewSvg(act)}</div>
         <div class="hint" style="margin-top:9px">${ico('alert','xs')} ${esc(tr(act
           ? 'Так отметку видит вахтенный на мостике проходящего судна: цепочка точек от своего судна в сторону плота.'
-          : 'Переведи переключатель в TEST или ON, чтобы увидеть, как отметка появляется на чужом радаре.'))}</div>`;
+          : 'Переведи переключатель в TEST или ON, чтобы увидеть, как отметка появляется на чужом радаре.'))}</div>
+
+        <div class="sech" style="margin-top:17px"><h3>Radar Preview</h3></div>
+        <div class="hint">${ico('alert','xs')} ${esc(tr('Линия из 12 точек с интервалом 0.64 мили. Ближе 1 мили точки становятся дугами, затем полными окружностями.'))}</div>
+        <div class="ppiwrap"><div class="ppiratio"><svg id="sartPpi" viewBox="0 0 300 300"></svg></div></div>
+        <div class="rngbtns">
+          <button class="rngbtn" data-rng="far">6-8 ${esc(tr('миль'))}</button>
+          <button class="rngbtn on" data-rng="mid">1-2 ${esc(tr('мили'))}</button>
+          <button class="rngbtn" data-rng="close">&lt;0.2 ${esc(tr('мили'))}</button>
+        </div>`;
   }
 
   h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Порядок самопроверки'))}</h3></div>
@@ -5705,16 +5883,30 @@ function renderGmdss(kind){
   });
   h+=`</div>`;
 
-  if(kind==='sart'){
-    h+=`<div class="sech" style="margin-top:19px"><h3>Radar Preview</h3></div>
-        <div class="hint">${ico('alert','xs')} ${esc(tr('Линия из 12 точек с интервалом 0.64 мили. Ближе 1 мили точки становятся дугами, затем полными окружностями.'))}</div>
-        <div class="ppiwrap"><div class="ppiratio"><svg id="sartPpi" viewBox="0 0 300 300"></svg></div></div>
-        <div class="rngbtns">
-          <button class="rngbtn" data-rng="far">6-8 ${esc(tr('миль'))}</button>
-          <button class="rngbtn on" data-rng="mid">1-2 ${esc(tr('мили'))}</button>
-          <button class="rngbtn" data-rng="close">&lt;0.2 ${esc(tr('мили'))}</button>
+  // ---- Чек-лист: три главных пункта, остальное под кнопкой ----
+  // Первые три -- то, что чаще всего и оказывается причиной отказа:
+  // просроченная батарея, заклинивший бракет, повреждённая антенна.
+  const MAIN=3;
+  const openAll=EQCHK_OPEN[kind];
+  const shown=openAll?checklist:checklist.slice(0,MAIN);
+  h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Ежемесячная проверка'))}</h3>
+        <a class="cnt2">${done.length}/${checklist.length}</a></div>
+      <div class="eqprogress"><i style="width:${pct}%"></i></div>`;
+  shown.forEach(it=>{
+    const on=done.includes(it.k);
+    h+=`<div class="eqchk ${on?'on':''}" data-chk="${it.k}">
+          <div class="box">${on?ico('back','sm'):''}</div>
+          <div class="t">${esc(tr(it.t))}</div>
         </div>`;
+  });
+  if(checklist.length>MAIN){
+    const hidden=checklist.length-MAIN;
+    const hiddenDone=checklist.slice(MAIN).filter(it=>done.includes(it.k)).length;
+    h+=`<button class="showall" data-eqmore="${kind}">${openAll
+      ? esc(tr('Свернуть'))
+      : esc(tr('Показать остальные'))+' · '+hidden+(hiddenDone?(' · '+esc(tr('отмечено'))+' '+hiddenDone):'')}</button>`;
   }
+  h+=`<button class="btn wide" id="${kind}SaveChk" style="margin-top:8px">${esc(tr('Сохранить отметки'))}</button>`;
 
   h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('История проверок'))}</h3>
         ${history.length?`<a id="${kind}ClearHist">${esc(tr('Очистить'))}</a>`:''}</div>`;
@@ -5742,6 +5934,9 @@ function bindGmdssEvents(kind){
   const eo=$('#epirbOn'); if(eo) eo.onclick=epirbActivate;
   document.querySelectorAll('[data-sart]').forEach(b=>b.onclick=()=>sartSetMode(b.dataset.sart));
 
+  document.querySelectorAll('[data-eqmore]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.eqmore; EQCHK_OPEN[k]=!EQCHK_OPEN[k]; hap(); renderGmdss(k);
+  });
   document.querySelectorAll('[data-chk]').forEach(el=>el.onclick=()=>{
     hap(); const k=el.dataset.chk;
     EQCHECK[kind]=EQCHECK[kind].includes(k)?EQCHECK[kind].filter(x=>x!==k):EQCHECK[kind].concat([k]);
