@@ -361,6 +361,32 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 }
 .offline.on{display:block;animation:up .34s}
 .hidden{display:none!important}
+/* ---- Кнопка позиции с устройства ---- */
+.geobtn{
+  width:44px;height:44px;flex:none;border-radius:15px;cursor:pointer;
+  background:var(--surf);border:1px solid var(--line);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .22s cubic-bezier(.34,1.6,.5,1),color .2s,border-color .2s;
+}
+.geobtn:active{transform:scale(.9)}
+.geobtn.on{color:var(--ok);border-color:rgba(63,201,127,.4);background:rgba(63,201,127,.1)}
+.geobtn.err{color:var(--hot);border-color:rgba(255,107,74,.4)}
+.geobtn.busy{color:var(--amber);border-color:rgba(240,160,60,.4)}
+.geobtn.busy .ico{animation:geospin 1.1s linear infinite}
+@keyframes geospin{to{transform:rotate(360deg)}}
+.geoline{
+  display:flex;align-items:center;gap:9px;padding:11px 13px;margin-bottom:12px;
+  border-radius:var(--r-md);background:var(--surf);border:1px solid var(--line);
+  font-size:12px;color:var(--muted);cursor:pointer;
+}
+.geoline .ico{color:var(--amber);flex:none}
+.geoline b{color:var(--text);font-weight:650;font-family:ui-monospace,monospace;font-size:12.5px}
+.geouse{
+  background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-sm);
+  color:var(--muted);font-size:11px;font-weight:650;font-family:inherit;
+  padding:8px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:11px;
+}
+.geouse:active{border-color:var(--amber);color:var(--amber)}
 
 /* ---- Тренажёр ЦИВ: корпус Furuno FS-2575C ----
    Проверено рендером в headless-браузере и сверено с фото реальной
@@ -608,6 +634,57 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-radius:var(--r-sm);padding:11px 13px;font-size:14px;font-family:inherit;outline:none;
 }
 .eqfield input:focus{border-color:var(--amber)}
+
+/* ---- EPIRB / SART: живые органы управления ---- */
+.eqdev{flex:none;display:flex;flex-direction:column;align-items:center;gap:9px}
+.eqhero.alarm{border-color:rgba(255,107,74,.5);
+  background:linear-gradient(160deg,#4a1d18,#2a0f0c);animation:eqalarm 1.4s ease-in-out infinite}
+@keyframes eqalarm{50%{border-color:rgba(255,107,74,.85)}}
+.eqctl{display:flex;gap:6px}
+.eqbtn{
+  border:1px solid #4a4f55;border-radius:8px;padding:7px 11px;cursor:pointer;
+  font-family:inherit;font-size:10.5px;font-weight:800;letter-spacing:.4px;
+  background:linear-gradient(180deg,#3d4249,#26292d);color:#dfe4e8;
+  box-shadow:0 2px 0 #17181a;transition:transform .08s;
+}
+.eqbtn:active{transform:translateY(2px);box-shadow:0 0 0 #17181a}
+.eqbtn.test.holding{background:linear-gradient(180deg,#f0a03c,#c07a20);color:#16232f;
+  animation:eqhold .4s infinite}
+@keyframes eqhold{50%{background:linear-gradient(180deg,#ffc372,#e09030)}}
+.eqbtn.arm{background:linear-gradient(180deg,#6b2822,#43140f);color:#ffb3a8;border-color:#8d3a30}
+.eqbtn.arm.on{background:linear-gradient(180deg,#f0503e,#b8281a);color:#fff;border-color:#ff7a68;
+  box-shadow:0 0 12px rgba(240,80,62,.6)}
+
+.eqsw{display:flex;flex-direction:column;gap:4px;width:74px}
+.swpos{
+  border:1px solid #4a4f55;border-radius:7px;padding:6px 4px;cursor:pointer;
+  font-family:inherit;font-size:9.5px;font-weight:800;letter-spacing:.5px;
+  background:linear-gradient(180deg,#3d4249,#26292d);color:#9aa0a6;transition:all .15s;
+}
+.swpos.on.off{background:linear-gradient(180deg,#4a4f55,#32363b);color:#e6eaee}
+.swpos.on.test{background:linear-gradient(180deg,#f0a03c,#c07a20);color:#16232f;
+  box-shadow:0 0 10px rgba(240,160,60,.5)}
+.swpos.on.on{background:linear-gradient(180deg,#f0503e,#b8281a);color:#fff;
+  box-shadow:0 0 12px rgba(240,80,62,.6)}
+
+.eqleds{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}
+.eqled{display:flex;align-items:center;gap:5px}
+.eqled i{width:8px;height:8px;border-radius:50%;background:#2a3038;flex:none;
+  border:1px solid rgba(255,255,255,.08);transition:all .2s}
+.eqled i.on.green{background:#3fc97f;box-shadow:0 0 8px #3fc97f;border-color:#3fc97f}
+.eqled i.on.amber{background:#ffb020;box-shadow:0 0 8px #ffb020;border-color:#ffb020}
+.eqled i.on.white{background:#fff;box-shadow:0 0 10px #fff;border-color:#fff}
+.eqled i.on.red{background:#ff6b4a;box-shadow:0 0 10px #ff6b4a;border-color:#ff6b4a}
+.eqled i.blink{animation:eqblink .55s steps(2) infinite}
+@keyframes eqblink{50%{opacity:.25}}
+.eqled span{font-size:8.5px;font-weight:750;color:#9db6d4;letter-spacing:.3px}
+
+.eqphase{
+  background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--amber);
+  border-radius:var(--r-md);padding:12px 14px;margin-top:11px;font-size:12.5px;
+  line-height:1.5;color:var(--muted);
+}
+.eqphase.alarm{border-left-color:var(--hot);background:rgba(255,107,74,.1);color:#ffb3a8;font-weight:650}
 
 /* ---- Радарная отметка SART ---- */
 .ppiwrap{background:#04140c;border:2px solid #0a2818;border-radius:var(--r-lg);padding:8px;
@@ -1110,7 +1187,8 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
       <div class="hello" id="buildId" style="font-size:9.5px;opacity:.55;margin-top:1px"></div>
       <div class="h1">Watch<span>keeper</span></div>
     </div>
-    <button class="langbtn" id="langBtn">RU</button>
+    <button class="geobtn" id="geoBtn" title="Позиция с устройства"></button>
+      <button class="langbtn" id="langBtn">RU</button>
       <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
   </div>
 
@@ -1413,6 +1491,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 <script>
 /* ---- Векторные иконки (вместо эмодзи) ---- */
 const ICONS={
+  target:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
   compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z" fill="currentColor" stroke="none"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>',
   sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="18" cy="18" r="2" fill="currentColor" stroke="none"/>',
@@ -2665,6 +2744,15 @@ Object.assign(DICT,{
  'Линия из 12 точек, расходящаяся от места установки радара по пеленгу на SART.':'A line of 12 dots extending from own ship along the bearing to the SART.',
  'Вернуть в дежурный режим':'Return to standby',
  'Тест не дольше 5 минут: расходует батарею и создаёт помехи чужим радарам в зоне видимости.':'Keep the test under 5 minutes: it drains the battery and interferes with other radars in range.'
+});
+Object.assign(DICT,{
+ 'Подставить мою позицию':'Use my position','Позиция подставлена':'Position filled in',
+ 'Позиция недоступна':'Position unavailable','Определяю…':'Locating…',
+ 'Позиция не запрошена':'Position not requested',
+ 'доступ к геопозиции запрещён':'location access denied',
+ 'спутники не поймались, попробуй у окна или на крыле мостика':'no satellite fix, try near a window or on the bridge wing',
+ 'устройство не отдаёт позицию':'device does not provide position',
+ 'Моя позиция':'My position'
 });
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
@@ -4306,6 +4394,13 @@ function lcdMenuList(){
   return '';
 }
 
+/* Шкала S-метра: чем больше усиление, тем больше делений. Это не
+   имитация эфира, а отклик на ручку -- как на станции, где RF GAIN
+   двигает уровень шума и сигнала. */
+function sBars(){
+  const n=Math.round((KNOB.rf/99)*8);
+  return Array.from({length:8},(_,i)=>i<Math.max(1,n)?1:0);
+}
 function drawDSC(){
   const box=$('#lcd'); if(!box||!DSC) return;
   const b=dscBand();
@@ -4314,7 +4409,13 @@ function drawDSC(){
 
   const mmsi=(VES&&VES.active&&VES.active.mmsi)?VES.active.mmsi:'210210000';
   const now=new Date(), hh=String(now.getUTCHours()).padStart(2,'0'), mm=String(now.getUTCMinutes()).padStart(2,'0');
-  const lat=(VES&&VES.active&&VES.active.lat)||'46-29.4N', lon=(VES&&VES.active&&VES.active.lon)||'030-44.3E';
+  // Позиция с устройства, если она свежая -- как на станции, где
+  // координаты приходят от приёмника, а не набираются руками.
+  const lat = geoFresh() ? geoFmtLat(GEO.lat) : ((VES&&VES.active&&VES.active.lat)||'46-29.4N');
+  const lon = geoFresh() ? geoFmtLon(GEO.lon) : ((VES&&VES.active&&VES.active.lon)||'030-44.3E');
+
+  { const v=$('#volVal'); if(v) v.textContent=Math.round(KNOB.vol);
+    const r=$('#rfVal'); if(r) r.textContent=Math.round(KNOB.rf); }
 
   if(DS.screen==='home'){
     box.innerHTML=`
@@ -4332,9 +4433,9 @@ function drawDSC(){
       <div class="lfreq"><span class="lb">TX</span><span class="v">${b.dsc.toFixed(1)}</span><span class="u">kHz</span></div>
       <div class="lfreq"><span class="lb">RX</span><span class="v">${b.rt.toFixed(2)}</span><span class="u">kHz</span></div>
       <div class="lmode"><span>SSB</span><span>MID</span><span>FAST</span><span>SIMP</span></div>
-      <div class="lmeter">S<div class="lbars">${[1,1,0,0,0,0,0,0].map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div></div>
+      <div class="lmeter">S<div class="lbars">${sBars().map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div></div>
       <div class="lmeter">IC<div class="lbars">${[1,1,1,0,0,0,0,0].map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div><span style="margin-left:3px">0.0A</span></div>
-      <div class="lag"><span class="attb">ATT</span><span>RF GAIN 28</span></div>
+      <div class="lag"><span class="attb">ATT</span><span>AF ${Math.round(KNOB.vol)} · RF GAIN ${Math.round(KNOB.rf)}</span></div>
       <div class="lgps"><span>LAT ${esc(String(lat))}<br>LON ${esc(String(lon))}</span><b>GPS DATA<br>${hh}:${mm} UTC</b></div>
       <div class="lmem">${Array(8).fill('<i></i>').join('')}</div>`;
     return;
@@ -4404,7 +4505,8 @@ async function runCall(c){
   dscPrint(`FREQ ${b.dsc} kHz`);
   if(DS.mmsi) dscPrint(`TO   ${DS.mmsi}`);
   if(DS.nature) dscPrint(`NATURE ${DS.nature.t}`);
-  dscPrint('POS  46-29.4N 030-44.3E');
+  dscPrint('POS  '+(geoFresh()?(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):'46-29.4N 030-44.3E')
+           +(geoFresh()?'':'  (нет данных GPS)'));
   dscPrint('');
   dscPrint(isDistress?'TRANSMITTING DISTRESS...':'TRANSMITTING...');
 
@@ -4551,10 +4653,10 @@ function renderDSC(){
         <div class="rleft">
           <div class="rspeaker"><i></i><i></i><i></i><i></i></div>
           <div class="rklabel">HANDSET</div>
-          <div class="rknob"></div>
-          <div class="rklabel">VOLUME</div>
-          <div class="rknob"></div>
-          <div class="rklabel">RF GAIN<br>PUSH TO ATT</div>
+          <div class="rknob" id="knobVol"></div>
+          <div class="rklabel">VOLUME · <b id="volVal">5</b></div>
+          <div class="rknob" id="knobRf"></div>
+          <div class="rklabel">RF GAIN · <b id="rfVal">28</b><br>PUSH TO ATT</div>
           <div class="rleds">
             <div class="rled"><i class="amber"></i><span>ALARM</span></div>
             <div class="rled"><i class="${DS.busy?'green':''}"></i><span>OVEN</span></div>
@@ -4630,6 +4732,7 @@ function renderDSC(){
   }
   const es=$('#examStart'); if(es) es.onclick=startExam;
   const ex=$('#examStop'); if(ex) ex.onclick=stopExam;
+  bindStationKnobs();
   applyLang();
 }
 
@@ -4675,6 +4778,341 @@ function dscKey(k){
   }
 }
 
+
+
+/* ================= Позиция с устройства =================
+   Берём координаты у самого телефона, чтобы не набирать их руками.
+   Telegram отдаёт своё хранилище позиции только начиная с Bot API 8.0
+   (LocationManager), поэтому сначала пробуем его, а если его нет --
+   обычный navigator.geolocation. На судне GPS телефона обычно ловит,
+   но в глубине корпуса может и не поймать: тогда честно говорим об этом,
+   а не подставляем последнюю известную точку молча. */
+let GEO={lat:null, lon:null, at:0, acc:null, busy:false, err:null};
+
+function geoFmtLat(d){
+  const s=d<0?'S':'N'; d=Math.abs(d);
+  const deg=Math.floor(d), min=(d-deg)*60;
+  return String(deg).padStart(2,'0')+'-'+min.toFixed(1).padStart(4,'0')+s;
+}
+function geoFmtLon(d){
+  const s=d<0?'W':'E'; d=Math.abs(d);
+  const deg=Math.floor(d), min=(d-deg)*60;
+  return String(deg).padStart(3,'0')+'-'+min.toFixed(1).padStart(4,'0')+s;
+}
+const geoFresh = ()=> GEO.lat!==null && (Date.now()-GEO.at) < 5*60*1000;
+
+function requestPosition(){
+  return new Promise(resolve=>{
+    if(GEO.busy){ resolve(null); return; }
+    GEO.busy=true; GEO.err=null; renderGeoBtn();
+
+    const done=(ok,err)=>{
+      GEO.busy=false; GEO.err=ok?null:(err||'нет данных');
+      renderGeoBtn();
+      resolve(ok?{lat:GEO.lat,lon:GEO.lon}:null);
+    };
+
+    // 1. Telegram LocationManager (Bot API 8.0+)
+    try{
+      const lm=TG&&TG.LocationManager;
+      if(lm&&typeof lm.init==='function'){
+        lm.init(()=>{
+          if(!lm.isLocationAvailable){ browserGeo(done); return; }
+          lm.getLocation(loc=>{
+            if(loc&&typeof loc.latitude==='number'){
+              GEO.lat=loc.latitude; GEO.lon=loc.longitude;
+              GEO.acc=loc.horizontal_accuracy||null; GEO.at=Date.now();
+              done(true);
+            } else browserGeo(done);
+          });
+        });
+        return;
+      }
+    }catch(e){}
+
+    browserGeo(done);
+  });
+}
+
+function browserGeo(done){
+  if(!navigator.geolocation){ done(false,'устройство не отдаёт позицию'); return; }
+  navigator.geolocation.getCurrentPosition(
+    p=>{
+      GEO.lat=p.coords.latitude; GEO.lon=p.coords.longitude;
+      GEO.acc=p.coords.accuracy||null; GEO.at=Date.now();
+      done(true);
+    },
+    err=>{
+      const msg = err && err.code===1 ? 'доступ к геопозиции запрещён'
+                : err && err.code===3 ? 'спутники не поймались, попробуй у окна или на крыле мостика'
+                : 'позиция недоступна';
+      done(false,msg);
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:60000}
+  );
+}
+
+/* Кнопка позиции в шапке: показывает состояние и текущие координаты */
+function renderGeoBtn(){
+  const b=$('#geoBtn'); if(!b) return;
+  b.className='geobtn'+(GEO.busy?' busy':'')+(geoFresh()?' on':'')+(GEO.err?' err':'');
+  b.innerHTML=ico('target','sm');
+  const t=$('#geoText');
+  if(t){
+    if(GEO.busy) t.textContent=tr('Определяю…');
+    else if(GEO.err) t.textContent=GEO.err;
+    else if(GEO.lat!==null) t.textContent=geoFmtLat(GEO.lat)+'  '+geoFmtLon(GEO.lon);
+    else t.textContent=tr('Позиция не запрошена');
+  }
+}
+
+/* Подставляет позицию в открытый инструмент: заполняет пары полей
+   широта/долгота, какие бы имена у них ни были. */
+async function fillPositionInto(pairs){
+  const p = geoFresh() ? {lat:GEO.lat,lon:GEO.lon} : await requestPosition();
+  if(!p) return false;
+  pairs.forEach(([latKey,lonKey])=>{
+    const la=document.querySelector(`[data-k="${latKey}"]`);
+    const lo=document.querySelector(`[data-k="${lonKey}"]`);
+    if(la){ la.value=geoFmtLat(p.lat); toolVals[latKey]=la.value; }
+    if(lo){ lo.value=geoFmtLon(p.lon); toolVals[lonKey]=lo.value; }
+  });
+  if(typeof curTool!=='undefined'&&curTool) saveCalcVals(curTool.id,toolVals);
+  if(typeof runTool==='function') runTool();
+  hap('medium');
+  return true;
+}
+
+/* Ищет в полях открытого инструмента пары широта/долгота.
+   Имена у полей разные (la/lo, la1/lo1, lat/lon), поэтому сопоставляем
+   по порядку: каждая широта со следующей за ней долготой. */
+function coordPairsOf(tool){
+  if(!tool||!tool.fields) return [];
+  const lats=tool.fields.filter(f=>f.t==='coord'&&/^(la|lat)/.test(f.k)).map(f=>f.k);
+  const lons=tool.fields.filter(f=>f.t==='coord'&&/^(lo|lon)/.test(f.k)).map(f=>f.k);
+  const out=[];
+  for(let i=0;i<Math.min(lats.length,lons.length);i++) out.push([lats[i],lons[i]]);
+  return out;
+}
+
+/* ================= Ручки станции =================
+   Крутятся пальцем и реально меняют показания на экране, как на судовой
+   станции: VOLUME -- громкость, RF GAIN -- усиление приёмника (оно же
+   двигает S-метр), большая ручка -- энкодер выбора пунктов меню.
+   Считаем угол от центра ручки до пальца, поэтому крутить можно с любой
+   стороны, а не только тянуть вверх-вниз. */
+const KNOB={vol:5, rf:28, ent:0};   // ent -- накопленный поворот энкодера
+
+function knobAngle(el, x, y){
+  const r=el.getBoundingClientRect();
+  return Math.atan2(y-(r.top+r.height/2), x-(r.left+r.width/2))*180/Math.PI;
+}
+
+function makeKnob(el, opts){
+  if(!el||el._knob) return;
+  el._knob=true;
+  let prev=null;
+
+  const start=(x,y)=>{ prev=knobAngle(el,x,y); };
+  const move=(x,y)=>{
+    if(prev===null) return;
+    const a=knobAngle(el,x,y);
+    let d=a-prev;
+    if(d>180) d-=360; if(d<-180) d+=360;   // переход через 180 градусов
+    if(Math.abs(d)<1) return;
+    prev=a;
+    opts.onTurn(d);
+  };
+  const end=()=>{ prev=null; };
+
+  el.addEventListener('pointerdown',e=>{ e.preventDefault(); el.setPointerCapture&&el.setPointerCapture(e.pointerId); start(e.clientX,e.clientY); },{passive:false});
+  el.addEventListener('pointermove',e=>{ if(prev!==null){ e.preventDefault(); move(e.clientX,e.clientY); } },{passive:false});
+  el.addEventListener('pointerup',end,{passive:true});
+  el.addEventListener('pointercancel',end,{passive:true});
+  el.addEventListener('touchstart',e=>{ if(e.touches[0]) start(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  el.addEventListener('touchmove',e=>{ if(e.touches[0]&&prev!==null){ e.preventDefault(); move(e.touches[0].clientX,e.touches[0].clientY); } },{passive:false});
+  el.addEventListener('touchend',end,{passive:true});
+}
+
+function knobRotate(el, deg){
+  if(el) el.style.transform='rotate('+deg+'deg)';
+}
+
+function bindStationKnobs(){
+  const vol=$('#knobVol'), rf=$('#knobRf'), ent=$('#dkEnter');
+
+  makeKnob(vol,{onTurn:d=>{
+    KNOB.vol=Math.max(0,Math.min(10,KNOB.vol+d/28));
+    knobRotate(vol, (KNOB.vol/10)*270-135);
+    if(Math.random()<0.35) hap();
+    drawDSC();
+  }});
+  knobRotate(vol,(KNOB.vol/10)*270-135);
+
+  makeKnob(rf,{onTurn:d=>{
+    KNOB.rf=Math.max(0,Math.min(99,KNOB.rf+d/3.6));
+    knobRotate(rf, (KNOB.rf/99)*270-135);
+    if(Math.random()<0.35) hap();
+    drawDSC();
+  }});
+  knobRotate(rf,(KNOB.rf/99)*270-135);
+
+  // Большая ручка: поворот листает список, нажатие -- подтверждение.
+  makeKnob(ent,{onTurn:d=>{
+    KNOB.ent+=d;
+    const step=22;                       // столько градусов на один щелчок
+    while(KNOB.ent>=step){ KNOB.ent-=step; dscKey('down'); }
+    while(KNOB.ent<=-step){ KNOB.ent+=step; dscKey('up'); }
+    knobRotate(ent, (KNOB.ent||0));
+  }});
+}
+
+
+/* ================= Живые органы управления EPIRB / SART =================
+   Не картинка, а работающий прибор: кнопка TEST нажимается и удерживается,
+   индикаторы загораются в том порядке, что описан в руководстве, у SART
+   поворотный переключатель имеет три положения.
+
+   Важное различие, которое и надо усвоить на тренажёре: TEST -- это
+   самопроверка, сигнал никуда не уходит. Боевое включение (ON/DISTRESS)
+   поднимает спасательные службы, поэтому в тренажёре оно доступно, но
+   сопровождается предупреждением и ведёт себя иначе -- индикаторы горят
+   постоянно, а не гаснут после проверки. */
+let EQLIVE={
+  epirb:{mode:'off', holding:false, phase:'', gnss:false, strobe:false, tx:false, verdict:null, timer:null},
+  sart:{mode:'off', phase:'', led:false, verdict:null, timer:null}
+};
+
+function eqReset(kind){
+  const st=EQLIVE[kind];
+  if(st.timer){ clearTimeout(st.timer); st.timer=null; }
+  if(kind==='epirb') Object.assign(st,{mode:'off',holding:false,phase:'',gnss:false,strobe:false,tx:false,verdict:null});
+  else Object.assign(st,{mode:'off',phase:'',led:false,verdict:null});
+}
+
+/* ---- EPIRB: удержание кнопки TEST ----
+   По руководству Tron 60AIS: удержание TEST -> поиск позиции GNSS ->
+   передача на 121.5 / AIS / 406 МГц -> один проблеск = норма. */
+function epirbTestStart(){
+  const st=EQLIVE.epirb;
+  if(st.mode==='on') return;                 // в боевом режиме тест не запускается
+  st.holding=true; st.verdict=null; st.phase='hold';
+  hap('medium'); renderGmdss('epirb');
+
+  st.timer=setTimeout(()=>{
+    if(!st.holding){ return; }               // отпустил раньше -- теста нет
+    st.mode='test'; st.phase='gnss'; st.gnss=true;
+    hap(); renderGmdss('epirb');
+
+    st.timer=setTimeout(()=>{
+      st.phase='tx'; st.tx=true; st.gnss=false;
+      renderGmdss('epirb');
+
+      st.timer=setTimeout(()=>{
+        st.phase='flash'; st.tx=false; st.strobe=true;
+        renderGmdss('epirb');
+
+        st.timer=setTimeout(async()=>{
+          st.strobe=false; st.phase='done'; st.verdict='pass'; st.mode='off';
+          hap('medium');
+          try{ GMEQ=await api('/api/gmdss?action=log_test&kind=epirb&result=pass'); }catch(e){}
+          renderGmdss('epirb');
+        },900);
+      },1600);
+    },1400);
+  },1200);
+}
+
+function epirbTestStop(){
+  const st=EQLIVE.epirb;
+  if(st.phase==='hold'){                     // не додержал
+    st.holding=false; st.phase=''; 
+    if(st.timer){ clearTimeout(st.timer); st.timer=null; }
+    renderGmdss('epirb');
+    return;
+  }
+  st.holding=false;
+}
+
+/* ---- EPIRB: боевое включение ---- */
+function epirbActivate(){
+  const st=EQLIVE.epirb;
+  if(st.mode==='on'){ eqReset('epirb'); renderGmdss('epirb'); return; }
+  if(!confirm(tr('Это боевое включение. На настоящем приборе оно поднимает спасательные службы. Продолжить в тренажёре?'))) return;
+  eqReset('epirb');
+  st.mode='on'; st.phase='active'; st.strobe=true; st.tx=true; st.gnss=true;
+  hap('heavy'); renderGmdss('epirb');
+}
+
+/* ---- SART: поворотный переключатель OFF / TEST / ON ---- */
+function sartSetMode(mode){
+  const st=EQLIVE.sart;
+  if(mode==='on'&&st.mode!=='on'){
+    if(!confirm(tr('Это боевое включение. На настоящем приборе SART начнёт отвечать на радары как сигнал бедствия. Продолжить в тренажёре?'))) return;
+  }
+  if(st.timer){ clearTimeout(st.timer); st.timer=null; }
+  st.mode=mode; st.verdict=null;
+
+  if(mode==='off'){ st.phase=''; st.led=false; renderGmdss('sart'); return; }
+
+  if(mode==='test'){
+    st.phase='warmup'; st.led=true; hap('medium'); renderGmdss('sart');
+    st.timer=setTimeout(()=>{
+      st.phase='responding'; renderGmdss('sart');
+      st.timer=setTimeout(async()=>{
+        st.phase='done'; st.verdict='pass'; st.led=false; st.mode='off';
+        hap('medium');
+        try{ GMEQ=await api('/api/gmdss?action=log_test&kind=sart&result=pass'); }catch(e){}
+        renderGmdss('sart');
+      },3200);
+    },1200);
+    return;
+  }
+
+  // боевой режим: отвечает постоянно, пока не выключат
+  st.phase='active'; st.led=true; hap('heavy'); renderGmdss('sart');
+}
+
+/* ---- индикаторы: панель состояния прибора ---- */
+function eqLedPanel(kind){
+  const st=EQLIVE[kind];
+  const led=(on,color,label,blink)=>
+    `<div class="eqled"><i class="${on?'on '+color:''}${on&&blink?' blink':''}"></i><span>${esc(label)}</span></div>`;
+
+  if(kind==='epirb'){
+    return `<div class="eqleds">
+      ${led(st.gnss,'green','GNSS',st.phase==='gnss')}
+      ${led(st.tx,'amber','406 MHz TX',true)}
+      ${led(st.strobe,'white','STROBE',true)}
+      ${led(st.mode==='on','red','ACTIVE',true)}
+    </div>`;
+  }
+  return `<div class="eqleds">
+    ${led(st.led&&st.mode==='test','amber','TEST',true)}
+    ${led(st.mode==='on','red','ACTIVE',true)}
+    ${led(st.phase==='responding'||st.phase==='active','green','RADAR REPLY',true)}
+  </div>`;
+}
+
+/* ---- подпись текущего состояния ---- */
+const EQ_PHASE_TEXT={
+  epirb:{
+    '':'Прибор в дежурном режиме, на кронштейне',
+    hold:'Удерживай кнопку TEST…',
+    gnss:'Поиск спутниковой позиции. Зелёный индикатор загорится, когда позиция определена',
+    tx:'Идёт передача тестового сигнала: 121.5 МГц, AIS и 406 МГц. Спасательные службы его не получают',
+    flash:'Проблеск индикатора по итогу проверки',
+    done:'Один проблеск — самопроверка пройдена. Если индикатор продолжает мигать, смотри код ошибки в руководстве',
+    active:'БОЕВОЙ РЕЖИМ. На настоящем приборе сигнал уже принят спутниками COSPAS-SARSAT'
+  },
+  sart:{
+    '':'Переключатель в положении OFF, транспондер на кронштейне',
+    warmup:'Режим TEST включён, транспондер прогревается',
+    responding:'Отвечает на облучение радаром. Смотри отклик на экране X-диапазонного радара ниже',
+    done:'Тест пройден. Не держи в режиме TEST дольше пяти минут: расходует батарею и мешает чужим радарам',
+    active:'БОЕВОЙ РЕЖИМ. Отвечает на все радары в зоне видимости как сигнал бедствия'
+  }
+};
 
 /* ================= EPIRB / SART: проверка оборудования =================
    Чек-лист, пошаговая самопроверка (по руководству Jotron), история с
@@ -4738,6 +5176,25 @@ const EQ_META={
 };
 const EQ_STATUS_LABEL={ok:'В порядке',watch:'Планируй замену',soon:'Скоро истекает',expired:'Просрочено',unknown:'Срок не указан'};
 
+
+/* Кнопка TEST у EPIRB: нажать и удерживать, как на приборе */
+function epirbControls(){
+  const st=EQLIVE.epirb;
+  return `<div class="eqctl">
+    <button class="eqbtn test ${st.phase==='hold'?'holding':''}" id="epirbTest">TEST</button>
+    <button class="eqbtn arm ${st.mode==='on'?'on':''}" id="epirbOn">${st.mode==='on'?'OFF':'ON'}</button>
+  </div>`;
+}
+
+/* Поворотный переключатель SART: три положения */
+function sartControls(){
+  const m=EQLIVE.sart.mode;
+  return `<div class="eqsw">
+    ${['off','test','on'].map(x=>
+      `<button class="swpos ${m===x?'on':''} ${x}" data-sart="${x}">${x.toUpperCase()}</button>`).join('')}
+  </div>`;
+}
+
 function renderGmdss(kind){
   const box=$('#'+kind+'Box'); if(!box||!GMEQ) return;
   const eq=(GMEQ.equipment&&GMEQ.equipment[kind])||{};
@@ -4749,14 +5206,20 @@ function renderGmdss(kind){
   const pct=checklist.length?Math.round(done.length/checklist.length*100):0;
   const status=eq.status||'unknown';
 
-  let h=`<div class="eqhero">
-      ${meta.svg}
+  const live=EQLIVE[kind];
+  const phaseTxt=(EQ_PHASE_TEXT[kind]||{})[live.phase]||'';
+
+  let h=`<div class="eqhero ${live.mode==='on'?'alarm':''}">
+      <div class="eqdev">${meta.svg}${kind==='epirb'?epirbControls():sartControls()}</div>
       <div class="eqinfo">
         <div class="nm">${esc(meta.name)}</div>
         <div class="md">${esc(tr(meta.sub))}</div>
         <div class="eqstatus ${status}">● ${esc(tr(EQ_STATUS_LABEL[status]))}${eq.battery_expires?' · '+esc(String(eq.battery_expires).slice(0,10)):''}</div>
+        ${eqLedPanel(kind)}
       </div>
     </div>
+    ${phaseTxt?`<div class="eqphase ${live.mode==='on'?'alarm':''}">${esc(tr(phaseTxt))}</div>`:''}
+    ${live.verdict==='pass'?`<div class="verdict ok"><b>PASS</b>${esc(tr('Самопроверка пройдена. Отметка добавлена в историю.'))}</div>`:''}
 
     <div class="eqfield" style="margin-top:15px">
       <label>${esc(tr('Дата замены батареи'))}</label>
@@ -4775,22 +5238,17 @@ function renderGmdss(kind){
   });
   h+=`<button class="btn wide" id="${kind}SaveChk" style="margin-top:6px">${esc(tr('Сохранить отметки'))}</button>`;
 
-  h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Self-Test'))}</h3></div>`;
-  if(EQSTEP[kind]<0){
-    h+=`<div class="hint">${ico('alert','xs')} ${esc(tr('Пошагово, как по руководству. Ничего не передаётся по-настоящему.'))}</div>
-        <button class="btn wide" id="${kind}StartTest">${esc(tr('Начать самопроверку'))}</button>`;
-  } else if(EQSTEP[kind]>=steps.length){
-    h+=`<div class="verdict ok"><b>PASS</b>${esc(tr('Самопроверка пройдена. Отметка добавлена в историю.'))}</div>
-        <button class="btn g wide" style="margin-top:10px" id="${kind}TestAgain">${esc(tr('Пройти ещё раз'))}</button>`;
-  } else {
-    const s=steps[EQSTEP[kind]];
-    h+=`<div class="examhead"><div class="n">${esc(tr('Шаг'))} ${EQSTEP[kind]+1} / ${steps.length}</div>
-          <div class="q">${esc(tr(s.t))}</div></div>
-        <div class="dsctip">${esc(tr(s.d))}</div>
-        <button class="btn wide" style="margin-top:11px" id="${kind}NextStep">
-          ${EQSTEP[kind]+1<steps.length?esc(tr('Следующий шаг')):esc(tr('Завершить: PASS'))}</button>
-        <button class="btn g wide" style="margin-top:8px" id="${kind}FailStep">${esc(tr('Обнаружена неисправность'))}</button>`;
-  }
+  h+=`<div class="sech" style="margin-top:19px"><h3>${esc(tr('Порядок самопроверки'))}</h3></div>
+      <div class="hint">${ico('alert','xs')} ${esc(tr(kind==='epirb'
+        ? 'Нажми и удерживай TEST на приборе выше. Индикаторы отработают тот же порядок, что и на настоящем.'
+        : 'Переведи переключатель на приборе выше в положение TEST.'))}</div>
+      <div class="eqsteps">`;
+  steps.forEach(st=>{
+    h+=`<div class="eqstep"><div class="num"></div><div class="txt">
+          <div class="st">${esc(tr(st.t))}</div>
+          <div class="sd">${esc(tr(st.d))}</div></div></div>`;
+  });
+  h+=`</div>`;
 
   if(kind==='sart'){
     h+=`<div class="sech" style="margin-top:19px"><h3>Radar Preview</h3></div>
@@ -4820,6 +5278,15 @@ function renderGmdss(kind){
 }
 
 function bindGmdssEvents(kind){
+  // органы управления прибора
+  const et=$('#epirbTest');
+  if(et){
+    et.onmousedown=epirbTestStart; et.onmouseup=epirbTestStop; et.onmouseleave=epirbTestStop;
+    et.ontouchstart=(e)=>{e.preventDefault();epirbTestStart()}; et.ontouchend=epirbTestStop;
+  }
+  const eo=$('#epirbOn'); if(eo) eo.onclick=epirbActivate;
+  document.querySelectorAll('[data-sart]').forEach(b=>b.onclick=()=>sartSetMode(b.dataset.sart));
+
   document.querySelectorAll('[data-chk]').forEach(el=>el.onclick=()=>{
     hap(); const k=el.dataset.chk;
     EQCHECK[kind]=EQCHECK[kind].includes(k)?EQCHECK[kind].filter(x=>x!==k):EQCHECK[kind].concat([k]);
@@ -5375,6 +5842,20 @@ function openTool(t){
              value="${esc(String(toolVals[f.k]||''))}"></div>`;
   }).join('');
 
+  // В расчётах с координатами -- кнопка подстановки позиции с устройства
+  { const pairs=coordPairsOf(t);
+    if(pairs.length){
+      $('#tFields').insertAdjacentHTML('afterbegin',
+        `<button class="geouse" id="useGeo">${ico('target','xs')}${esc(tr('Подставить мою позицию'))}</button>`);
+      const ug=$('#useGeo');
+      if(ug) ug.onclick=async()=>{
+        ug.textContent=tr('Определяю…');
+        const ok=await fillPositionInto(pairs);
+        ug.innerHTML=ico('target','xs')+esc(ok?tr('Позиция подставлена'):(GEO.err||tr('Позиция недоступна')));
+      };
+    }
+  }
+
   document.querySelectorAll('.tinput').forEach(el=>{
     const ev=el.tagName==='SELECT'?'onchange':'oninput';
     el[ev]=()=>{
@@ -5438,6 +5919,21 @@ document.addEventListener('pointerdown', ev=>{
 
 $('#tBackTop').innerHTML=ico('back');
 $('#tBackTop').onclick=()=>{ if(typeof curCL!=='undefined'&&curCL) saveCL(); closeTool(); };
+{ const gb=$('#geoBtn');
+  if(gb) gb.onclick=async()=>{
+    hap('medium');
+    const p=await requestPosition();
+    if(p){
+      // свежая позиция сразу видна на экране станции и в текущем расчёте
+      if(typeof drawDSC==='function'&&DSC) drawDSC();
+      if(typeof curTool!=='undefined'&&curTool){
+        const pairs=coordPairsOf(curTool);
+        if(pairs.length) fillPositionInto(pairs);
+      }
+    }
+    renderGeoBtn();
+  };
+}
 $('#langBtn').onclick=()=>{
   LANG=(LANG==='en')?'ru':'en';
   tr._keys=null;
