@@ -1,29 +1,29 @@
 """
 Ask Watchkeeper: понимание вопроса вахтенного.
 
-Устроено в два слоя, и порядок здесь принципиален.
+Порядок работы взят из спецификации и важен именно в таком виде:
 
-Сначала работает разбор на месте, без сети: он узнаёт типовые вопросы
-вахтенного и вытаскивает из фразы числа. В рейсе спутниковый интернет
-дорогой и ненадёжный, а вопрос "какой у меня запас под килём" нужен
-именно тогда, когда некогда ждать ответа сервера. Поэтому всё, что можно
-понять по числам и словам, понимается локально и мгновенно.
+  1. Определить намерение (о чём вообще вопрос).
+  2. Вытащить из фразы числа и названия.
+  3. Дополнить тем, что приложение уже знает: карточка судна, позиция
+     с устройства, текущий маршрут.
+  4. Понять, чего не хватает.
+  5. Если хватает -- отдать готовое действие.
+  6. Если нет -- спросить ТОЛЬКО недостающее, а не весь список заново.
 
-Если фраза не похожа ни на один из знакомых образцов -- вопрос уходит
-к Claude как обычный разговор о судовождении.
+Ключевая мысль -- пункт 3. Человек не должен диктовать осадку своего
+судна каждый раз: она уже записана в карточке. Поэтому "какой у меня
+запас под килём" -- законченный вопрос, если известны позиция и осадка.
 
-Разбор намеренно не пытается быть умным: он ищет число рядом со знакомым
-словом. Это надёжнее хитрых правил и понятно, когда ошибается.
+Разбор работает без сети. В рейсе спутниковый канал дорогой и рвётся,
+а вопрос про запас под килём нужен именно тогда, когда некогда ждать.
+К модели уходит только то, что не разобралось здесь.
 """
 from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta, timezone
 
-# ---------------------------------------------------------------------- #
-# Как достаём числа
-# ---------------------------------------------------------------------- #
-# Число может быть с точкой или запятой: 11.5 и 11,5 -- одно и то же.
 _NUM = r"(-?\d+(?:[.,]\d+)?)"
 
 
@@ -31,170 +31,351 @@ def _f(v: str) -> float:
     return float(v.replace(",", "."))
 
 
-def _find(text: str, words: list[str], after: bool = True) -> float | None:
-    """Ищет число рядом со словом. after=True -- число после слова
-    ("осадка 11.5"), иначе перед ним ("11.5 м осадка")."""
-    for w in words:
-        pat = (rf"{w}\s*(?:[:=]|—|-)?\s*{_NUM}" if after
-               else rf"{_NUM}\s*(?:м|m|узл\w*|kn|kt|kts)?\s*{w}")
+def _pick(text: str, patterns: list[str]) -> float | None:
+    """Первое число, найденное по любому из образцов."""
+    for pat in patterns:
         m = re.search(pat, text, re.I)
         if m:
             try:
                 return _f(m.group(1))
-            except ValueError:
+            except (ValueError, IndexError):
                 pass
     return None
 
 
 # ---------------------------------------------------------------------- #
-# Что умеем узнавать
+# Извлечение величин
 # ---------------------------------------------------------------------- #
-# Для каждого расчёта: по каким словам его узнать и как разобрать поля.
-# Ключи полей совпадают с теми, что в приложении -- иначе подстановка
-# не сработает.
+def x_speed(t):    return _pick(t, [rf"(?:скорост\w*|speed|sog)\s*(?:[:=])?\s*{_NUM}",
+                                    rf"(?:иду|идём|идем|следую|ход\w*|на)\s*{_NUM}\s*(?:узл\w*|kn|kts?|kt)",
+                                    rf"{_NUM}\s*(?:узл\w*|kn|kts?|kt)\b"])
+def x_dist(t):     return _pick(t, [rf"(?:расстояни\w*|дистанц\w*|distance|до)\s*\w*\s*(?:[:=])?\s*{_NUM}\s*(?:мил\w*|nm)",
+                                    rf"(?:расстояни\w*|дистанц\w*|distance)\s*(?:[:=])?\s*{_NUM}",
+                                    rf"{_NUM}\s*(?:мил\w*|nm|n\.?m\.?)\b"])
+def x_draft(t):    return _pick(t, [rf"(?:осадк\w*|draft|draught)\s*(?:[:=])?\s*{_NUM}"])
+def x_depth(t):    return _pick(t, [rf"(?:глубин\w*|depth)\s*(?:по карте)?\s*(?:[:=])?\s*{_NUM}"])
+def x_squat(t):    return _pick(t, [rf"(?:просед\w*|squat)\s*(?:[:=])?\s*{_NUM}"])
+def x_tide(t):     return _pick(t, [rf"(?:прилив\w*|tide)\s*(?:[:=])?\s*{_NUM}"])
+def x_heel(t):     return _pick(t, [rf"(?:крен\w*|heel|list)\s*(?:[:=])?\s*{_NUM}"])
+def x_wave(t):     return _pick(t, [rf"(?:волнени\w*|wave|swell)\s*(?:[:=])?\s*{_NUM}"])
+def x_cb(t):       return _pick(t, [rf"(?:cb|коэффициент полноты|полнот\w*)\s*(?:[:=])?\s*{_NUM}"])
+def x_bearing(t):  return _pick(t, [rf"(?:пеленг\w*|bearing|brg)\s*(?:[:=])?\s*{_NUM}"])
+def x_range(t):    return _pick(t, [rf"(?:дистанц\w*|range|до цели)\s*(?:[:=])?\s*{_NUM}"])
+def x_rot(t):      return _pick(t, [rf"(?:rot|скорость поворота|угловая)\s*(?:[:=])?\s*{_NUM}"])
+def x_radius(t):   return _pick(t, [rf"(?:радиус\w*|radius)\s*(?:[:=])?\s*{_NUM}"])
+def x_chain(t):    return _pick(t, [rf"(?:смычек|смычк\w*|цеп\w*|shackles?|chain)\s*(?:[:=])?\s*{_NUM}",
+                                    rf"{_NUM}\s*смычек"])
 
-def _speed(text: str) -> float | None:
-    """Скорость пишут по-разному: "скорость 14", "иду 14 узлов", "на 13 узлах",
-    "14 kn". Ловим все формы, а не только слово перед числом."""
-    for pat in (rf"(?:скорост\w*|speed)\s*(?:[:=])?\s*{_NUM}",
-                rf"(?:иду|идём|идем|следую|ход\w*|на)\s*{_NUM}\s*(?:узл\w*|kn|kts?|kt)",
-                rf"{_NUM}\s*(?:узл\w*|kn|kts?|kt)\b"):
-        m = re.search(pat, text, re.I)
-        if m:
-            try:
-                return _f(m.group(1))
-            except ValueError:
-                pass
+
+def x_courses(t):
+    """Изменение курса: '090 -> 180', 'с 090 на 180'."""
+    m = re.search(rf"{_NUM}\s*°?\s*(?:->|→|на|to)\s*{_NUM}\s*°?", t, re.I)
+    if m:
+        try:
+            return _f(m.group(1)), _f(m.group(2))
+        except ValueError:
+            pass
+    return None, None
+
+
+def x_own_course(t):
+    return _pick(t, [rf"(?:свой курс|мой курс|own course)\s*(?:[:=])?\s*{_NUM}",
+                     rf"(?:курс\w*|course)\s*(?:[:=])?\s*{_NUM}"])
+
+
+def x_time(t):
+    """Время прибытия: 'в 06:00', 'к 0600'."""
+    m = re.search(r"(?:в|к|at|by)\s*(\d{1,2})[:\.]?(\d{2})", t, re.I)
+    if m:
+        h, mi = int(m.group(1)), int(m.group(2))
+        if 0 <= h < 24 and 0 <= mi < 60:
+            return f"{h:02d}:{mi:02d}"
     return None
 
 
-def _distance(text: str) -> float | None:
-    """Расстояние: "480 миль", "расстояние 480", "480 nm"."""
-    for pat in (rf"(?:расстояни\w*|дистанц\w*|distance)\s*(?:[:=])?\s*{_NUM}",
-                rf"{_NUM}\s*(?:мил\w*|nm|n\.?m\.?)\b"):
-        m = re.search(pat, text, re.I)
-        if m:
-            try:
-                return _f(m.group(1))
-            except ValueError:
-                pass
-    return None
+def x_ports(t):
+    """Пара портов: 'из X в Y', 'от X до Y'."""
+    m = re.search(r"(?:из|от|from)\s+([A-Za-zА-Яа-яёЁ\-' ]{3,28}?)\s+(?:в|до|на|to)\s+([A-Za-zА-Яа-яёЁ\-' ]{3,28})", t, re.I)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    m = re.search(r"(?:до|в|to)\s+([A-Za-zА-Яа-яёЁ\-' ]{3,28})", t, re.I)
+    if m:
+        return None, m.group(1).strip()
+    return None, None
 
 
-DRAFT_W  = ["осадк\\w*", "draft", "draught"]
-DEPTH_W  = ["глубин\\w*", "depth", "глубина по карте"]
-SQUAT_W  = ["просед\\w*", "squat"]
-TIDE_W   = ["прилив\\w*", "tide"]
-SPEED_W  = ["скорост\\w*", "speed", "ход\\w*", "иду", "идём", "следую"]
-DIST_W   = ["расстояни\\w*", "дистанц\\w*", "distance", "миль", "nm"]
-CB_W     = ["cb", "коэффициент полноты", "полнот\\w*"]
-HEEL_W   = ["крен\\w*", "heel", "list"]
-WAVE_W   = ["волнени\\w*", "wave", "swell"]
+def confined(t):
+    return bool(re.search(r"канал|фарватер|мелковод|стеснённ|стесненн|confined|channel", t, re.I))
 
 
-def _ukc(text: str) -> dict | None:
-    depth = _find(text, DEPTH_W)
-    draft = _find(text, DRAFT_W)
-    if depth is None and draft is None:
-        return None
-    vals = {}
-    if depth is not None: vals["cd"] = depth
-    if draft is not None: vals["dr"] = draft
-    sq = _find(text, SQUAT_W)
-    if sq is not None: vals["sq"] = sq
-    td = _find(text, TIDE_W)
-    if td is not None: vals["td"] = td
-    hl = _find(text, HEEL_W)
-    if hl is not None: vals["hl"] = hl
-    wv = _find(text, WAVE_W)
-    if wv is not None: vals["wv"] = wv
-    out = {"tool": "ukc", "values": vals}
-    # Скорость на запас под килём напрямую не влияет, но влияет через
-    # проседание -- подсказываем, что его стоит посчитать отдельно.
-    sp = _speed(text)
-    if sp is not None and "sq" not in vals:
-        out["hint_tool"] = {"tool": "squat", "values": {"v": sp}}
-    return out
+# ---------------------------------------------------------------------- #
+# Намерения
+# ---------------------------------------------------------------------- #
+# Каждое: как узнать, какой расчёт открыть, какие поля обязательны и что
+# из этого приложение может подставить само.
+#
+# ctx -- откуда берётся значение, если человек его не назвал:
+#   vessel:<ключ>  -- из карточки судна
+#   position       -- с устройства
+#   route          -- из текущего маршрута
 
-
-def _squat(text: str) -> dict | None:
-    v = _speed(text)
-    cb = _find(text, CB_W)
-    if v is None and cb is None:
-        return None
-    vals = {}
-    if v is not None: vals["v"] = v
-    if cb is not None: vals["cb"] = cb
-    # мелководье или канал упомянуты -- это меняет коэффициент в формуле
-    if re.search(r"канал|фарватер|мелковод|стеснённ|стесненн|confined|channel", text, re.I):
-        vals["w"] = "confined"
-    return {"tool": "squat", "values": vals}
-
-
-def _eta(text: str) -> dict | None:
-    d = _distance(text)
-    s = _speed(text)
-    if d is None or s is None:
-        return None
-    return {"tool": "eta", "values": {"d": d, "s": s}}
-
-
-def _cpa(text: str) -> dict | None:
-    if not re.search(r"cpa|tcpa|расхожд\w*|разойд\w*|цел[ьи]|target", text, re.I):
-        return None
-    vals = {}
-    oc = _find(text, ["свой курс", "мой курс", "курс\\w*"])
-    if oc is not None: vals["oc"] = oc
-    os_ = _speed(text)
-    if os_ is not None: vals["os"] = os_
-    tb = _find(text, ["пеленг\\w*", "bearing"])
-    if tb is not None: vals["tb"] = tb
-    tr = _find(text, ["дистанц\\w*", "range", "расстояни\\w*"])
-    if tr is not None: vals["tr"] = tr
-    return {"tool": "cpa", "values": vals} if vals else None
-
-
-# Порядок важен: более узкие образцы проверяются раньше общих.
-TOOL_MATCHERS = [
-    (r"\bukc\b|запас\w*\s+(?:воды\s+)?под\s+кил|под килем|под килём|clearance", _ukc),
-    (r"просед\w*|squat", _squat),
-    (r"\bcpa\b|\btcpa\b|расхожд\w*|разойд\w*", _cpa),
-    (r"\beta\b|через сколько (?:часов|времени)|когда прид|время в пути|сколько идти", _eta),
+INTENTS = [
+    {
+        "id": "UKC", "tool": "ukc",
+        "match": r"\bukc\b|запас\w*\s+(?:воды\s+)?под\s+кил|под килем|под килём|clearance",
+        "fields": {
+            "cd": {"get": x_depth,  "req": True,  "label": "Глубина по карте", "unit": "м"},
+            "dr": {"get": x_draft,  "req": True,  "label": "Осадка", "unit": "м", "ctx": "vessel:draft"},
+            "sq": {"get": x_squat,  "req": False, "label": "Проседание", "unit": "м"},
+            "td": {"get": x_tide,   "req": False, "label": "Высота прилива", "unit": "м"},
+            "hl": {"get": x_heel,   "req": False, "label": "Поправка на крен", "unit": "м"},
+            "wv": {"get": x_wave,   "req": False, "label": "Поправка на волнение", "unit": "м"},
+        },
+    },
+    {
+        "id": "SQUAT", "tool": "squat",
+        "match": r"просед\w*|squat",
+        "fields": {
+            "cb": {"get": x_cb,    "req": True,  "label": "Коэффициент полноты Cb", "ctx": "vessel:cb"},
+            "v":  {"get": x_speed, "req": True,  "label": "Скорость", "unit": "узлов", "ctx": "vessel:speed"},
+            "w":  {"get": None,    "req": False, "label": "Акватория"},
+        },
+    },
+    {
+        "id": "CPA_TCPA", "tool": "cpa",
+        "match": r"\bcpa\b|\btcpa\b|расхожд\w*|разойд\w*|цель\b|цели\b|target",
+        "not": r"что делать|кто уступ|мои действия|как расходит|правил\w*\s+\d",
+        "fields": {
+            "oc": {"get": x_own_course, "req": True, "label": "Свой курс", "unit": "°"},
+            "os": {"get": x_speed,      "req": True, "label": "Своя скорость", "unit": "узлов", "ctx": "vessel:speed"},
+            "tb": {"get": x_bearing,    "req": True, "label": "Пеленг на цель", "unit": "°"},
+            "tr": {"get": x_range,      "req": True, "label": "Дистанция до цели", "unit": "миль"},
+            "tc": {"get": None,         "req": False, "label": "Курс цели", "unit": "°"},
+            "ts": {"get": None,         "req": False, "label": "Скорость цели", "unit": "узлов"},
+        },
+    },
+    {
+        "id": "ETA", "tool": "eta",
+        "match": r"\beta\b|когда прид|через сколько (?:часов|времени|прид)|время в пути|сколько идти|когда будем",
+        "not": r"вахт\w*|watch|смена",
+        "fields": {
+            "d": {"get": x_dist,  "req": True, "label": "Расстояние", "unit": "миль", "ctx": "route:distance"},
+            "s": {"get": x_speed, "req": True, "label": "Скорость", "unit": "узлов", "ctx": "vessel:speed"},
+        },
+    },
+    {
+        "id": "SPEED_TO_ARRIVE", "tool": "eta",
+        "match": r"как(?:ую|ой)\s+скорость|чтобы прийти|чтобы успеть|нужно прибыть|держать чтобы",
+        "fields": {
+            "d":  {"get": x_dist, "req": True, "label": "Расстояние", "unit": "миль", "ctx": "route:distance"},
+            "ha": {"get": None,   "req": True, "label": "Времени в запасе", "unit": "часов"},
+        },
+    },
+    {
+        "id": "WHEEL_OVER", "tool": "wop",
+        "match": r"wheel over|\bwop\b|точк\w*\s+перекладк|перекладк\w*\s+рул",
+        "fields": {
+            "r":  {"get": x_radius, "req": True, "label": "Радиус циркуляции", "unit": "миль"},
+            "cc": {"get": None,     "req": True, "label": "Изменение курса", "unit": "°"},
+            "sp": {"get": x_speed,  "req": False, "label": "Скорость", "unit": "узлов", "ctx": "vessel:speed"},
+        },
+    },
+    {
+        "id": "ANCHOR", "tool": "anchor",
+        "match": r"якор\w*|anchor|смычек|радиус разворот",
+        "fields": {
+            "ch":  {"get": x_chain, "req": True,  "label": "Вытравлено цепи", "unit": "смычек"},
+            "dp":  {"get": x_depth, "req": True,  "label": "Глубина", "unit": "м"},
+            "hh":  {"get": None,    "req": False, "label": "Высота клюза", "unit": "м", "ctx": "vessel:hawse"},
+            "loa": {"get": None,    "req": False, "label": "Длина судна", "unit": "м", "ctx": "vessel:loa"},
+        },
+    },
+    {
+        "id": "COURSE_DISTANCE", "tool": "dist",
+        "match": r"расстояни\w*\s+и\s+курс|курс\w*\s+и\s+расстояни|great circle|ортодром|локсодром",
+        "fields": {
+            "la1": {"get": None, "req": True, "label": "Широта отхода", "ctx": "position:lat"},
+            "lo1": {"get": None, "req": True, "label": "Долгота отхода", "ctx": "position:lon"},
+            "la2": {"get": None, "req": True, "label": "Широта прихода"},
+            "lo2": {"get": None, "req": True, "label": "Долгота прихода"},
+        },
+    },
+    {
+        "id": "SUN", "tool": "sun",
+        "match": r"восход|заход|сумерк|twilight|sunrise|sunset|темно",
+        "fields": {
+            "la": {"get": None, "req": True,  "label": "Широта", "ctx": "position:lat"},
+            "lo": {"get": None, "req": True,  "label": "Долгота", "ctx": "position:lon"},
+            "dt": {"get": None, "req": False, "label": "Дата"},
+        },
+    },
+    {
+        "id": "MOON", "tool": "moon",
+        "match": r"лун\w*|moon|фаза",
+        "fields": {
+            "la": {"get": None, "req": True, "label": "Широта", "ctx": "position:lat"},
+            "lo": {"get": None, "req": True, "label": "Долгота", "ctx": "position:lon"},
+        },
+    },
+    {
+        "id": "AIR_DRAFT", "tool": "air",
+        "match": r"под мост|air draft|air draught|надводн\w*\s+габарит|высот\w*\s+мост",
+        "fields": {
+            "cc":  {"get": None,    "req": True,  "label": "Габарит по карте", "unit": "м"},
+            "hat": {"get": None,    "req": False, "label": "HAT", "unit": "м"},
+            "tn":  {"get": x_tide,  "req": False, "label": "Текущий прилив", "unit": "м"},
+            "ad":  {"get": None,    "req": True,  "label": "Надводный габарит судна", "unit": "м", "ctx": "vessel:air_draft"},
+        },
+    },
+    {
+        "id": "FUEL", "tool": "fuel",
+        "match": r"топлив\w*|бункер\w*|fuel|bunker|хватит ли",
+        "fields": {
+            "d":   {"get": x_dist,  "req": True,  "label": "Расстояние", "unit": "миль", "ctx": "route:distance"},
+            "s":   {"get": x_speed, "req": True,  "label": "Скорость", "unit": "узлов", "ctx": "vessel:speed"},
+            "c":   {"get": None,    "req": True,  "label": "Расход в сутки", "unit": "т", "ctx": "vessel:cons"},
+            "rob": {"get": None,    "req": False, "label": "Топлива на борту", "unit": "т"},
+        },
+    },
+    {
+        "id": "MAGNETRON", "tool": "magnetron",
+        "match": r"магнетрон|magnetron|ресурс радар",
+        "fields": {
+            "rx":   {"get": None, "req": True,  "label": "RX time", "unit": "часов"},
+            "life": {"get": None, "req": False, "label": "Ресурс", "unit": "часов"},
+        },
+    },
+    {
+        "id": "CONVERTER", "tool": "units",
+        "match": r"переведи|конверт|сколько будет|в километр|в узл|в метр|в фут|в градус|knots?\s*(?:в|to)",
+        "fields": {"val": {"get": lambda t: _pick(t, [rf"{_NUM}"]), "req": True, "label": "Значение"}},
+    },
 ]
 
 
-def match_tool(text: str) -> dict | None:
-    for pattern, fn in TOOL_MATCHERS:
-        if re.search(pattern, text, re.I):
-            got = fn(text)
-            if got and got.get("values"):
-                return got
-    # чисел хватает на запас под килём, даже если слова UKC не было
-    if re.search(r"глубин\w*", text, re.I) and re.search(r"осадк\w*|draft", text, re.I):
-        got = _ukc(text)
-        if got and len(got["values"]) >= 2:
-            return got
+def _ctx_value(spec: str, ctx: dict):
+    """Значение из контекста приложения: карточка судна, позиция, маршрут."""
+    if not spec or not ctx:
+        return None
+    kind, _, key = spec.partition(":")
+    src = ctx.get(kind) or {}
+    v = src.get(key)
+    if v in ("", None):
+        return None
+    return v
+
+
+def match_intent(text: str, ctx: dict | None = None) -> dict | None:
+    """Определяет намерение и собирает параметры."""
+    ctx = ctx or {}
+    for spec in INTENTS:
+        if not re.search(spec["match"], text, re.I):
+            continue
+        # Некоторые вопросы похожи по словам, но относятся к другому:
+        # «через сколько часов моя вахта» -- это не ETA, а расписание,
+        # «судно справа, что делать» -- не расчёт CPA, а правила расхождения.
+        if spec.get("not") and re.search(spec["not"], text, re.I):
+            continue
+
+        values, from_ctx, missing = {}, {}, []
+        for key, f in spec["fields"].items():
+            v = f["get"](text) if f.get("get") else None
+            if v is None and f.get("ctx"):
+                v = _ctx_value(f["ctx"], ctx)
+                if v is not None:
+                    from_ctx[key] = f["ctx"]
+            if v is not None:
+                values[key] = v
+            elif f.get("req"):
+                missing.append({"k": key, "label": f["label"], "unit": f.get("unit", "")})
+
+        # частные доводки
+        if spec["id"] == "SQUAT" and confined(text):
+            values["w"] = "confined"
+        if spec["id"] == "UKC":
+            sp = x_speed(text)
+            if sp is not None and "sq" not in values:
+                values["_hint"] = {"tool": "squat", "values": {"v": sp}}
+        if spec["id"] == "WHEEL_OVER":
+            c1, c2 = x_courses(text)
+            if c1 is not None and c2 is not None:
+                d = (c2 - c1) % 360
+                values["cc"] = d if d <= 180 else d - 360
+                missing = [m for m in missing if m["k"] != "cc"]
+            rot = x_rot(text)
+            if rot and "r" not in values and values.get("sp"):
+                # Радиус циркуляции из скорости и угловой скорости.
+                # За полный оборот (360/ROT минут) судно проходит длину
+                # окружности, отсюда R = V * 3 / (ROT * pi).
+                # Проверка: 14 узлов при 20 град/мин дают 0.67 мили.
+                import math
+                values["r"] = round(values["sp"] * 3 / (rot * math.pi), 3)
+                missing = [m for m in missing if m["k"] != "r"]
+        if spec["id"] == "SPEED_TO_ARRIVE":
+            at = x_time(text)
+            if at:
+                values["_arrive_at"] = at
+                missing = [m for m in missing if m["k"] != "ha"]
+
+        # ничего не нашли и подставить неоткуда -- значит это не то намерение
+        if not values and missing:
+            continue
+
+        return {
+            "intent": spec["id"], "action": "calculate", "tool": spec["tool"],
+            "values": {k: v for k, v in values.items() if not k.startswith("_")},
+            "from_context": from_ctx,
+            "missing": missing,
+            "hint_tool": values.get("_hint"),
+            "arrive_at": values.get("_arrive_at"),
+        }
     return None
 
 
 # ---------------------------------------------------------------------- #
-# Переход и предупреждения по маршруту
+# Намерения без расчёта: разделы приложения
 # ---------------------------------------------------------------------- #
-def match_route(text: str) -> dict | None:
-    if not re.search(r"навари|navarea|предупрежд\w*|warning|маршрут\w*|route|переход\w*|по пути", text, re.I):
-        return None
-    m = re.search(r"(?:из|от|from)\s+([A-Za-zА-Яа-яёЁ\- ]{3,28}?)\s+(?:в|до|to|на)\s+([A-Za-zА-Яа-яёЁ\- ]{3,28})", text, re.I)
-    out = {"view": "voy"}
-    if m:
-        out["from"] = m.group(1).strip()
-        out["to"] = m.group(2).strip()
-    return out
+VIEW_INTENTS = [
+    {"id": "NAVAREA", "view": "voy",
+     "match": r"навари|navarea|предупрежд\w*|warning|влияют на маршрут|по маршруту|по пути"},
+    {"id": "PASSAGE_PLAN", "view": "voy",
+     "match": r"passage plan|проверь маршрут|проверь мой маршрут|проложи|переход\w*\s+из"},
+    {"id": "MSI", "view": "areas",
+     "match": r"\bmsi\b|навтекс|navtex|безопасност\w*\s+мореплав"},
+    {"id": "VESSEL", "view": "ship",
+     "match": r"мо[её]\w*\s+судн\w*|данные судна|карточк\w*\s+судна|my vessel|параметры судна|моё судно"},
+    {"id": "GMDSS_EQUIPMENT", "view": "epirb",
+     "match": r"epirb|аварийн\w*\s+радиобу|когда.*(?:провер|тест).*(?:epirb|буй)"},
+    {"id": "GMDSS_SART", "view": "sart",
+     "match": r"\bsart\b|транспондер|радиолокационн\w*\s+ответчик"},
+    {"id": "GMDSS_DSC", "view": "dsc",
+     "match": r"\bцив\b|\bdsc\b|тренаж|вызов бедствия|distress call"},
+    {"id": "RADIO", "view": "radio",
+     "match": r"радиостанц\w*|coast (?:radio )?station|станци\w*\s+для теста|mf/hf"},
+    {"id": "CHECKLIST", "view": "bridge",
+     "match": r"чек-?лист|checklist|перед прих|перед отход|сдач\w*\s+вахты|handover"},
+    {"id": "MAP", "view": "map",
+     "match": r"покажи на карте|на карте|карт[уы]\b"},
+    {"id": "POSITION", "view": None,
+     "match": r"где я|моя позиц|current position|мои координат|позиция сейчас"},
+]
+
+
+def match_view(text: str) -> dict | None:
+    for spec in VIEW_INTENTS:
+        if re.search(spec["match"], text, re.I):
+            out = {"intent": spec["id"], "action": "open", "view": spec["view"]}
+            if spec["id"] in ("NAVAREA", "PASSAGE_PLAN"):
+                a, b = x_ports(text)
+                if a: out["from"] = a
+                if b: out["to"] = b
+            return out
+    return None
 
 
 # ---------------------------------------------------------------------- #
 # Вахта
 # ---------------------------------------------------------------------- #
-# Второй помощник стоит 00-04 и 12-16, это его штатная вахта.
 WATCH_SCHEDULES = {
     "2nd": [(0, 4), (12, 16)],
     "3rd": [(8, 12), (20, 24)],
@@ -203,18 +384,11 @@ WATCH_SCHEDULES = {
 
 
 def match_watch(text: str, now: datetime | None = None, schedule: str = "2nd") -> dict | None:
-    if not re.search(r"вахт\w*|watch|когда (?:мне )?засту|через сколько.*вахт", text, re.I):
+    if not re.search(r"вахт\w*|watch|когда (?:мне )?засту|смена", text, re.I):
         return None
     now = now or datetime.now(timezone.utc)
     hours = WATCH_SCHEDULES.get(schedule, WATCH_SCHEDULES["2nd"])
-
-    cur = None
-    for a, b in hours:
-        if a <= now.hour < b:
-            cur = (a, b)
-            break
-
-    # ближайшее начало вахты
+    cur = next(((a, b) for a, b in hours if a <= now.hour < b), None)
     nxt = None
     for day in (0, 1):
         for a, b in hours:
@@ -224,15 +398,65 @@ def match_watch(text: str, now: datetime | None = None, schedule: str = "2nd") -
     return {"now_on_watch": cur, "next": nxt, "schedule": hours}
 
 
+# ---------------------------------------------------------------------- #
+# COLREG: какое правило применимо
+# ---------------------------------------------------------------------- #
+def match_colreg(text: str) -> dict | None:
+    """Какое правило расхождения применимо.
+
+    Признаки ищем независимо друг от друга: фраза «судно справа, пеленг
+    035, что делать» и «что делать, если цель слева» одинаково законны,
+    а требовать определённый порядок слов было бы придиркой."""
+    direct = re.search(r"colreg|мппсс|правил\w*\s+\d|кто уступ|обгон|расхожден\w*\s+прав|навстреч|лоб в лоб|head.?on|ограниченн\w*\s+видим|restricted visibility", text, re.I)
+    asks = re.search(r"что делать|как расходит|как расход|мои действия|кто кого", text, re.I)
+    about = re.search(r"судн\w*|цел[ьи]\b|target|встречн\w*|справа|слева|туман|пеленг", text, re.I)
+    if not direct and not (asks and about):
+        return None
+
+    brg = x_bearing(text)
+    # Сторону могут назвать словом, без пеленга
+    if brg is None:
+        if re.search(r"справа|starboard", text, re.I):
+            brg = 45.0
+        elif re.search(r"слева|port side|по левому", text, re.I):
+            brg = 315.0
+    situation, rule, action = None, None, None
+
+    if re.search(r"обгон|overtaking", text, re.I) or (brg is not None and (brg > 112.5 and brg < 247.5)):
+        situation, rule = "OVERTAKING", "Правило 13"
+        action = "Обгоняющий уступает дорогу. Держись в стороне до полного расхождения."
+    elif re.search(r"навстреч|лоб в лоб|head.?on", text, re.I) or (brg is not None and (brg <= 5 or brg >= 355)):
+        situation, rule = "HEAD_ON", "Правило 14"
+        action = "Оба поворачивают вправо и расходятся левыми бортами."
+    elif brg is not None and 5 < brg <= 112.5:
+        situation, rule = "CROSSING", "Правило 15"
+        action = "Цель справа -- уступаешь ты. Поворот вправо, за корму цели. Правило 16: действуй заблаговременно и решительно."
+    elif brg is not None and 247.5 <= brg < 355:
+        situation, rule = "CROSSING", "Правило 15"
+        action = "Цель слева -- ты сохраняешь курс и скорость (Правило 17). Следи: если цель не уступает, действуй сам."
+    else:
+        situation, rule = "UNKNOWN", None
+        action = "Нужен пеленг на цель, чтобы определить ситуацию."
+
+    if re.search(r"туман|ограниченн\w*\s+видим|restricted visibility", text, re.I):
+        situation, rule = "RESTRICTED_VISIBILITY", "Правило 19"
+        action = ("В ограниченной видимости преимущественного права нет ни у кого. "
+                  "Сбавь ход до безопасного, будь готов остановиться. Избегай поворота влево "
+                  "на цель впереди траверза и поворота на цель на траверзе или позади.")
+
+    return {"intent": "COLREG", "situation": situation, "rule": rule,
+            "action": action, "bearing": brg}
+
+
 def ask_payload() -> dict:
-    """Подсказки для интерфейса: что вообще можно спросить."""
     return {
         "examples": [
-            "Иду 14 узлов, глубина 16 м, осадка 11.5, проседание 0.8. Какой запас под килём?",
-            "Какие NAVAREA влияют на мой маршрут из Одессы в Сингапур?",
+            "Посчитай UKC: глубина 15.8, осадка 11.4, прилив 0.8, squat 0.6",
+            "До Singapore 426 миль, скорость 14.5. Когда придём?",
+            "Какие NAVAREA влияют на мой маршрут?",
+            "Судно справа, пеленг 035, что делать?",
+            "Какой squat при 13 узлах?",
             "Через сколько часов моя вахта?",
-            "Проседание на 12 узлах, Cb 0.82, канал",
-            "Идти 480 миль на 13 узлах, когда придём?",
         ],
-        "schedules": {"2nd": "00-04 и 12-16", "3rd": "08-12 и 20-24", "ch": "04-08 и 16-20"},
+        "intents": [i["id"] for i in INTENTS] + [v["id"] for v in VIEW_INTENTS] + ["WATCH", "COLREG", "GENERAL"],
     }

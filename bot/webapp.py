@@ -486,13 +486,47 @@ def _api_gmdss(query: dict) -> dict:
     }
 
 
+def _api_cyclones(query: dict) -> dict:
+    """Тропические циклоны и их близость к маршруту.
+
+    Данные тянутся из сети, поэтому вызов асинхронный: выполняем его в
+    своём потоке обработчика. Если сеть недоступна -- отдаём пустой
+    список, а не ошибку: в рейсе это обычное дело."""
+    from .services.cyclone import distance_to_route, fetch_storms
+
+    try:
+        import asyncio
+        storms = asyncio.run(fetch_storms())
+    except Exception as e:
+        logger.warning("Не удалось получить сводку по циклонам: %s", e)
+        return {"storms": [], "error": "no_data"}
+
+    # если передан маршрут -- считаем расстояние от каждого циклона до линии
+    raw = (query.get("route") or [""])[0]
+    route = []
+    if raw:
+        try:
+            route = json.loads(raw)
+        except ValueError:
+            route = []
+    if route:
+        for st in storms:
+            pos = st.get("position")
+            if pos:
+                st["route_distance_nm"] = distance_to_route(pos, route)
+
+    return {"storms": storms}
+
+
 def _api_ask(query: dict) -> dict:
     """Ask Watchkeeper: понимаем вопрос и говорим, что с ним делать.
 
-    Ответ всегда одного вида: тип действия и данные к нему. Приложение
-    само решает, открыть ли расчёт, увести ли на проверку маршрута или
-    просто показать текст."""
-    from .services.ask import ask_payload, match_route, match_tool, match_watch
+    Приложение присылает вместе с вопросом то, что уже знает о судне,
+    позиции и маршруте. Это и есть главный смысл: человек спрашивает
+    "какой у меня запас под килём", а осадку своего судна диктовать
+    не должен -- она в карточке."""
+    from .services.ask import (ask_payload, match_colreg, match_intent,
+                               match_view, match_watch)
 
     text = (query.get("q") or [""])[0].strip()
     if not text:
@@ -500,111 +534,63 @@ def _api_ask(query: dict) -> dict:
 
     watch_role = (query.get("watch") or ["2nd"])[0]
 
-    # 1. Расчёт с подставленными числами
-    tool = match_tool(text)
-    if tool:
-        return {"kind": "tool", **tool, "q": text}
+    ctx = {}
+    raw = (query.get("ctx") or [""])[0]
+    if raw:
+        try:
+            ctx = json.loads(raw)
+        except ValueError:
+            ctx = {}
 
-    # 2. Проверка маршрута
-    route = match_route(text)
-    if route:
-        return {"kind": "route", **route, "q": text}
+    # Порядок проверок: сперва то, что распознаётся однозначно по смыслу,
+    # потом расчёты. Иначе «через сколько часов моя вахта» уедет в ETA,
+    # а «судно справа, что делать» -- в расчёт CPA вместо правил.
 
-    # 3. Вахта
+    # 1. Вахта
     w = match_watch(text, schedule=watch_role)
     if w:
         nxt = w["next"]
         return {
-            "kind": "watch",
+            "kind": "watch", "intent": "WATCH", "q": text,
             "on_watch": bool(w["now_on_watch"]),
             "current": list(w["now_on_watch"]) if w["now_on_watch"] else None,
             "next_at": nxt[0].isoformat() if nxt else None,
             "next_window": list(nxt[1]) if nxt else None,
-            "schedule": [list(x) for x in w["schedule"]],
-            "q": text,
         }
 
-    # 4. Всё остальное -- обычный вопрос к Claude.
+    # 2. Правила расхождения
+    col = match_colreg(text)
+    if col:
+        return {"kind": "colreg", "q": text, **col}
+
+    # 3. Расчёт: числа из фразы плюс то, что известно приложению
+    got = match_intent(text, ctx)
+    if got:
+        got["kind"] = "need" if got["missing"] else "tool"
+        got["q"] = text
+        return got
+
+    # 4. Раздел приложения
+    view = match_view(text)
+    if view:
+        return {"kind": "view", "q": text, **view}
+
+    # 5. Всё остальное -- обычный вопрос к Claude.
     #    Сервер многопоточный, каждый запрос в своём потоке, поэтому
-    #    асинхронный вызов можно выполнить прямо здесь. Ответ может идти
-    #    несколько секунд -- приложение показывает это ожиданием.
+    #    асинхронный вызов выполняется прямо здесь.
     qa = _state.get("qa")
     if qa is None:
-        return {"kind": "text", "q": text,
+        return {"kind": "text", "intent": "GENERAL", "q": text,
                 "text": "Ассистент не настроен: в .env не задан ключ ANTHROPIC_API_KEY."}
     try:
         import asyncio
-        answer = asyncio.run(qa.ask(text))
-        return {"kind": "text", "q": text, "text": answer}
+        return {"kind": "text", "intent": "GENERAL", "q": text,
+                "text": asyncio.run(qa.ask(text))}
     except Exception as e:
         logger.warning("Ассистент не ответил: %s", e)
-        return {"kind": "text", "q": text,
+        return {"kind": "text", "intent": "GENERAL", "q": text,
                 "text": "Ассистент сейчас недоступен. Расчёты и справочники работают без связи."}
 
-
-# Сводка циклонов живёт в памяти: источник обновляется раз в несколько
-# часов, дёргать его на каждое открытие вкладки незачем.
-_CYCLONE_CACHE = {"at": 0.0, "storms": None}
-_CYCLONE_TTL = 30 * 60
-
-
-def _api_cyclones(query: dict) -> dict:
-    """Тропические циклоны и их близость к маршруту.
-
-    Если переданы порты, считаем расстояние до линии перехода: расстояние
-    сейчас, наибольшее сближение по прогнозу и когда оно случится."""
-    import asyncio
-    import time as _t
-
-    from .services.cyclone import analyse_route, danger_level, fetch_storms
-
-    now = _t.time()
-    storms = _CYCLONE_CACHE["storms"]
-    if storms is None or (now - _CYCLONE_CACHE["at"]) > _CYCLONE_TTL:
-        try:
-            storms = asyncio.run(fetch_storms())
-            _CYCLONE_CACHE["storms"] = storms
-            _CYCLONE_CACHE["at"] = now
-        except Exception as e:
-            logger.warning("Сводка циклонов недоступна: %s", e)
-            if storms is None:
-                return {"storms": [], "error": "source_unavailable",
-                        "note": "Сводка Национального центра ураганов сейчас недоступна. "
-                                "Попробуй позже, остальные разделы работают."}
-
-    src = (query.get("from") or [""])[0].strip()
-    dst = (query.get("to") or [""])[0].strip()
-    route = []
-    route_label = None
-    if src and dst:
-        from .services.voyage import planned_route, resolve_point
-        a, b = resolve_point(src), resolve_point(dst)
-        if a and b:
-            plan = planned_route(a, b)
-            route = plan["points"]
-            route_label = f"{a.label} → {b.label}"
-
-    out = []
-    for st in storms:
-        item = dict(st)
-        if route:
-            item["route"] = analyse_route(st, route)
-            item["level"] = danger_level(item["route"]["closest_nm"], st.get("wind_kt"))
-        else:
-            item["level"] = "info"
-        out.append(item)
-
-    # сначала то, что ближе к маршруту
-    out.sort(key=lambda x: (x.get("route") or {}).get("closest_nm") or 99999)
-
-    return {
-        "storms": out,
-        "route_label": route_label,
-        "has_route": bool(route),
-        "coverage": "Атлантика и восточная часть Тихого океана (данные NHC). "
-                    "Тайфуны западной части Тихого океана ведёт JTWC, его сводки здесь нет.",
-        "updated": int(_CYCLONE_CACHE["at"]),
-    }
 
 
 def _api_stations(query: dict) -> dict:

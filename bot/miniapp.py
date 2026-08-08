@@ -807,6 +807,20 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .fcrow .fp{color:var(--text)}
 .fcrow .fw{color:var(--amber);font-weight:700}
 
+.arow .auto{
+  font-style:normal;font-size:9px;font-weight:750;color:var(--ok);
+  background:rgba(63,201,127,.14);border-radius:6px;padding:1px 5px;margin-left:5px;
+}
+.needq{font-size:12px;color:var(--amber);margin-bottom:9px;font-weight:650}
+.needf{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.needin{
+  background:var(--surf2);border:1px solid var(--line);color:var(--text);
+  border-radius:var(--r-sm);padding:11px 13px;font-size:14px;font-family:inherit;outline:none;
+  -webkit-appearance:none;
+}
+.needin:focus{border-color:var(--amber)}
+.amsg.colreg{border-left:3px solid var(--amber)}
+
 /* ---- Ask Watchkeeper ---- */
 .askbox{
   min-height:200px;padding-bottom:8px;
@@ -2973,6 +2987,14 @@ Object.assign(DICT,{
    'Fill in the ports in the Voyage section and distances will be measured to your passage line.',
  'Опасно':'Dangerous','Близко':'Close','Следить':'Watch','В стороне':'Clear'
 });
+Object.assign(DICT,{
+ 'Не хватает':'Missing','Посчитать':'Calculate','само':'auto','Открыть':'Open',
+ 'Встречное расхождение':'Head-on','Пересекающиеся курсы':'Crossing','Обгон':'Overtaking',
+ 'Ограниченная видимость':'Restricted visibility','Недостаточно данных':'Not enough data',
+ 'Это подсказка по правилам, а не указание. Решение принимает судоводитель по обстановке.':
+   'This is a reminder of the rules, not an instruction. The decision rests with the navigator.',
+ 'Пеленг на цель':'Target bearing','Предупреждения':'Warnings','Моя позиция':'My position'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -4881,13 +4903,36 @@ function askPush(role, data){
   renderAsk();
 }
 
+/* Что приложение уже знает о судне, месте и рейсе. Именно это избавляет
+   от повторного ввода: осадка лежит в карточке, позиция приходит с
+   устройства, расстояние -- из проложенного маршрута. */
+function askContext(){
+  const v=(VES&&VES.active)||{};
+  const ctx={vessel:{},position:{},route:{}};
+  [['draft','draft'],['cb','cb'],['speed','speed'],['loa','loa'],
+   ['hawse','hawse'],['air_draft','air_draft'],['cons','cons']].forEach(([a,b])=>{
+    if(v[b]!==undefined&&v[b]!=='') ctx.vessel[a]=v[b];
+  });
+  if(typeof geoFresh==='function'&&geoFresh()){
+    ctx.position.lat=geoFmtLat(GEO.lat); ctx.position.lon=geoFmtLon(GEO.lon);
+  }
+  if(typeof LAST_VOY!=='undefined'&&LAST_VOY&&LAST_VOY.distance_nm){
+    ctx.route.distance=LAST_VOY.distance_nm;
+    if(LAST_VOY.from) ctx.route.from=LAST_VOY.from.label;
+    if(LAST_VOY.to)   ctx.route.to=LAST_VOY.to.label;
+  }
+  return ctx;
+}
+
 async function askSend(text){
   text=(text||'').trim();
   if(!text||ASK_BUSY) return;
   askPush('me',{text});
   ASK_BUSY=true; renderAsk();
   try{
-    const r=await api('/api/ask?q='+encodeURIComponent(text)+'&watch='+encodeURIComponent(WATCH_ROLE));
+    const r=await api('/api/ask?q='+encodeURIComponent(text)
+      +'&watch='+encodeURIComponent(WATCH_ROLE)
+      +'&ctx='+encodeURIComponent(JSON.stringify(askContext())));
     askPush('bot', r);
   }catch(e){
     askPush('bot',{kind:'text',text:tr('Не получилось спросить: нет связи. Расчёты и справочники работают без неё.')});
@@ -4963,7 +5008,10 @@ function renderAsk(){
         const f=t&&t.fields.find(x=>x.k===k);
         const lab=f?tr(f.l):k;
         const val=m.values[k]==='confined'?tr('Стеснённая / канал'):m.values[k];
-        return `<div class="arow"><span>${esc(lab)}</span><b>${esc(String(val))}</b></div>`;
+        // Помечаем то, что подставилось из карточки судна или позиции --
+        // человек должен видеть, откуда взялось число, которое он не называл.
+        const auto=(m.from_context||{})[k];
+        return `<div class="arow"><span>${esc(lab)}${auto?' <i class="auto">'+esc(tr('само'))+'</i>':''}</span><b>${esc(String(val))}</b></div>`;
       }).join('');
       h+=`<div class="amsg bot card">
         <div class="ahead">${ico('sliders','sm')}${esc(tr('Открыть расчёт'))}: ${esc(tr(title))}</div>
@@ -4973,6 +5021,54 @@ function renderAsk(){
         ${m.hint_tool?`<button class="btn g wide" style="margin-top:8px"
            data-open="${esc(m.hint_tool.tool)}" data-vals="${esc(JSON.stringify(m.hint_tool.values||{}))}">
            ${esc(tr('Заодно посчитать проседание'))}</button>`:''}
+      </div>`;
+      return;
+    }
+
+    if(m.kind==='need'){
+      // Спрашиваем только то, чего не хватает, остальное уже собрано
+      const t=TOOLS.find(x=>x.id===m.tool);
+      const have=Object.keys(m.values||{}).map(k=>{
+        const f=t&&t.fields.find(x=>x.k===k);
+        const src=(m.from_context||{})[k];
+        return `<div class="arow"><span>${esc(f?tr(f.l):k)}${src?' <i class="auto">'+esc(tr('само'))+'</i>':''}</span><b>${esc(String(m.values[k]))}</b></div>`;
+      }).join('');
+      h+=`<div class="amsg bot card">
+        <div class="ahead">${ico('sliders','sm')}${esc(tr(ASK_TOOL_TITLES[m.tool]||m.tool))}</div>
+        ${have?`<div class="arows">${have}</div>`:''}
+        <div class="needq">${esc(tr('Не хватает'))}: ${m.missing.map(x=>esc(tr(x.label))+(x.unit?' ('+esc(tr(x.unit))+')':'')).join(', ')}</div>
+        <div class="needf">${m.missing.map(x=>
+          `<input class="needin" data-need="${esc(x.k)}" inputmode="decimal"
+             placeholder="${esc(tr(x.label))}${x.unit?', '+esc(tr(x.unit)):''}">`).join('')}</div>
+        <button class="btn wide" data-needgo="${esc(m.tool)}" data-have="${esc(JSON.stringify(m.values||{}))}">
+          ${esc(tr('Посчитать'))}</button>
+      </div>`;
+      return;
+    }
+
+    if(m.kind==='colreg'){
+      const sit={HEAD_ON:'Встречное расхождение',CROSSING:'Пересекающиеся курсы',
+                 OVERTAKING:'Обгон',RESTRICTED_VISIBILITY:'Ограниченная видимость',
+                 UNKNOWN:'Недостаточно данных'}[m.situation]||m.situation;
+      h+=`<div class="amsg bot card colreg">
+        <div class="ahead">${ico('radar','sm')}${esc(tr(sit))}${m.rule?' · '+esc(m.rule):''}</div>
+        ${m.bearing!==null&&m.bearing!==undefined?`<div class="arows"><div class="arow">
+          <span>${esc(tr('Пеленг на цель'))}</span><b>${Math.round(m.bearing)}°</b></div></div>`:''}
+        <div class="atext">${esc(m.action||'')}</div>
+        <div class="ahint">${esc(tr('Это подсказка по правилам, а не указание. Решение принимает судоводитель по обстановке.'))}</div>
+      </div>`;
+      return;
+    }
+
+    if(m.kind==='view'){
+      const names={NAVAREA:'Проверка маршрута',PASSAGE_PLAN:'Проверка маршрута',MSI:'Предупреждения',
+        VESSEL:'Моё судно',GMDSS_EQUIPMENT:'EPIRB Test',GMDSS_SART:'SART Test',GMDSS_DSC:'Тренажёр ЦИВ',
+        RADIO:'Радиостанции MF/HF',CHECKLIST:'Чек-листы',MAP:'Обстановка',POSITION:'Моя позиция'};
+      h+=`<div class="amsg bot card">
+        <div class="ahead">${ico('compass','sm')}${esc(tr(names[m.intent]||m.intent))}</div>
+        <button class="btn wide" data-view="${esc(m.view||'')}"
+          data-from="${esc(m.from||'')}" data-to="${esc(m.to||'')}">
+          ${esc(tr('Открыть'))}</button>
       </div>`;
       return;
     }
@@ -5010,6 +5106,21 @@ function renderAsk(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{
     let v={}; try{ v=JSON.parse(b.dataset.vals||'{}'); }catch(e){}
     hap('medium'); askOpenTool(b.dataset.open, v);
+  });
+  document.querySelectorAll('[data-needgo]').forEach(b=>b.onclick=()=>{
+    let v={}; try{ v=JSON.parse(b.dataset.have||'{}'); }catch(e){}
+    document.querySelectorAll('[data-need]').forEach(i=>{
+      const val=(i.value||'').trim();
+      if(val) v[i.dataset.need]=val.replace(',','.');
+    });
+    hap('medium'); askOpenTool(b.dataset.needgo, v);
+  });
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+    hap('medium');
+    const v=b.dataset.view;
+    if(!v){ requestPosition().then(()=>renderAsk()); return; }
+    if(v==='voy'&&(b.dataset.from||b.dataset.to)){ askOpenRoute(b.dataset.from,b.dataset.to); return; }
+    const g=VIEW_GROUP[v]||'tools'; switchGroup(g); setTimeout(()=>switchView(v),40);
   });
   document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{
     hap('medium'); askOpenRoute(b.dataset.from, b.dataset.to);
