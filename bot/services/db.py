@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
     is_premium INTEGER NOT NULL DEFAULT 0,
     premium_until TEXT,
     qa_count_today INTEGER NOT NULL DEFAULT 0,
-    qa_count_date TEXT
+    qa_count_date TEXT,
+    notif_seen_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS area_subscriptions (
@@ -115,6 +116,38 @@ CREATE TABLE IF NOT EXISTS daily_stats (
     in_force INTEGER NOT NULL,
     added INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (day, area_code)
+);
+
+CREATE TABLE IF NOT EXISTS ports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    country TEXT,
+    lat REAL,
+    lon REAL,
+    eta TEXT,
+    note TEXT,
+    ord_num INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS support_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    author TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    seen_by_user INTEGER NOT NULL DEFAULT 0,
+    seen_by_owner INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scope TEXT NOT NULL DEFAULT 'all',
+    kind TEXT NOT NULL DEFAULT 'news',
+    title TEXT NOT NULL,
+    body TEXT,
+    created_at TEXT NOT NULL
 );
 """
 
@@ -735,3 +768,118 @@ class Database:
             except (ValueError, TypeError):
                 pass
         return out
+
+    # ------------------------------------------------------------------ #
+    # Порты рейса
+    # ------------------------------------------------------------------ #
+    def get_ports(self, user_id: int) -> list[dict]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM ports WHERE user_id = ? ORDER BY ord_num, id", (user_id,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def add_port(self, user_id: int, name: str, country: str = "", lat=None, lon=None,
+                 eta: str = "", note: str = "") -> int:
+        with self._conn() as conn:
+            nxt = conn.execute(
+                "SELECT COALESCE(MAX(ord_num), -1) + 1 AS n FROM ports WHERE user_id = ?",
+                (user_id,)).fetchone()["n"]
+            cur = conn.execute("""
+                INSERT INTO ports (user_id, name, country, lat, lon, eta, note, ord_num, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, name, country, lat, lon, eta, note, nxt, _now()))
+            return cur.lastrowid
+
+    def update_port(self, user_id: int, port_id: int, **fields) -> None:
+        allowed = {"name", "country", "lat", "lon", "eta", "note", "ord_num"}
+        sets, vals = [], []
+        for k, v in fields.items():
+            if k in allowed:
+                sets.append(f"{k} = ?")
+                vals.append(v)
+        if not sets:
+            return
+        vals += [user_id, port_id]
+        with self._conn() as conn:
+            conn.execute(f"UPDATE ports SET {', '.join(sets)} WHERE user_id = ? AND id = ?", vals)
+
+    def delete_port(self, user_id: int, port_id: int) -> None:
+        with self._conn() as conn:
+            conn.execute("DELETE FROM ports WHERE user_id = ? AND id = ?", (user_id, port_id))
+
+    # ------------------------------------------------------------------ #
+    # Чат с поддержкой
+    # ------------------------------------------------------------------ #
+    def add_support_message(self, user_id: int, author: str, text: str) -> int:
+        """author -- 'user' или 'owner'. Своё сообщение автор уже видел."""
+        with self._conn() as conn:
+            cur = conn.execute("""
+                INSERT INTO support_messages (user_id, author, text, created_at, seen_by_user, seen_by_owner)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (user_id, author, text, _now(),
+                  1 if author == "user" else 0,
+                  1 if author == "owner" else 0))
+            return cur.lastrowid
+
+    def get_support_thread(self, user_id: int, limit: int = 100) -> list[dict]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM support_messages WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+                (user_id, limit)).fetchall()
+        return [dict(r) for r in reversed(rows)]
+
+    def mark_support_seen(self, user_id: int, by: str) -> None:
+        col = "seen_by_user" if by == "user" else "seen_by_owner"
+        with self._conn() as conn:
+            conn.execute(f"UPDATE support_messages SET {col} = 1 WHERE user_id = ?", (user_id,))
+
+    def support_unread_for_user(self, user_id: int) -> int:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM support_messages "
+                "WHERE user_id = ? AND author = 'owner' AND seen_by_user = 0", (user_id,)).fetchone()
+        return int(row["n"] or 0)
+
+    def support_threads(self, limit: int = 50) -> list[dict]:
+        """Список диалогов для владельца: кто писал и сколько непрочитанного."""
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT s.user_id,
+                       MAX(s.created_at) AS last_at,
+                       SUM(CASE WHEN s.author = 'user' AND s.seen_by_owner = 0 THEN 1 ELSE 0 END) AS unread,
+                       COUNT(*) AS total
+                FROM support_messages s
+                GROUP BY s.user_id
+                ORDER BY last_at DESC
+                LIMIT ?
+            """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+    # ------------------------------------------------------------------ #
+    # Уведомления (новости и обновления бота)
+    # ------------------------------------------------------------------ #
+    def add_notice(self, title: str, body: str = "", kind: str = "news", scope: str = "all") -> int:
+        with self._conn() as conn:
+            cur = conn.execute("""
+                INSERT INTO notices (scope, kind, title, body, created_at) VALUES (?, ?, ?, ?, ?)
+            """, (scope, kind, title, body, _now()))
+            return cur.lastrowid
+
+    def get_notices(self, user_id: int, limit: int = 30) -> list[dict]:
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM notices WHERE scope = 'all' OR scope = ?
+                ORDER BY id DESC LIMIT ?
+            """, (str(user_id), limit)).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_notif_seen_at(self, user_id: int) -> Optional[str]:
+        with self._conn() as conn:
+            row = conn.execute("SELECT notif_seen_at FROM users WHERE user_id = ?", (user_id,)).fetchone()
+        return row["notif_seen_at"] if row else None
+
+    def set_notif_seen_at(self, user_id: int, when: str | None = None) -> None:
+        with self._conn() as conn:
+            conn.execute("UPDATE users SET notif_seen_at = ? WHERE user_id = ?",
+                         (when or _now(), user_id))

@@ -18,7 +18,10 @@ from datetime import datetime, timedelta, timezone
 
 from ..config import config
 
-TRIAL_DAYS = 14
+# Длительность пробного берётся из .env (TRIAL_DAYS). Ноль -- пробного нет:
+# платные разделы закрыты сразу, и человеку сразу видна кнопка оплаты.
+# Именно так проверяется настоящая покупка за звёзды.
+TRIAL_DAYS = config.trial_days
 
 # Что доступно только на Premium (и в пробном периоде)
 PAID_FEATURES = {
@@ -49,6 +52,9 @@ def _parse(dt) -> datetime | None:
 
 def trial_state(db, user_id: int) -> dict:
     """Сколько осталось от пробного периода."""
+    if TRIAL_DAYS <= 0:
+        return {"active": False, "days_left": 0, "ends": None, "disabled": True}
+
     user = db.get_user(user_id)
     started = _parse(getattr(user, "created_at", None)) if user else None
     if started is None:

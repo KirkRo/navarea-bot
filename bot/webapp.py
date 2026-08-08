@@ -427,6 +427,224 @@ def _api_prompts(query: dict) -> dict:
     return prompts_payload()
 
 
+def _api_notifications(query: dict) -> dict:
+    """Лента колокольчика. ?seen=1 -- отметить всё прочитанным."""
+    from .services.notify import build_feed
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"items": [], "unread": 0, "error": "unauthorized"}
+
+    if (query.get("seen") or [""])[0] == "1":
+        feed = build_feed(db, user_id)
+        db.set_notif_seen_at(user_id)
+        db.mark_support_seen(user_id, "user")
+        for it in feed["items"]:
+            it["unread"] = False
+        feed["unread"] = 0
+        return feed
+
+    return build_feed(db, user_id)
+
+
+def _api_my_ports(query: dict) -> dict:
+    """Порты рейса пользователя: список, добавление, правка, удаление.
+
+    Это заменило прежний раздел «Рейс»: маршрут строится по списку портов
+    захода, а не по двум полям «откуда» и «куда». Не путать с /api/ports --
+    там живёт поиск по справочнику портов, он нужен для подсказок при вводе."""
+    from .services.voyage import resolve_point
+
+    db = _state["db"]
+    user_id, denied = _require("voyage", query)
+    if denied:
+        return denied
+
+    action = (query.get("action") or [""])[0]
+    pid = (query.get("id") or ["0"])[0]
+
+    if action == "add":
+        name = (query.get("name") or [""])[0].strip()
+        if name:
+            p = resolve_point(name)
+            db.add_port(user_id, p.name if p else name,
+                        p.country if p else "",
+                        p.lat if p else None, p.lon if p else None,
+                        (query.get("eta") or [""])[0].strip(),
+                        (query.get("note") or [""])[0].strip())
+    elif action == "del" and pid.isdigit():
+        db.delete_port(user_id, int(pid))
+    elif action == "edit" and pid.isdigit():
+        fields = {}
+        for f in ("name", "eta", "note"):
+            if f in query:
+                fields[f] = (query.get(f) or [""])[0].strip()
+        if fields.get("name"):
+            p = resolve_point(fields["name"])
+            if p:
+                fields.update({"name": p.name, "country": p.country, "lat": p.lat, "lon": p.lon})
+        db.update_port(user_id, int(pid), **fields)
+    elif action == "move" and pid.isdigit():
+        # переставляем порт выше или ниже соседа
+        rows = db.get_ports(user_id)
+        idx = next((i for i, r in enumerate(rows) if r["id"] == int(pid)), None)
+        step = -1 if (query.get("dir") or ["up"])[0] == "up" else 1
+        if idx is not None and 0 <= idx + step < len(rows):
+            a, b = rows[idx], rows[idx + step]
+            db.update_port(user_id, a["id"], ord_num=b["ord_num"])
+            db.update_port(user_id, b["id"], ord_num=a["ord_num"])
+
+    return _ports_payload(db, user_id)
+
+
+def _ports_payload(db, user_id: int) -> dict:
+    """Список портов плюс расстояния между соседними и итог по рейсу."""
+    from .services.voyage import Port, planned_route
+
+    rows = db.get_ports(user_id)
+    ports, prev = [], None
+    total = 0.0
+    for r in rows:
+        item = {"id": r["id"], "name": r["name"], "country": r.get("country") or "",
+                "lat": r.get("lat"), "lon": r.get("lon"),
+                "eta": r.get("eta") or "", "note": r.get("note") or "",
+                "leg_nm": None, "legs": []}
+        if prev and prev.get("lat") is not None and r.get("lat") is not None:
+            try:
+                plan = planned_route(Port(prev["name"], prev.get("country") or "", prev["lat"], prev["lon"]),
+                                     Port(r["name"], r.get("country") or "", r["lat"], r["lon"]))
+                item["leg_nm"] = round(plan["distance_nm"])
+                item["legs"] = [l.get("title") for l in plan.get("legs", []) if l.get("title")]
+                total += plan["distance_nm"]
+            except Exception:
+                logger.exception("Не удалось посчитать участок между портами")
+        ports.append(item)
+        prev = r
+
+    return {"ports": ports, "total_nm": round(total), "count": len(ports)}
+
+
+def _api_port_weather(query: dict) -> dict:
+    """Погода в порту: наш прогноз плюс ссылки на Windy и Ventusky.
+
+    Свой прогноз даёт цифры, которые можно вставить в расчёт; карты Windy
+    и Ventusky показывают картину вокруг порта -- в них удобно смотреть
+    фронты и поля ветра, чего числами не передать."""
+    import asyncio
+
+    from .services.voyage import resolve_point
+    from .services.weather import point_forecast
+
+    name = (query.get("q") or [""])[0].strip()
+    lat = (query.get("lat") or [""])[0]
+    lon = (query.get("lon") or [""])[0]
+
+    label = name
+    try:
+        flat, flon = float(lat), float(lon)
+    except ValueError:
+        p = resolve_point(name)
+        if not p:
+            return {"error": "not_found", "q": name}
+        flat, flon, label = p.lat, p.lon, p.label
+
+    try:
+        data = asyncio.run(point_forecast(flat, flon))
+    except Exception as e:
+        logger.warning("Погода в порту не получена: %s", e)
+        data = {"error": "no_data"}
+
+    data["place"] = label
+    data["lat"], data["lon"] = round(flat, 4), round(flon, 4)
+    data["maps"] = _weather_maps(flat, flon)
+    return data
+
+
+def _weather_maps(lat: float, lon: float) -> list[dict]:
+    """Внешние погодные карты по точке. Ссылки строятся по координатам,
+    ключей и регистрации не требуют."""
+    la, lo = round(lat, 3), round(lon, 3)
+    return [
+        {"id": "windy_wind", "name": "Windy · ветер", "site": "Windy",
+         "url": f"https://www.windy.com/?{la},{lo},8,i:pressure",
+         "embed": f"https://embed.windy.com/embed2.html?lat={la}&lon={lo}&zoom=7"
+                  f"&level=surface&overlay=wind&menu=&message=true&marker=true"
+                  f"&calendar=now&pressure=true&type=map&location=coordinates"
+                  f"&detail=true&detailLat={la}&detailLon={lo}&metricWind=kt&metricTemp=%C2%B0C"},
+        {"id": "windy_waves", "name": "Windy · волнение", "site": "Windy",
+         "url": f"https://www.windy.com/?{la},{lo},8,i:pressure,waves",
+         "embed": f"https://embed.windy.com/embed2.html?lat={la}&lon={lo}&zoom=7"
+                  f"&level=surface&overlay=waves&menu=&message=true&marker=true"
+                  f"&calendar=now&type=map&location=coordinates"
+                  f"&detail=true&detailLat={la}&detailLon={lo}&metricWind=kt&metricTemp=%C2%B0C"},
+        {"id": "ventusky_wind", "name": "Ventusky · ветер", "site": "Ventusky",
+         "url": f"https://www.ventusky.com/?p={la};{lo};7&l=wind-10m&w=kt"},
+        {"id": "ventusky_waves", "name": "Ventusky · волны", "site": "Ventusky",
+         "url": f"https://www.ventusky.com/?p={la};{lo};7&l=wave&w=kt"},
+        {"id": "ventusky_press", "name": "Ventusky · давление", "site": "Ventusky",
+         "url": f"https://www.ventusky.com/?p={la};{lo};6&l=pressure&w=kt"},
+    ]
+
+
+def _api_support(query: dict) -> dict:
+    """Переписка с создателем бота прямо в приложении.
+
+    Сообщение пользователя тут же уходит владельцу в Telegram обычным
+    сообщением от бота -- отвечать он может там же, ответом на него."""
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"messages": [], "error": "unauthorized"}
+
+    action = (query.get("action") or [""])[0]
+
+    if action == "send":
+        text = (query.get("text") or [""])[0].strip()
+        if text:
+            db.add_support_message(user_id, "user", text[:2000])
+            _notify_owner(user_id, text[:2000])
+    elif action == "seen":
+        db.mark_support_seen(user_id, "user")
+
+    msgs = db.get_support_thread(user_id, limit=100)
+    return {
+        "messages": [{"author": m["author"], "text": m["text"], "at": m["created_at"]} for m in msgs],
+        "unread": db.support_unread_for_user(user_id),
+    }
+
+
+def _notify_owner(user_id: int, text: str) -> None:
+    """Сообщение владельцу о новом обращении. Идёт напрямую по Bot API:
+    веб-сервер живёт в своём потоке, до объекта бота отсюда не дотянуться."""
+    import urllib.request
+
+    from .config import config
+
+    token = _state["bot_token"]
+    if not token or not config.owner_ids:
+        return
+
+    name = ""
+    try:
+        u = _state["db"].get_user(user_id)
+        name = (getattr(u, "first_name", "") or "") + (
+            f" @{u.username}" if getattr(u, "username", None) else "")
+    except Exception:
+        pass
+
+    body = (f"💬 Поддержка · от {name.strip() or user_id} (id {user_id})\n\n{text}\n\n"
+            f"Ответить: /reply {user_id} текст")
+    payload = json.dumps({"chat_id": config.owner_ids[0], "text": body}).encode("utf-8")
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data=payload, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        urllib.request.urlopen(req, timeout=15).read()
+    except Exception:
+        logger.exception("Не удалось уведомить владельца об обращении")
+
+
 def _api_invoice(query: dict) -> dict:
     """Ссылка на оплату подписки звёздами для кнопки внутри Mini App.
 
@@ -818,6 +1036,10 @@ API_ROUTES = {
     "/api/gmdss": _api_gmdss,
     "/api/dsc": _api_dsc,
     "/api/prompts": _api_prompts,
+    "/api/notifications": _api_notifications,
+    "/api/my-ports": _api_my_ports,
+    "/api/port-weather": _api_port_weather,
+    "/api/support": _api_support,
     "/api/invoice": _api_invoice,
     "/api/ship-search": _api_ship_search,
     "/api/access": _api_access,

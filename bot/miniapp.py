@@ -371,11 +371,76 @@ body.light .wkmark{background:#dceefb;border-color:#2b8fd8;color:#0d3050}
 .wkhero{
   position:relative;border-radius:var(--r-lg);overflow:hidden;border:1px solid #24526c;
   background:linear-gradient(135deg,#092a40,#071c2d 55%,#10223a);
-  box-shadow:var(--sh);padding:17px 16px 13px;min-height:176px;
+  box-shadow:var(--sh);padding:17px 16px 15px;min-height:212px;
 }
 body.light .wkhero{background:linear-gradient(135deg,#dceaf6,#eaf2fa 55%,#e2ecf7);border-color:#b9d2e4}
-.wkhero .art{position:absolute;right:-6px;top:0;bottom:0;width:190px;pointer-events:none;opacity:.95}
-.wkhero .art svg{width:100%;height:100%}
+
+/* ---- Живая сцена: Одесский порт ----
+   Воронцовский маяк, Потёмкинская лестница, памятник Дюку, портовые
+   краны и судно на ходу. Объём даётся слоями: дальний план почти не
+   двигается, ближние волны идут быстрее и перекрывают друг друга --
+   тот же приём, что в театральной перспективе.
+
+   Всё нарисовано и анимировано средствами SVG и CSS: ни одной картинки
+   и ни одной внешней библиотеки. В рейсе спутниковый канал дорогой,
+   и тянуть ради заставки мегабайты неправильно. */
+.wkhero .art{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:var(--r-lg)}
+.wkhero .art svg{width:100%;height:100%;display:block}
+.wkhero .eyebrow,.wkhero .greet,.wkhero .sub,.wkvessel{position:relative;z-index:2}
+.wkhero::after{
+  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:var(--r-lg);
+  background:linear-gradient(100deg,rgba(4,17,28,.92) 0%,rgba(4,17,28,.72) 38%,rgba(4,17,28,.15) 66%,transparent 100%);
+}
+body.light .wkhero::after{
+  background:linear-gradient(100deg,rgba(233,241,248,.94) 0%,rgba(233,241,248,.76) 38%,rgba(233,241,248,.2) 66%,transparent 100%);
+}
+
+/* маяк: огонь моргает, луч обходит горизонт */
+@keyframes lhLamp{0%,72%{opacity:.35}76%,88%{opacity:1}92%,100%{opacity:.35}}
+@keyframes lhBeam{0%{opacity:0}70%{opacity:0}78%{opacity:.5}86%{opacity:.5}100%{opacity:0}}
+@keyframes lhSweep{from{transform:rotate(-24deg)}to{transform:rotate(24deg)}}
+.lhLamp{animation:lhLamp 4s infinite}
+.lhBeam{animation:lhBeam 4s infinite;transform-origin:0 0}
+.lhSweep{animation:lhSweep 8s ease-in-out infinite alternate;transform-origin:0 0}
+
+/* судно идёт по воде и покачивается */
+@keyframes shipSail{from{transform:translateX(-58px)}to{transform:translateX(226px)}}
+@keyframes shipRoll{0%,100%{transform:rotate(-1.1deg) translateY(0)}50%{transform:rotate(1.1deg) translateY(1.6px)}}
+.shipGo{animation:shipSail 46s linear infinite}
+.shipRoll{animation:shipRoll 4.4s ease-in-out infinite;transform-origin:50% 90%}
+/* ходовые огни: правый зелёный, левый красный, топовый белый */
+@keyframes navRed{0%,46%{opacity:.35}50%,60%{opacity:1}64%,100%{opacity:.35}}
+@keyframes navGreen{0%,20%{opacity:.35}24%,34%{opacity:1}38%,100%{opacity:.35}}
+@keyframes mastFlash{0%,88%{opacity:.3}91%,95%{opacity:1}98%,100%{opacity:.3}}
+.navRed{animation:navRed 3s infinite}
+.navGreen{animation:navGreen 3s infinite}
+.mastFlash{animation:mastFlash 2.2s infinite}
+
+/* вода: три слоя с разной скоростью плюс блик по поверхности */
+@keyframes waveA{from{transform:translateX(0)}to{transform:translateX(-90px)}}
+@keyframes waveB{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+@keyframes waveC{from{transform:translateX(0)}to{transform:translateX(-70px)}}
+@keyframes shimmer{0%,100%{opacity:.18}50%{opacity:.44}}
+.waveA{animation:waveA 13s linear infinite}
+.waveB{animation:waveB 9s linear infinite}
+.waveC{animation:waveC 19s linear infinite}
+.shimmer{animation:shimmer 6s ease-in-out infinite}
+
+/* окна города зажигаются вразнобой */
+@keyframes winBlink{0%,100%{opacity:.25}45%,55%{opacity:.95}}
+.win{animation:winBlink 7s ease-in-out infinite}
+.win:nth-child(3n){animation-duration:9s;animation-delay:-2s}
+.win:nth-child(4n){animation-duration:11s;animation-delay:-5s}
+.win:nth-child(5n){animation-duration:6s;animation-delay:-3.5s}
+
+/* портовый кран возит стрелой */
+@keyframes craneSwing{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.craneArm{animation:craneSwing 14s ease-in-out infinite;transform-origin:12px 6px}
+
+@media (prefers-reduced-motion: reduce){
+  .lhLamp,.lhBeam,.lhSweep,.shipGo,.shipRoll,.navRed,.navGreen,.mastFlash,
+  .waveA,.waveB,.waveC,.shimmer,.win,.craneArm{animation:none}
+}
 .wkhero .eyebrow{font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--cyan);position:relative}
 body.light .wkhero .eyebrow{color:#0a6ea8}
 .wkhero .greet{font-size:23px;font-weight:850;letter-spacing:-.6px;margin-top:12px;position:relative;max-width:200px}
@@ -1527,6 +1592,119 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .scen .sm.ok{color:var(--ok)}
 .scen .sm .ico{width:11px;height:11px;margin:0}
 
+/* ---- Уведомления ---- */
+.ntf{
+  display:flex;gap:11px;padding:12px 13px;border-radius:var(--r-md);
+  border:1px solid var(--line);background:var(--surf);margin-bottom:8px;cursor:pointer;
+  text-align:left;width:100%;font-family:inherit;color:inherit;
+}
+.ntf.new{border-color:rgba(70,184,255,.4);background:linear-gradient(150deg,rgba(70,184,255,.09),var(--surf))}
+.ntf .ic{
+  width:30px;height:30px;flex:none;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;background:var(--surf2);color:var(--blue);
+}
+.ntf .ic .ico{width:15px;height:15px;margin:0}
+.ntf.urgent .ic{background:rgba(255,107,74,.16);color:var(--hot)}
+.ntf .tx{flex:1;min-width:0}
+.ntf .t1{font-size:13.5px;font-weight:750;line-height:1.3}
+.ntf .t2{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.ntf .t3{font-size:10px;color:var(--dim);margin-top:5px}
+.ntf .dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none;margin-top:6px}
+
+/* ---- Мои порты ---- */
+.pcard{
+  display:flex;gap:11px;align-items:flex-start;padding:12px 13px;border-radius:var(--r-md);
+  border:1px solid var(--line);background:var(--surf);margin-bottom:8px;
+}
+.pcard .num{
+  width:26px;height:26px;flex:none;border-radius:50%;background:var(--amber-soft);
+  color:var(--amber);font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+}
+.pcard .tx{flex:1;min-width:0}
+.pcard .t1{font-size:14.5px;font-weight:750}
+.pcard .t2{font-size:11.5px;color:var(--muted);margin-top:3px}
+.pcard .t3{font-size:11px;color:var(--sea);margin-top:4px;display:flex;align-items:center;gap:5px}
+.pcard .acts{display:flex;flex-direction:column;gap:5px;flex:none}
+.pact{
+  width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--surf2);
+  color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  padding:0;font-family:inherit;
+}
+.pact:active{border-color:var(--amber);color:var(--amber)}
+.pact.del:active{border-color:var(--hot);color:var(--hot)}
+.pleg{
+  display:flex;align-items:center;gap:8px;margin:-4px 0 8px 26px;padding-left:12px;
+  border-left:2px dashed var(--line);font-size:11px;color:var(--muted);min-height:22px;
+}
+.ptotal{
+  display:flex;justify-content:space-between;align-items:center;padding:13px 14px;
+  border-radius:var(--r-md);background:var(--surf2);border:1px solid var(--line);margin:12px 0;
+}
+.ptotal b{font-size:19px;font-weight:800;color:var(--amber);font-variant-numeric:tabular-nums}
+
+/* ---- Погода в порту ---- */
+.wxcard{
+  border-radius:var(--r-lg);border:1px solid var(--line);background:var(--surf);
+  padding:15px;margin-bottom:11px;
+}
+.wxhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}
+.wxhead .nm{font-size:15px;font-weight:800}
+.wxhead .at{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wxgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.wxcell{background:var(--surf2);border-radius:var(--r-sm);padding:9px 10px;border:1px solid var(--line)}
+.wxcell .v{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.wxcell .k{font-size:9px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.wxcell.hot .v{color:var(--hot)}
+.wxcell.warn .v{color:var(--amber)}
+.wxmaps{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.wxmap{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:750;
+  padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surf2);
+  color:var(--sea);cursor:pointer;font-family:inherit;
+}
+.wxmap:active{border-color:var(--sea)}
+.wxembed{
+  width:100%;height:290px;border:1px solid var(--line);border-radius:var(--r-md);
+  margin-top:11px;background:var(--surf2);
+}
+
+/* ---- Справка ---- */
+.faqcat{margin-bottom:9px;border:1px solid var(--line);border-radius:var(--r-md);
+  background:var(--surf);overflow:hidden}
+.faqhead{
+  display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;
+  font-size:14px;font-weight:750;width:100%;background:none;border:none;
+  color:inherit;font-family:inherit;text-align:left;
+}
+.faqhead .ico{width:16px;height:16px;margin:0;color:var(--amber);flex:none}
+.faqhead .cnt{margin-left:auto;font-size:10px;color:var(--dim);font-weight:700}
+.faqhead .ar{color:var(--muted);transition:transform .2s;flex:none}
+.faqcat.on .faqhead .ar{transform:rotate(90deg)}
+.faqitems{display:none;padding:0 14px 6px}
+.faqcat.on .faqitems{display:block}
+.faqq{
+  border-top:1px solid var(--line);padding:11px 0 0;width:100%;background:none;border-left:0;
+  border-right:0;border-bottom:0;text-align:left;font-family:inherit;color:inherit;cursor:pointer;
+}
+.faqq .q{font-size:13px;font-weight:700;line-height:1.35;display:flex;gap:7px}
+.faqq .q::before{content:'?';color:var(--amber);font-weight:800;flex:none}
+.faqq .a{font-size:12.5px;color:var(--muted);line-height:1.5;margin:7px 0 11px 15px;display:none}
+.faqq.on .a{display:block}
+.faqq .a b{color:var(--text)}
+.faqempty{font-size:12.5px;color:var(--muted);padding:14px 2px}
+
+/* ---- Поддержка ---- */
+.supmsg{
+  max-width:86%;padding:10px 13px;border-radius:var(--r-md);font-size:13.5px;line-height:1.45;
+  margin-bottom:9px;white-space:pre-wrap;word-break:break-word;
+}
+.supmsg.me{margin-left:auto;background:var(--amber-soft);border:1px solid rgba(240,160,60,.3)}
+.supmsg.owner{background:var(--surf);border:1px solid var(--line)}
+.supmsg .who{font-size:9.5px;font-weight:800;letter-spacing:.4px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:4px}
+.supmsg.owner .who{color:var(--sea)}
+
 
 
 .vhero{
@@ -1832,23 +2010,156 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <!-- Судно и приветствие -->
     <div class="wkhero" id="hero">
       <div class="art" data-notr>
-        <svg viewBox="0 0 190 176" fill="none" aria-hidden="true">
-          <g opacity=".38" stroke="#1c5570">
-            <circle cx="128" cy="86" r="67"/><circle cx="128" cy="86" r="48"/><circle cx="128" cy="86" r="29"/>
+        <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#071a2c"/><stop offset=".55" stop-color="#12406b"/>
+              <stop offset="1" stop-color="#2a5c7e"/>
+            </linearGradient>
+            <linearGradient id="hSea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a6390"/><stop offset="1" stop-color="#071d31"/>
+            </linearGradient>
+            <radialGradient id="hGlow" cx=".5" cy=".5" r=".5">
+              <stop offset="0" stop-color="#ffd894" stop-opacity=".85"/>
+              <stop offset="1" stop-color="#ffd894" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="hBeam" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffe6b0" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#ffe6b0" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <rect width="400" height="200" fill="url(#hSky)"/>
+
+          <!-- звёзды -->
+          <g fill="#dcecff">
+            <circle cx="36" cy="22" r="1" opacity=".7"/><circle cx="88" cy="14" r=".8" opacity=".5"/>
+            <circle cx="150" cy="28" r="1" opacity=".65"/><circle cx="214" cy="17" r=".9" opacity=".55"/>
+            <circle cx="278" cy="30" r="1" opacity=".6"/><circle cx="336" cy="19" r=".8" opacity=".5"/>
+            <circle cx="376" cy="38" r="1" opacity=".55"/><circle cx="118" cy="44" r=".7" opacity=".4"/>
           </g>
-          <path d="M128 86 L176 52" stroke="#25d6a0" stroke-width="2" opacity=".75"/>
-          <circle cx="176" cy="52" r="4" fill="#ffcf45"/>
-          <circle cx="105" cy="108" r="4" fill="#ff5c65"/>
-          <g id="vessel-illustration">
-            <path d="M41 107 L89 107 L103 121 L23 121 Z" fill="#b9c9d5" stroke="#e7f3fb"/>
-            <path d="M31 107 L42 84 L79 84 L90 107Z" fill="#15374c" stroke="#70c9f7"/>
-            <rect x="48" y="74" width="29" height="10" rx="2" fill="#1b4c68" stroke="#6ecbff"/>
-            <path d="M61 70V54M55 57h12" stroke="#a9d8ef" stroke-width="2"/>
-            <rect x="52" y="89" width="5" height="6" fill="#5ed7ff"/>
-            <rect x="61" y="89" width="5" height="6" fill="#5ed7ff"/>
-            <rect x="70" y="89" width="5" height="6" fill="#5ed7ff"/>
-            <path d="M23 121 C40 130 84 130 103 121 C90 139 40 142 23 121Z" fill="#12608a"/>
-            <path d="M22 135 Q61 143 105 135" stroke="#48c9ff" stroke-width="1.5"/>
+
+          <!-- Одесса: город на холме, слева Потёмкинская лестница и Дюк -->
+          <g>
+            <!-- склон берега -->
+            <path d="M0 112 L118 96 L214 100 L400 92 L400 132 L0 132 Z" fill="#0b2137"/>
+            <!-- силуэт застройки -->
+            <g fill="#102b45">
+              <rect x="6" y="80" width="20" height="32"/><rect x="30" y="72" width="14" height="40"/>
+              <rect x="48" y="86" width="18" height="26"/><rect x="70" y="76" width="12" height="36"/>
+              <rect x="150" y="82" width="16" height="20"/><rect x="170" y="74" width="20" height="28"/>
+              <rect x="194" y="86" width="14" height="16"/>
+              <rect x="238" y="78" width="18" height="18"/><rect x="260" y="70" width="12" height="26"/>
+              <rect x="278" y="82" width="22" height="14"/>
+            </g>
+            <!-- окна -->
+            <g fill="#ffd894">
+              <rect class="win" x="10" y="86" width="3" height="4"/><rect class="win" x="17" y="86" width="3" height="4"/>
+              <rect class="win" x="10" y="94" width="3" height="4"/><rect class="win" x="34" y="78" width="3" height="4"/>
+              <rect class="win" x="34" y="88" width="3" height="4"/><rect class="win" x="52" y="92" width="3" height="4"/>
+              <rect class="win" x="59" y="92" width="3" height="4"/><rect class="win" x="74" y="82" width="3" height="4"/>
+              <rect class="win" x="155" y="88" width="3" height="4"/><rect class="win" x="176" y="80" width="3" height="4"/>
+              <rect class="win" x="183" y="80" width="3" height="4"/><rect class="win" x="243" y="84" width="3" height="4"/>
+              <rect class="win" x="264" y="76" width="3" height="4"/><rect class="win" x="284" y="88" width="3" height="4"/>
+            </g>
+
+            <!-- Потёмкинская лестница -->
+            <g fill="#16334f">
+              <path d="M96 112 L140 112 L136 116 L100 116 Z"/>
+              <path d="M99 117 L137 117 L133 121 L103 121 Z"/>
+              <path d="M102 122 L134 122 L131 126 L105 126 Z"/>
+              <path d="M105 127 L131 127 L128 131 L108 131 Z"/>
+            </g>
+            <g stroke="#22496b" stroke-width=".7">
+              <path d="M96 112 L100 131"/><path d="M140 112 L136 131"/>
+            </g>
+            <!-- памятник Дюку на верхней площадке -->
+            <g>
+              <rect x="115" y="98" width="6" height="12" fill="#1d3f5e"/>
+              <rect x="113" y="96" width="10" height="3" fill="#22496b"/>
+              <path d="M118 96 L118 88" stroke="#9fc0da" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="118" cy="86" r="1.9" fill="#b7d3e8"/>
+              <path d="M118 91 L114 89" stroke="#9fc0da" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M118 90 L122 93" stroke="#9fc0da" stroke-width="1.4" stroke-linecap="round"/>
+            </g>
+
+            <!-- портовые краны справа -->
+            <g stroke="#1b3f5e" stroke-width="2" fill="none">
+              <path d="M312 112 L312 84 M326 112 L326 84"/>
+              <g class="craneArm" transform="translate(300,78)">
+                <path d="M12 6 L52 6" stroke="#1b3f5e" stroke-width="2.4"/>
+                <path d="M12 6 L2 14" stroke="#1b3f5e" stroke-width="2"/>
+                <path d="M40 6 L40 16" stroke="#1b3f5e" stroke-width="1.4"/>
+                <rect x="37" y="16" width="6" height="5" fill="#1b3f5e" stroke="none"/>
+              </g>
+              <path d="M352 112 L352 88 M366 112 L366 88 M352 88 L390 88"/>
+            </g>
+            <!-- контейнеры на причале -->
+            <g>
+              <rect x="306" y="104" width="14" height="7" fill="#2c5a7d"/>
+              <rect x="322" y="104" width="14" height="7" fill="#33506b"/>
+              <rect x="306" y="96" width="14" height="7" fill="#26506f"/>
+              <rect x="344" y="104" width="14" height="7" fill="#2f5f82"/>
+            </g>
+          </g>
+
+          <!-- Воронцовский маяк на молу -->
+          <g>
+            <path d="M196 132 L262 132 L262 138 L196 138 Z" fill="#0d2740"/>
+            <path d="M222 132 L224 104 L234 104 L236 132 Z" fill="#e9eff5"/>
+            <path d="M229 132 L229 104 L234 104 L236 132 Z" fill="#c3d0dc"/>
+            <path d="M223.4 118 h11.2 l.5 6 h-12.2 z" fill="#c9463a"/>
+            <path d="M224.5 108 h8.9 l.4 5 h-9.7 z" fill="#c9463a"/>
+            <rect x="221" y="100" width="16" height="4" fill="#1d3f5e"/>
+            <rect x="223.5" y="93" width="11" height="8" rx="1.5" fill="#3d5f80"/>
+            <rect class="lhLamp" x="225" y="94" width="8" height="6" rx="1" fill="#ffd894"/>
+            <circle class="lhLamp" cx="229" cy="97" r="9" fill="url(#hGlow)"/>
+            <path d="M223 93 L229 87 L235 93 Z" fill="#1d3f5e"/>
+            <rect x="228.2" y="82" width="1.6" height="5" fill="#1d3f5e"/>
+            <!-- луч, обходящий горизонт -->
+            <g class="lhSweep" transform="translate(229,97)">
+              <polygon class="lhBeam" points="0,0 190,-46 190,46" fill="url(#hBeam)"/>
+            </g>
+          </g>
+
+          <!-- море -->
+          <rect y="130" width="400" height="70" fill="url(#hSea)"/>
+          <!-- лунная дорожка -->
+          <path class="shimmer" d="M214 132 L244 132 L268 200 L190 200 Z" fill="#ffd894" opacity=".2"/>
+
+          <!-- судно на ходу -->
+          <g class="shipGo">
+            <g class="shipRoll" transform="translate(0,138)">
+              <path d="M8 16 L64 16 L70 24 L2 24 Z" fill="#132f47"/>
+              <path d="M8 16 L64 16 L63 18 L9 18 Z" fill="#1d4668"/>
+              <rect x="46" y="6" width="16" height="10" rx="1" fill="#1b3f5e"/>
+              <rect x="49" y="8.5" width="3" height="3" fill="#cfe6fb" opacity=".9"/>
+              <rect x="55" y="8.5" width="3" height="3" fill="#cfe6fb" opacity=".9"/>
+              <rect x="14" y="10" width="7" height="6" fill="#2c5a7d"/>
+              <rect x="24" y="10" width="7" height="6" fill="#33506b"/>
+              <rect x="34" y="10" width="7" height="6" fill="#26506f"/>
+              <rect x="14" y="4" width="7" height="6" fill="#2f5f82"/>
+              <rect x="24" y="4" width="7" height="6" fill="#2c5a7d"/>
+              <path d="M57 6 L57 -4" stroke="#8fa8c0" stroke-width="1.4"/>
+              <circle class="mastFlash" cx="57" cy="-5" r="1.8" fill="#ffffff"/>
+              <circle class="navGreen" cx="68" cy="19" r="1.7" fill="#3fc97f"/>
+              <circle class="navRed" cx="4" cy="19" r="1.7" fill="#ff5c65"/>
+              <path d="M2 24 Q36 30 70 24 Q36 33 2 24 Z" fill="#0d3557" opacity=".85"/>
+            </g>
+          </g>
+
+          <!-- волны: три слоя, каждый со своей скоростью -->
+          <g class="waveA">
+            <path d="M-100 150 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 v60 h-600 z"
+                  fill="#0f4269" opacity=".85"/>
+          </g>
+          <g class="waveB">
+            <path d="M-130 162 q30 -7 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v50 h-660 z"
+                  fill="#0b3151" opacity=".9"/>
+          </g>
+          <g class="waveC">
+            <path d="M-80 176 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 v40 h-560 z"
+                  fill="#071f36"/>
           </g>
         </svg>
       </div>
@@ -1885,13 +2196,8 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     </div>
 
 
-    <div id="histBox"></div>
-    <div class="sech" style="margin-top:17px"><h3>Избранные районы</h3><a id="toAreas">Все →</a></div>
-    <div id="favlist"></div>
-
-
-    <div id="lastVoyBox"></div>
     <div id="lastCalcBox"></div>
+    <div id="histBox"></div>
   </section>
 
   <!-- РАЙОНЫ -->
@@ -1975,6 +2281,45 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <section id="v-ship" class="hidden">
     <div class="vhead"><button class="vback" data-back></button><h3>Моё судно</h3></div>
     <div id="vesselBox"><div class="sk card"></div><div class="sk card"></div></div>
+  </section>
+
+  <!-- МОИ ПОРТЫ -->
+  <section id="v-ports" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Мои порты</h3></div>
+    <div class="hint" id="portsHint"></div>
+    <div class="fld">
+      <label>Добавить порт захода</label>
+      <div class="sbox" id="pnewBox"><input id="pnew" placeholder="Например Constanta" autocomplete="off"></div>
+      <div class="sugg" id="snew"></div>
+    </div>
+    <div id="portsBox"></div>
+  </section>
+
+  <!-- СПРАВКА -->
+  <section id="v-faq" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Справка</h3></div>
+    <div class="sbox" style="margin-bottom:12px">
+      <input id="faqQ" placeholder="Найти в справке…" autocomplete="off">
+    </div>
+    <div id="faqBox"></div>
+  </section>
+
+  <!-- ПОДДЕРЖКА -->
+  <section id="v-support" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Поддержка</h3></div>
+    <div class="hint" id="supHint"></div>
+    <div id="supBox" class="askbox"></div>
+    <div class="askbar">
+      <input id="supInput" class="askinput" placeholder="Опиши, что случилось…" autocomplete="off">
+      <button id="supSend" class="asksend">→</button>
+    </div>
+  </section>
+
+  <!-- УВЕДОМЛЕНИЯ -->
+  <section id="v-notif" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Уведомления</h3>
+      <a id="notifClear" class="vsub">Прочитано</a></div>
+    <div id="notifBox"></div>
   </section>
 
   <!-- НАСТРОЙКИ -->
@@ -3480,6 +3825,39 @@ Object.assign(DICT,{
  'Моё судно':'My Vessel','Судно':'Vessel','Документы':'Documents','Расчёты':'Calculations',
  'МОЁ СУДНО':'MY VESSEL','НА СВЯЗИ':'ONLINE','БЕЗ СВЯЗИ':'OFFLINE',
  'Сценарии':'Scenarios','Как отвечать':'Answer style','спросит':'will ask',
+ 'Мои порты':'My Ports','Справка':'Help','Поддержка':'Support','Уведомления':'Notifications',
+ 'Прочитано':'Mark read','Уведомлений пока нет.':'No notifications yet.',
+ 'Портов пока нет. Добавь первый порт захода выше.':'No ports yet. Add your first port of call above.',
+ 'Добавить порт захода':'Add a port of call','Весь переход':'Whole passage',
+ 'Проверить предупреждения по рейсу':'Check warnings along the voyage',
+ 'Убрать порт из рейса?':'Remove this port from the voyage?',
+ 'Нужны хотя бы два порта.':'At least two ports are needed.',
+ 'Погода в порту':'Port weather','порт не найден в справочнике':'port not in the directory',
+ 'расстояние не посчитано':'distance not calculated',
+ 'Список портов захода. По нему считается переход, проверяются предупреждения и берётся погода.':
+   'Your ports of call. The passage, warnings and weather are all built from this list.',
+ 'Погода в портах захода':'Weather at your ports','Карта прямо здесь':'Map right here',
+ 'ветер':'wind','порывы':'gusts','волна':'wave','зыбь':'swell','видимость':'visibility',
+ 'давление':'pressure','баллов':'force','гПа':'hPa',
+ 'Погоду сейчас получить не удалось. Карты ниже работают отдельно.':
+   'Could not fetch the forecast. The maps below work independently.',
+ 'Добавь порты захода в разделе «Моё судно» → «Мои порты» — по ним появится сводка погоды и карты.':
+   'Add ports of call in My Vessel → My Ports — the forecast and maps will follow.',
+ 'Добавь порты захода в «Мои порты», и расстояние будет считаться до линии перехода.':
+   'Add ports of call in My Ports and distances will be measured to your passage line.',
+ 'Написать в поддержку':'Contact support',
+ 'Переписка с создателем бота прямо здесь':'Talk to the bot author right here',
+ 'Частые вопросы по боту и его разделам':'Common questions about the bot',
+ 'Пишешь напрямую создателю бота. Ответ придёт сюда и сообщением в чат.':
+   'You are writing to the bot author. The reply arrives here and as a chat message.',
+ 'Опиши, что не работает или чего не хватает. Прочту и отвечу.':
+   'Describe what is broken or missing. I read every message.',
+ 'Опиши, что случилось…':'Describe what happened…','Ты':'You',
+ 'Поддержка работает только внутри Telegram — открой приложение кнопкой в чате с ботом.':
+   'Support works only inside Telegram — open the app from the chat with the bot.',
+ 'Найти в справке…':'Search the help…',
+ 'Ничего не нашлось. Спроси в поддержке — отвечу и добавлю в справку.':
+   'Nothing found. Ask support — I will answer and add it here.',
  'все данные подставлены':'all data filled in',
  'Библиотека сценариев не загрузилась — нужна связь с сервером.':
    'The scenario library did not load — a server connection is needed.',
@@ -4080,13 +4458,7 @@ function renderDash(){
   const nb=$('#notifCnt');
   if(nb){ const t=(S.stats&&S.stats.totals)||{}; nb.textContent=t.added_today?String(t.added_today):''; }
 
-  if(S.stats&&S.stats.totals){
-    const fav=(S.stats.areas||[]).filter(a=>S.favs.includes(a.code));
-    $('#favlist').innerHTML=fav.length?collapsible('fav',fav,areaCard)
-      :`<div class="empty">${ico('star')}Отметь районы звёздочкой — они появятся здесь для быстрого доступа.</div>`;
-    bindAreas();
-  }
-  renderLastVoyage(); renderLastCalcs();
+  renderLastCalcs();
 }
 
 function areaCard(a,i){
@@ -4359,7 +4731,10 @@ function focusWarning(w){
 }
 
 /* --- рейс --- */
-function setupPort(i,s){
+/* Подсказки при вводе порта. onPick -- что сделать с выбранным портом:
+   в проверке маршрута его достаточно вписать в поле, а в «Моих портах»
+   выбор сразу добавляет порт в рейс. */
+function setupPort(i,s,onPick){
   const inp=$(i),sug=$(s);let t=null;
   inp.oninput=()=>{
     clearTimeout(t);const v=inp.value.trim();
@@ -4370,7 +4745,9 @@ function setupPort(i,s){
         sug.innerHTML=(r.results||[]).map(p=>`<div data-p="${esc(p.name)}">${esc(p.label)}</div>`).join('');
         sug.classList.toggle('on',(r.results||[]).length>0);
         sug.querySelectorAll('[data-p]').forEach(d=>d.onclick=()=>{
-          inp.value=d.dataset.p;sug.classList.remove('on');hap();
+          sug.classList.remove('on');hap();
+          if(onPick){ inp.value=''; onPick(d.dataset.p); }
+          else inp.value=d.dataset.p;
         });
       }catch(e){sug.classList.remove('on')}
     },220);
@@ -4443,21 +4820,27 @@ const GROUPS={
   ask:{t:'Ask WatchKeeper',i:'compass',subs:[{v:'ask',t:'Ask WatchKeeper',i:'compass'}]},
   map:{t:'Карта',i:'map',subs:[
     {v:'map',t:'Обстановка',i:'map'},
-    {v:'voy',t:'Маршрут',i:'route'},
     {v:'cyc',t:'Погода',i:'wave'},
     {v:'zones',t:'Зоны',i:'globe'}]},
   profile:{t:'Моё судно',i:'ship',subs:[
     {v:'ship',t:'Судно',i:'ship'},
+    {v:'ports',t:'Мои порты',i:'anchor'},
     {v:'bridge',t:'Документы',i:'flag'},
+    {v:'faq',t:'Справка',i:'archive'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
-const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc'];
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc','ports','faq','support','notif'];
 const VIEW_GROUP={};
 Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
 // GMDSS-разделы открываются карточками с главного экрана "Инструменты", а не
 // отдельными вкладками сверху -- так их не пять в ряд, а по категориям, как
 // просили: сначала общий раздел, оборудование ГМССБ внутри него отдельным блоком.
 ['radio','dsc','epirb','sart'].forEach(v=>VIEW_GROUP[v]='tools');
+// Проверка рейса открывается из «Моих портов» и из ассистента, отдельной
+// вкладки у неё больше нет: маршрут задаётся списком портов захода.
+VIEW_GROUP['voy']='profile';
+['support','faq'].forEach(v=>VIEW_GROUP[v]='profile');
+VIEW_GROUP['notif']='home';
 let S_GROUP='home';
 
 
@@ -4575,8 +4958,11 @@ function switchView(v){
   try{ renderSubtabs(); }catch(e){ console.warn('подвкладки:',e); }
   try{ bindBackButtons(); }catch(e){}
 
-  const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='dash');
-  const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='dash'&&v!=='areas');
+  // Лента районов живёт в карте и в списке районов. На главной её нет:
+  // главный экран отвечает на вопрос «что у меня сейчас», а не показывает
+  // разбивку по регионам.
+  const topCats=$('#cats'); if(topCats) topCats.classList.toggle('hidden', v!=='map'&&v!=='areas');
+  const topSearch=$('#topSearch'); if(topSearch) topSearch.classList.toggle('hidden', v!=='areas');
   try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}
 
   if(v==='tools') renderTools();
@@ -4584,14 +4970,18 @@ function switchView(v){
   if(v==='bridge'){ if(gate('#bridgeBox','bridge')) loadBridge(); }
   if(v==='ship'){ if(gate('#v-ship','vessel')) loadVessel(); }
   if(v==='settings') renderSettings();
-  if(v==='cyc'){ renderCyclones(); if(!CYC) loadCyclones(); }
+  if(v==='cyc'){ renderCyclones(); loadWeatherPorts(); if(!CYC) loadCyclones(); }
   if(v==='ask'){ renderAsk(); loadAskHints().then(renderAsk); setTimeout(bindAskInput,60); }
   if(v==='dsc'){ renderDSC(); loadDSC().then(renderDSC); }
   if(v==='epirb'){ if(gate('#epirbBox','bridge')) loadGmdss().then(()=>renderGmdss('epirb')); }
   if(v==='sart'){ if(gate('#sartBox','bridge')) loadGmdss().then(()=>renderGmdss('sart')); }
   if(v==='radio') setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
-  if(v==='dash') loadHistory();
+  if(v==='dash'){ loadHistory(); loadNotifications(true); }
   if(v==='voy') gate('#v-voy','voyage');
+  if(v==='ports'){ if(gate('#v-ports','voyage')) loadPorts(); }
+  if(v==='faq') renderFaq();
+  if(v==='support'){ loadSupport(); setTimeout(bindSupportInput,60); }
+  if(v==='notif'){ renderNotif(); loadNotifications().then(markNotifSeen); }
   if(v==='zones') renderZones();
   if(v==='map') setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
   setTimeout(applyLang,30);
@@ -4609,7 +4999,8 @@ const GROUP_LAST={};
 // раньше ошибка в любом другом месте оставляла панель без обработчиков,
 // и внешне это выглядело как "кнопки не нажимаются".
 // (нижнее меню обрабатывается делегированием в начале скрипта)
-$('#toAreas').onclick=()=>{hap();S.cat='all';renderCats();switchView('areas');renderAreas()};
+{ const ta=$('#toAreas');
+  if(ta) ta.onclick=()=>{hap();S.cat='all';renderCats();switchView('areas');renderAreas()}; }
 $('#fbtn').onclick=()=>{
   hap();
   const order=['count','new','code'],next=order[(order.indexOf(S.sort)+1)%3];
@@ -5654,6 +6045,19 @@ function renderSettings(){
       <button class="btn g wide" id="setClear" style="margin-top:9px">Очистить сохранённые данные</button>
     </div>
 
+    <div class="dpanel"><h4>Поддержка</h4>
+      <div class="sw" data-set="support">
+        <div style="min-width:0"><div class="t">${ico('compass','sm')}Написать в поддержку</div>
+          <div class="d">Переписка с создателем бота прямо здесь</div></div>
+        <span class="rtag am">${(SUP&&SUP.unread)?SUP.unread:'→'}</span>
+      </div>
+      <div class="sw" data-set="faq">
+        <div style="min-width:0"><div class="t">${ico('archive','sm')}Справка</div>
+          <div class="d">Частые вопросы по боту и его разделам</div></div>
+        <span class="rtag am">→</span>
+      </div>
+    </div>
+
     <div class="dpanel"><h4>О приложении</h4>
       <div class="tres"><span class="tl">WatchKeeper</span><span class="tv" style="font-size:13px">${APP_VERSION}</span></div>
       <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Данные справочные. Официальный источник — оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.</div>
@@ -5677,6 +6081,10 @@ function renderSettings(){
     if(HAPTIC) hap('medium');
     renderSettings();
   };
+  const sup=box.querySelector('[data-set="support"]');
+  if(sup) sup.onclick=()=>{ hap('medium'); switchView('support'); };
+  const fq=box.querySelector('[data-set="faq"]');
+  if(fq) fq.onclick=()=>{ hap('medium'); switchView('faq'); };
   const ds=box.querySelector('[data-set="dscsnd"]');
   if(ds) ds.onclick=()=>{
     DSC_SND=!DSC_SND; localStorage.setItem('navarea_dscsnd',DSC_SND?'1':'0');
@@ -5782,23 +6190,58 @@ function cycWhen(iso){
     tr('через')+' '+(hh?hh+' '+tr('ч')+' ':'')+mm+' '+tr('мин');
 }
 
+/* ---- Погода по портам захода ----
+   Свой прогноз даёт цифры, которые можно вставить в расчёт, а карты Windy
+   и Ventusky показывают поля ветра и волнения вокруг порта -- этого
+   числами не передашь. Поэтому и то, и другое рядом. */
+let WX_PORT=null;
+
+async function loadWeatherPorts(){
+  if(!PORTS) await loadPorts();
+  const list=(PORTS&&PORTS.ports)||[];
+  if(!list.length){ renderCyclones(); return; }
+  const p=WX_PORT&&list.find(x=>x.id===WX_PORT) ? list.find(x=>x.id===WX_PORT) : list[0];
+  WX_PORT=p.id;
+  if(!PORT_WX[p.id]) await loadPortWeather(p);
+  renderCyclones();
+}
+
+function weatherPortsHtml(){
+  const list=(PORTS&&PORTS.ports)||[];
+  if(!list.length){
+    return `<div class="hint">${ico('alert','xs')} ${
+      esc(tr('Добавь порты захода в разделе «Моё судно» → «Мои порты» — по ним появится сводка погоды и карты.'))}</div>`;
+  }
+  const cur=list.find(p=>p.id===WX_PORT)||list[0];
+  let h=`<div class="sech"><h3>${esc(tr('Погода в портах захода'))}</h3></div>
+    <div class="chips">${list.map(p=>
+      `<button class="chip ${p.id===cur.id?'on':''}" data-wxp="${p.id}">${esc(p.name)}</button>`).join('')}</div>`;
+  h+=PORT_WX[cur.id] ? portWxHtml(PORT_WX[cur.id], cur.id)
+                     : '<div class="sk card" style="height:96px"></div>';
+  return h;
+}
+
 function renderCyclones(){
   const box=$('#cycBox'); if(!box) return;
 
-  if(CYC_BUSY&&!CYC){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
-  if(!CYC){ box.innerHTML=''; return; }
+  let h=weatherPortsHtml();
+  h+=`<div class="sech" style="margin-top:18px"><h3>${esc(tr('Тропические циклоны'))}</h3></div>`;
 
-  let h='';
+  if(CYC_BUSY&&!CYC){
+    box.innerHTML=h+'<div class="sk card"></div>';
+    bindWeatherPorts(box); return;
+  }
+  if(!CYC){ box.innerHTML=h; bindWeatherPorts(box); return; }
 
   if(CYC.error){
     h+=`<div class="empty">${ico('alert')}${esc(CYC.note||tr('Сводка циклонов сейчас недоступна. Остальные разделы работают.'))}</div>`;
-    box.innerHTML=h; applyLang(); return;
+    box.innerHTML=h; bindWeatherPorts(box); applyLang(); return;
   }
 
   if(CYC.route_label){
     h+=`<div class="cycroute">${ico('ship','xs')} ${esc(CYC.route_label)}</div>`;
   } else {
-    h+=`<div class="hint">${ico('alert','xs')} ${esc(tr('Заполни порты в разделе «Рейс», и расстояние будет считаться до линии перехода.'))}</div>`;
+    h+=`<div class="hint">${ico('alert','xs')} ${esc(tr('Добавь порты захода в «Мои порты», и расстояние будет считаться до линии перехода.'))}</div>`;
   }
 
   if(!CYC.storms.length){
@@ -5853,8 +6296,20 @@ function renderCyclones(){
     const id=b.dataset.cycfc; CYC_OPEN[id]=!CYC_OPEN[id]; hap(); renderCyclones();
   });
   const rf=$('#cycRefresh'); if(rf) rf.onclick=()=>{ hap('medium'); CYC=null; loadCyclones(true); };
+  bindWeatherPorts(box);
 }
 const CYC_OPEN={};
+
+function bindWeatherPorts(box){
+  (box||document).querySelectorAll('[data-wxp]').forEach(b=>b.onclick=async()=>{
+    hap();
+    WX_PORT=+b.dataset.wxp;
+    const p=((PORTS&&PORTS.ports)||[]).find(x=>x.id===WX_PORT);
+    if(p&&!PORT_WX[p.id]){ renderCyclones(); await loadPortWeather(p); }
+    renderCyclones();
+  });
+  bindWxMaps(box);
+}
 
 /* ================= Ask WatchKeeper =================
    Разговор с приложением обычными словами. Смысл не в переписке, а в том,
@@ -6241,6 +6696,405 @@ function bindAskInput(){
   };
   const cl=$('#askClear'); if(cl) cl.onclick=()=>{ ASKLOG=[]; hap(); renderAsk(); };
 }
+
+/* ================= Уведомления =================
+   Колокольчик в шапке. Лента собирается на сервере из сроков сертификатов,
+   батарей ГМССБ, новых предупреждений в отмеченных районах, ответов
+   поддержки и объявлений бота. Открыл ленту -- счётчик обнулился. */
+let NTF_FEED=null, NTF_BUSY=false;
+
+async function loadNotifications(silent){
+  if(NTF_BUSY) return NTF_FEED;
+  NTF_BUSY=true;
+  try{ NTF_FEED=await api('/api/notifications'); }
+  catch(e){ NTF_FEED={items:[],unread:0,error:'net'}; }
+  NTF_BUSY=false;
+  paintBell();
+  if(!silent) renderNotif();
+  return NTF_FEED;
+}
+function paintBell(){
+  const b=$('#notifCnt'); if(!b) return;
+  const n=(NTF_FEED&&NTF_FEED.unread)||0;
+  b.textContent=n?String(n>99?'99+':n):'';
+}
+const NTF_ICON={support:'compass',cert:'flag',gmdss:'radar',warning:'alert',
+                release:'sliders',news:'globe'};
+function renderNotif(){
+  const box=$('#notifBox'); if(!box) return;
+  if(!NTF_FEED){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
+  const items=NTF_FEED.items||[];
+  if(!items.length){
+    box.innerHTML=`<div class="empty">${ico('star')}${esc(tr('Уведомлений пока нет.'))}</div>`;
+    return;
+  }
+  box.innerHTML=items.map((it,i)=>
+    `<button class="ntf ${it.unread?'new':''} ${it.urgent?'urgent':''}" data-ntf="${i}">
+       <span class="ic">${ico(NTF_ICON[it.kind]||'globe','sm')}</span>
+       <span class="tx"><span class="t1">${esc(it.title)}</span>
+         ${it.body?`<span class="t2">${esc(it.body)}</span>`:''}
+         <span class="t3">${esc(ago(it.at))}</span></span>
+       ${it.unread?'<span class="dot"></span>':''}
+     </button>`).join('');
+  box.querySelectorAll('[data-ntf]').forEach(b=>b.onclick=()=>{
+    const it=items[+b.dataset.ntf]; hap('medium');
+    if(!it||!it.go) return;
+    const g=VIEW_GROUP[it.go]||'home';
+    switchGroup(g); setTimeout(()=>switchView(it.go),40);
+  });
+  applyLang();
+}
+async function markNotifSeen(){
+  try{ NTF_FEED=await api('/api/notifications?seen=1'); }catch(e){}
+  paintBell(); renderNotif();
+}
+
+/* ================= Мои порты =================
+   Раздел «Рейс» слился сюда: маршрут задаётся списком портов захода, а не
+   двумя полями. Расстояния между соседними портами считает сервер -- через
+   проливы и каналы, а не по прямой через сушу. */
+let PORTS=null, PORTS_BUSY=false, PORT_WX={};
+
+async function loadPorts(){
+  if(PORTS_BUSY) return PORTS;
+  PORTS_BUSY=true; renderPorts();
+  try{ PORTS=await api('/api/my-ports'); }
+  catch(e){ PORTS={ports:[],error:'net'}; }
+  PORTS_BUSY=false; renderPorts();
+  return PORTS;
+}
+async function portAction(qs){
+  try{ PORTS=await api('/api/my-ports?'+qs); }catch(e){}
+  renderPorts();
+}
+function renderPorts(){
+  const box=$('#portsBox'); if(!box) return;
+  const hint=$('#portsHint');
+  if(hint) hint.innerHTML=ico('alert','xs')+' '+
+    esc(tr('Список портов захода. По нему считается переход, проверяются предупреждения и берётся погода.'));
+
+  if(PORTS_BUSY&&!PORTS){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
+  if(!PORTS){ box.innerHTML=''; return; }
+  if(PORTS.error==='premium_required'){ box.innerHTML=''; gate('#v-ports','voyage'); return; }
+
+  const list=PORTS.ports||[];
+  if(!list.length){
+    box.innerHTML=`<div class="empty">${ico('anchor')}${esc(tr('Портов пока нет. Добавь первый порт захода выше.'))}</div>`;
+    return;
+  }
+
+  let h='';
+  list.forEach((p,i)=>{
+    if(i>0){
+      h+=`<div class="pleg">${ico('route','xs')}
+        <span>${p.leg_nm!=null?p.leg_nm+' '+tr('миль'):tr('расстояние не посчитано')}
+        ${p.legs&&p.legs.length?' · '+esc(p.legs.join(', ')):''}</span></div>`;
+    }
+    h+=`<div class="pcard">
+      <span class="num">${i+1}</span>
+      <span class="tx">
+        <span class="t1">${esc(p.name)}</span>
+        <span class="t2">${esc(p.country||'')}${p.eta?' · ETA '+esc(p.eta):''}</span>
+        ${p.note?`<span class="t2">${esc(p.note)}</span>`:''}
+        ${p.lat!=null?`<span class="t3">${ico('wave','xs')}<a data-pwx="${i}">${esc(tr('Погода в порту'))} →</a></span>`
+                     :`<span class="t3">${esc(tr('порт не найден в справочнике'))}</span>`}
+      </span>
+      <span class="acts">
+        <button class="pact" data-pup="${p.id}" aria-label="Выше">↑</button>
+        <button class="pact" data-pdn="${p.id}" aria-label="Ниже">↓</button>
+        <button class="pact del" data-pdel="${p.id}" aria-label="Удалить">×</button>
+      </span>
+    </div>`;
+    if(PORT_WX[p.id]) h+=portWxHtml(PORT_WX[p.id], p.id);
+  });
+
+  if(PORTS.total_nm){
+    h+=`<div class="ptotal"><span>${esc(tr('Весь переход'))}</span><b>${PORTS.total_nm} ${esc(tr('миль'))}</b></div>`;
+  }
+  h+=`<button class="btn wide" id="portsCheck">${esc(tr('Проверить предупреждения по рейсу'))}</button>`;
+  h+=`<div id="portsVoy"></div>`;
+
+  box.innerHTML=h;
+  box.querySelectorAll('[data-pup]').forEach(b=>b.onclick=()=>{ hap(); portAction('action=move&dir=up&id='+b.dataset.pup); });
+  box.querySelectorAll('[data-pdn]').forEach(b=>b.onclick=()=>{ hap(); portAction('action=move&dir=down&id='+b.dataset.pdn); });
+  box.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{
+    if(!confirm(tr('Убрать порт из рейса?'))) return;
+    hap('medium'); portAction('action=del&id='+b.dataset.pdel);
+  });
+  box.querySelectorAll('[data-pwx]').forEach(a=>a.onclick=()=>{
+    const p=list[+a.dataset.pwx]; hap('medium'); loadPortWeather(p);
+  });
+  bindWxMaps(box);
+  const chk=$('#portsCheck');
+  if(chk) chk.onclick=()=>{
+    const a=list[0], b=list[list.length-1];
+    if(list.length<2){ alert(tr('Нужны хотя бы два порта.')); return; }
+    hap('medium'); askOpenRoute(a.name, b.name);
+  };
+  applyLang();
+}
+
+/* ---- Погода в порту: свои цифры плюс карты Windy и Ventusky ---- */
+async function loadPortWeather(p){
+  const redraw=()=>{ if(S.view==='cyc') renderCyclones(); else renderPorts(); };
+  PORT_WX[p.id]={loading:true}; redraw();
+  try{
+    PORT_WX[p.id]=await api('/api/port-weather?q='+encodeURIComponent(p.name)
+      +(p.lat!=null?'&lat='+p.lat+'&lon='+p.lon:''));
+  }catch(e){ PORT_WX[p.id]={error:'net'}; }
+  redraw();
+}
+function portWxHtml(w, id){
+  if(w.loading) return '<div class="sk card" style="height:96px;margin-bottom:9px"></div>';
+  if(w.error) return `<div class="hint" style="margin-bottom:9px">${ico('alert','xs')} ${
+    esc(tr('Погоду сейчас получить не удалось. Карты ниже работают отдельно.'))}</div>`;
+  return `<div class="wxcard">
+    <div class="wxhead"><span class="nm">${esc(w.place||'')}</span><span class="at">${esc(w.at||'')}</span></div>
+    <div class="wxgrid">
+      ${wxCell(w.wind_kn,'уз','ветер', w.wind_kn>=22?'warn':'', w.wind_from)}
+      ${wxCell(w.gust_kn,'уз','порывы', w.gust_kn>=34?'hot':'')}
+      ${wxCell(w.wave_m,'м','волна', w.wave_m>=2.5?'warn':'')}
+      ${wxCell(w.swell_m,'м','зыбь')}
+      ${wxCell(w.visibility_nm,'мили','видимость', w.visibility_nm!=null&&w.visibility_nm<2?'hot':'')}
+      ${wxCell(w.pressure_hpa,'гПа','давление')}
+    </div>
+    <div class="wksm" style="margin-top:9px">${esc(tr(w.beaufort_name||''))}${
+      w.beaufort!=null?' · '+w.beaufort+' '+esc(tr('баллов')):''}${
+      w.sea_state?' · '+esc(tr(w.sea_state)):''}</div>
+    <div class="wxmaps">${(w.maps||[]).map(m=>
+      `<button class="wxmap" data-wxopen="${esc(m.url)}">${ico('map','xs')}${esc(m.name)}</button>`).join('')}
+      ${(w.maps||[]).some(m=>m.embed)
+        ? `<button class="wxmap" data-wxembed="${esc((w.maps.find(m=>m.embed)||{}).embed||'')}">${
+            ico('radar','xs')}${esc(tr('Карта прямо здесь'))}</button>` : ''}
+    </div>
+    <div id="wxe${id}"></div>
+  </div>`;
+}
+/* Кнопки погодных карт. Windy умеет встраиваться прямо в страницу,
+   Ventusky открывается отдельным окном -- встраивание он не разрешает. */
+function bindWxMaps(root){
+  (root||document).querySelectorAll('[data-wxopen]').forEach(b=>b.onclick=()=>{
+    hap('medium');
+    const url=b.dataset.wxopen;
+    try{ if(TG&&TG.openLink) return TG.openLink(url); }catch(e){}
+    window.open(url,'_blank');
+  });
+  (root||document).querySelectorAll('[data-wxembed]').forEach(b=>b.onclick=()=>{
+    hap('medium');
+    const card=b.closest('.wxcard'); if(!card) return;
+    const holder=card.querySelector('[id^="wxe"]'); if(!holder) return;
+    if(holder.firstChild){ holder.innerHTML=''; return; }
+    const f=document.createElement('iframe');
+    f.className='wxembed'; f.src=b.dataset.wxembed;
+    f.setAttribute('loading','lazy');
+    f.setAttribute('referrerpolicy','no-referrer');
+    holder.appendChild(f);
+  });
+}
+
+function wxCell(v,unit,label,cls,extra){
+  const val=(v===null||v===undefined)?'—':(v+(unit?' '+tr(unit):''));
+  return `<div class="wxcell ${cls||''}">
+    <div class="v">${esc(String(val))}${extra?` <span style="font-size:11px">${esc(extra)}</span>`:''}</div>
+    <div class="k">${esc(tr(label))}</div></div>`;
+}
+
+/* ================= Справка =================
+   Вопросы сгруппированы по разделам и свёрнуты: на экране видно только
+   заголовки, чтобы человек нашёл своё, а не читал всё подряд. */
+const FAQ=[
+ {t:'С чего начать',i:'compass',items:[
+  {q:'Что вообще умеет WatchKeeper?',
+   a:'Три вещи. Показывает действующие предупреждения NAVAREA и береговые по твоим районам и маршруту. Считает то, что считает вахтенный: запас под килём, проседание, расхождение с целью, ETA, якорную стоянку. И отвечает на вопросы обычными словами через Ask AI, сам подставляя данные судна, позицию и погоду.'},
+  {q:'С чего начать после установки?',
+   a:'Заполни карточку судна в разделе «Моё судно» — осадка, скорость и габариты потом подставляются в расчёты сами. Отметь звёздочкой свои районы NAVAREA. Добавь порты захода в «Мои порты». Всё остальное заработает само.'},
+  {q:'Работает ли приложение без связи?',
+   a:'Расчёты, справочники и тренажёры — да, полностью. Предупреждения, станции и зоны сохраняются на устройстве и показываются последними сохранёнными. Погода, ассистент и проверка маршрута требуют связи: они ходят на сервер.'},
+  {q:'Заменяет ли бот приём MSI по ГМССБ?',
+   a:'Нет и не может. Официальный источник — NAVTEX, приёмник Inmarsat SafetyNET и штатное оборудование ГМССБ. Бот — вспомогательный инструмент: он помогает не пропустить и разобраться, но решение принимает судоводитель по официальным пособиям.'}]},
+
+ {t:'Предупреждения и карта',i:'globe',items:[
+  {q:'Откуда берутся предупреждения?',
+   a:'Из открытых источников координаторов районов: NGA (США), UKHO (Великобритания), гидрографические службы Перу и Испании. Если подключён Sealagom, данные идут оттуда сразу по всем 21 району.'},
+  {q:'Как часто обновляются данные?',
+   a:'Бот опрашивает источники каждые 30 минут (настраивается). Время последнего обновления по каждому району видно в списке районов.'},
+  {q:'Почему у предупреждения нет точки на карте?',
+   a:'Координаты разбираются из текста сообщения. Если в тексте их нет или они записаны непривычным способом, точка не появится. Текст при этом доступен целиком.'},
+  {q:'Что значит «точная геометрия»?',
+   a:'Метка на карточке: район пришёл от источника готовой фигурой, а не разобран нами из текста. Такой контур точнее.'},
+  {q:'Как следить только за своими районами?',
+   a:'Отметь районы звёздочкой. Они попадут в избранное на главной, и по ним будут приходить уведомления о новых предупреждениях.'}]},
+
+ {t:'Расчёты',i:'sliders',items:[
+  {q:'Откуда берутся числа в расчётах?',
+   a:'Часть подставляется из карточки судна: осадка, скорость, коэффициент полноты, длина, надводный габарит. Такие поля помечены словом «само». Остальное вводится руками.'},
+  {q:'Можно ли доверять расчётам?',
+   a:'Это справочные расчёты по общепринятым формулам. Они не заменяют судовую документацию, таблицы манёвренных характеристик и информацию об остойчивости. Решение принимает судоводитель.'},
+  {q:'Почему проседание считается по-разному?',
+   a:'Формулы для открытой воды и для стеснённого фарватера дают разный результат — во втором случае проседание заметно больше. Выбор акватории есть прямо в расчёте.'},
+  {q:'Расчёты платные?',
+   a:'Нет. Всё, от чего зависит безопасность — запас под килём, проседание, расхождение, точка перекладки, якорь, габарит под мостом — бесплатно навсегда.'}]},
+
+ {t:'Ask AI',i:'compass',items:[
+  {q:'Чем ассистент отличается от обычного чат-бота?',
+   a:'Он умеет брать данные сам. Спросишь про погоду на переходе — сам проложит маршрут через проливы, разложит время прихода по точкам и возьмёт прогноз именно на эти часы. Спросишь про предупреждения — сам отберёт те, что задевают твой маршрут.'},
+  {q:'Что такое «Сценарии»?',
+   a:'Готовые запросы по разделам: навигация, ECDIS, МППСС, погода, ГМССБ, вахта, груз, аварийные случаи. В шаблон уже подставлены твои данные — видно, что подставилось, а что ассистент спросит.'},
+  {q:'Что такое режимы ответа?',
+   a:'Форма, в которой придёт ответ: коротко, для вахты, чек-листом, расчётом с проверкой, аварийным порядком действий, брифингом, записью в журнал, радиофразеологией. Выбирается кнопкой слева над перепиской.'},
+  {q:'Ассистент может ошибаться?',
+   a:'Да, как любая языковая модель. Он не выдумывает живые данные — погода и предупреждения приходят из источников, — но формулировки правил и выводы стоит проверять по МППСС, конвенциям и судовым инструкциям.'},
+  {q:'Есть ли лимит вопросов?',
+   a:'На бесплатном тарифе — пять вопросов в сутки. На Premium ограничения нет.'}]},
+
+ {t:'Тренажёры и ГМССБ',i:'radar',items:[
+  {q:'Тренажёр ЦИВ выходит в эфир?',
+   a:'Нет. Ничего не передаётся. Все подтверждения, задержки и ответы береговых станций имитируются внутри приложения.'},
+  {q:'Как пользоваться роликом на станции?',
+   a:'Поворот выбирает поле или пункт меню, нажатие открывает его на изменение. На дежурном экране ролик переключается между CH, TX и RX; нажал — крутишь значение.'},
+  {q:'Что делает кнопка BRILL?',
+   a:'Переключает яркость и контраст экрана: день, ночь (приглушённый красный, чтобы не сбивать адаптацию глаз) и зелёный люминофорный режим.'},
+  {q:'Зачем нужен режим экзамена?',
+   a:'Даёт обстановку, а ты выбираешь, каким вызовом отвечать. После ответа показывает разбор: почему бедствие, а не срочность, и наоборот.'},
+  {q:'Проверки EPIRB и SART — что записывается?',
+   a:'Отметки чек-листа, результат самопроверки и дата замены батареи. История хранится в приложении, её можно очистить.'}]},
+
+ {t:'Подписка',i:'star',items:[
+  {q:'Что входит в Premium?',
+   a:'Неограниченное число районов, береговые предупреждения, проверка маршрута, карточка судна, чек-листы и сертификаты, история за 30 дней, вопросы к ассистенту без лимита, расширенные расчёты.'},
+  {q:'Как оплатить?',
+   a:'Звёздами Telegram прямо в приложении: «Моё судно» → «Что входит в Premium» → «Оформить». Откроется окно оплаты Telegram. Карт и переводов не нужно.'},
+  {q:'Что такое звёзды Telegram?',
+   a:'Внутренняя валюта Telegram. Покупаются в самом приложении Telegram и тратятся на цифровые товары и услуги. Подписка продлевается сама каждые 30 дней.'},
+  {q:'Как отменить подписку?',
+   a:'Команда /cancel_subscription в чате с ботом или Настройки Telegram → Мои звёзды → Подписки. Оплаченный период доработает до конца.'},
+  {q:'Что остаётся бесплатным?',
+   a:'Два района с уведомлениями, карта всех действующих предупреждений, все расчёты безопасности, справочники, станции ГМССБ, тренажёры и пять вопросов ассистенту в сутки.'}]},
+
+ {t:'Данные и приватность',i:'flag',items:[
+  {q:'Что бот знает обо мне?',
+   a:'Идентификатор Telegram, отмеченные районы, карточку судна, сертификаты и чек-листы, порты рейса — то, что ты сам ввёл. Настройки интерфейса и последние расчёты хранятся только на устройстве.'},
+  {q:'Передаётся ли моя позиция?',
+   a:'Только когда ты сам её запросил кнопкой или включил слежение, и только на время работы приложения. Она нужна для погоды, расстояний и экрана станции. Геопозицию можно выключить совсем в настройках.'},
+  {q:'Как удалить свои данные?',
+   a:'Напиши в поддержку из настроек — удалю карточку судна, сертификаты и порты. Локальные данные стираются кнопкой «Очистить сохранённые данные».'}]},
+
+ {t:'Если что-то не работает',i:'alert',items:[
+  {q:'Приложение открылось пустым или без данных',
+   a:'Скорее всего нет связи с сервером — вверху появится полоса «Нет связи». Расчёты и справочники продолжат работать. Проверь интернет и потяни экран вниз.'},
+  {q:'Не приходят уведомления о предупреждениях',
+   a:'Проверь, отмечены ли районы звёздочкой и включён ли переключатель в настройках. Уведомления приходят сообщением от бота в чат.'},
+  {q:'Позиция не определяется',
+   a:'В глубине корпуса GPS телефона часто не ловит. Выйди на крыло мостика или введи координаты вручную. Проверь, что доступ к геопозиции разрешён.'},
+  {q:'Кнопка оплаты ничего не открывает',
+   a:'Оплата работает только внутри Telegram: приложение должно быть открыто кнопкой в чате с ботом, а не по ссылке в браузере.'},
+  {q:'Нашёл ошибку или есть предложение',
+   a:'Настройки → Написать в поддержку. Переписка идёт прямо здесь, я отвечаю в этом же чате.'}]}
+];
+const FAQ_OPEN={}, FAQ_ANS={};
+let FAQ_Q='';
+
+function renderFaq(){
+  const box=$('#faqBox'); if(!box) return;
+  const q=FAQ_Q.trim().toLowerCase();
+
+  const cats=FAQ.map((c,ci)=>{
+    const items=c.items.filter(it=>!q||
+      (it.q+' '+it.a).toLowerCase().indexOf(q)!==-1);
+    return {c,ci,items};
+  }).filter(x=>x.items.length);
+
+  if(!cats.length){
+    box.innerHTML=`<div class="faqempty">${esc(tr('Ничего не нашлось. Спроси в поддержке — отвечу и добавлю в справку.'))}</div>`;
+    bindFaq(); return;
+  }
+
+  box.innerHTML=cats.map(({c,ci,items})=>{
+    const open=q?true:!!FAQ_OPEN[ci];
+    return `<div class="faqcat ${open?'on':''}">
+      <button class="faqhead" data-fc="${ci}">
+        ${ico(c.i,'sm')}<span>${esc(tr(c.t))}</span>
+        <span class="cnt">${items.length}</span><span class="ar">›</span>
+      </button>
+      <div class="faqitems">${items.map(it=>{
+        const key=ci+'|'+c.items.indexOf(it);
+        return `<button class="faqq ${FAQ_ANS[key]?'on':''}" data-fq="${esc(key)}">
+          <span class="q">${esc(tr(it.q))}</span>
+          <span class="a">${esc(tr(it.a))}</span>
+        </button>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+  bindFaq();
+  applyLang();
+}
+function bindFaq(){
+  document.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{
+    const i=b.dataset.fc; FAQ_OPEN[i]=!FAQ_OPEN[i]; hap(); renderFaq();
+  });
+  document.querySelectorAll('[data-fq]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.fq; FAQ_ANS[k]=!FAQ_ANS[k]; hap(); renderFaq();
+  });
+}
+
+/* ================= Поддержка =================
+   Переписка с создателем бота внутри приложения. Сообщение сразу уходит
+   ему в Telegram, ответ приходит и сюда, и обычным сообщением от бота. */
+let SUP=null, SUP_BUSY=false;
+
+async function loadSupport(){
+  if(SUP_BUSY) return SUP;
+  SUP_BUSY=true; renderSupport();
+  try{ SUP=await api('/api/support?action=seen'); }
+  catch(e){ SUP={messages:[],error:'net'}; }
+  SUP_BUSY=false; renderSupport(); paintBell();
+  return SUP;
+}
+async function supSend(text){
+  text=(text||'').trim();
+  if(!text) return;
+  SUP=SUP||{messages:[]};
+  SUP.messages.push({author:'user',text:text,at:new Date().toISOString()});
+  renderSupport();
+  try{ SUP=await api('/api/support?action=send&text='+encodeURIComponent(text)); }
+  catch(e){}
+  renderSupport();
+}
+function renderSupport(){
+  const box=$('#supBox'); if(!box) return;
+  const hint=$('#supHint');
+  if(hint) hint.innerHTML=ico('alert','xs')+' '+
+    esc(tr('Пишешь напрямую создателю бота. Ответ придёт сюда и сообщением в чат.'));
+
+  const msgs=(SUP&&SUP.messages)||[];
+  if(SUP&&SUP.error==='unauthorized'){
+    box.innerHTML=`<div class="empty">${ico('alert')}${
+      esc(tr('Поддержка работает только внутри Telegram — открой приложение кнопкой в чате с ботом.'))}</div>`;
+    return;
+  }
+  if(!msgs.length){
+    box.innerHTML=`<div class="askintro">
+      <div class="ai">${ico('compass','lg')}</div>
+      <div class="at">${esc(tr('Чем помочь?'))}</div>
+      <div class="as">${esc(tr('Опиши, что не работает или чего не хватает. Прочту и отвечу.'))}</div>
+    </div>`;
+    return;
+  }
+  box.innerHTML=msgs.map(m=>
+    `<div class="supmsg ${m.author==='user'?'me':'owner'}">
+       <div class="who">${esc(tr(m.author==='user'?'Ты':'Поддержка'))} · ${esc(ago(m.at))}</div>
+       ${esc(m.text)}
+     </div>`).join('');
+  try{ box.scrollTop=box.scrollHeight; }catch(e){}
+  applyLang();
+}
+function bindSupportInput(){
+  const inp=$('#supInput'), btn=$('#supSend');
+  const go=()=>{ const v=inp?inp.value:''; if(inp) inp.value=''; hap('medium'); supSend(v); };
+  if(btn) btn.onclick=go;
+  if(inp) inp.onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); go(); } };
+}
+
 
 /* ================= Тренажёр ЦИВ (DSC) =================
    Экранная копия Furuno FS-1575: дисплей, клавиатура, кнопка бедствия
@@ -7482,14 +8336,62 @@ function saveNtf(){ try{ localStorage.setItem('navarea_ntf',JSON.stringify(NTF))
 let GEO={lat:null, lon:null, at:0, acc:null, cog:null, sog:null,
          busy:false, err:null, watchId:null, guard:null, cancel:null};
 
-/* Курс и скорость с приёмника. heading в градусах, speed в м/с; оба поля
-   необязательные и на стоянке приходят пустыми -- тогда ничего не пишем,
-   чтобы в сводке не появился курс 0° у стоящего судна. */
+/* ---- Курс и скорость относительно грунта ----
+   Приёмник телефона отдаёт heading и speed далеко не всегда: на многих
+   устройствах они пустые, пока не включена навигация. Поэтому считаем сами,
+   как это делает любой навигатор -- по смещению между двумя обсервациями:
+   чем быстрее меняется место, тем выше скорость, направление смещения и
+   есть курс.
+
+   Слишком короткие и слишком длинные промежутки отбрасываем: за одну
+   секунду смещение тонет в погрешности приёмника, а за полчаса судно
+   успевает отвернуть, и «курс» получится ни о чём. Значения сглаживаем,
+   иначе на волне цифры скачут на несколько узлов. */
+let GEO_PREV=null;
+
 function setCogSog(c){
   if(!c) return;
-  GEO.cog = (typeof c.heading==='number'&&!isNaN(c.heading)) ? c.heading : GEO.cog;
-  GEO.sog = (typeof c.speed==='number'&&!isNaN(c.speed)&&c.speed>=0)
-    ? +(c.speed*1.94384).toFixed(1) : GEO.sog;
+  // если устройство само даёт курс и скорость -- берём их, они точнее
+  if(typeof c.speed==='number'&&!isNaN(c.speed)&&c.speed>=0)
+    GEO.sog=+(c.speed*1.94384).toFixed(1);
+  if(typeof c.heading==='number'&&!isNaN(c.heading)) GEO.cog=c.heading;
+}
+
+function trackFromFix(lat, lon, at, acc){
+  const prev=GEO_PREV;
+  GEO_PREV={lat:lat, lon:lon, at:at||Date.now(), acc:acc||null};
+  if(!prev) return;
+
+  const dt=(GEO_PREV.at-prev.at)/1000;              // секунд между обсервациями
+  if(dt<3||dt>900) return;
+
+  const nm=haversineNm(prev.lat,prev.lon,lat,lon);
+  const metres=nm*1852;
+  // Смещение должно быть заметно больше погрешности места, иначе это шум
+  const need=Math.max(12,(prev.acc||20)+(acc||20));
+  if(metres<need) return;
+
+  const sog=nm/(dt/3600);
+  if(sog>60) return;                                 // явный выброс приёмника
+
+  const cog=bearingDeg(prev.lat,prev.lon,lat,lon);
+  // сглаживание: новое значение весит треть, чтобы цифры не прыгали
+  GEO.sog = GEO.sog==null ? +sog.toFixed(1) : +(GEO.sog*0.65+sog*0.35).toFixed(1);
+  GEO.cog = GEO.cog==null ? Math.round(cog) : Math.round(smoothAngle(GEO.cog,cog,0.35));
+}
+
+function bearingDeg(a1,o1,a2,o2){
+  const r=Math.PI/180;
+  const dl=(o2-o1)*r, p1=a1*r, p2=a2*r;
+  const y=Math.sin(dl)*Math.cos(p2);
+  const x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+  return (Math.atan2(y,x)/r+360)%360;
+}
+/* Углы усредняем через кратчайшую дугу: иначе на переходе через ноль
+   курс 359° и 001° дали бы 180° -- ровно противоположный. */
+function smoothAngle(old,next,k){
+  let d=((next-old+540)%360)-180;
+  return (old+d*k+360)%360;
 }
 
 /* Слежение за позицией можно выключить совсем: на судне интернет платный,
@@ -7521,6 +8423,7 @@ function startGeoWatch(){
         // устройства и только на ходу, поэтому в сводке они появляются
         // сами, а при отсутствии показывается прочерк, а не выдуманное число.
         setCogSog(p.coords);
+        trackFromFix(GEO.lat, GEO.lon, GEO.at, GEO.acc);
         renderGeoBtn();
         if(S.view==='dash') renderSnapshot();
         if(typeof map!=='undefined'&&map) drawMyPos();
@@ -7613,6 +8516,7 @@ function browserGeo(done){
       GEO.lat=p.coords.latitude; GEO.lon=p.coords.longitude;
       GEO.acc=p.coords.accuracy||null; GEO.at=Date.now();
       setCogSog(p.coords);
+      trackFromFix(GEO.lat, GEO.lon, GEO.at, GEO.acc);
       done(true);
     },
     err=>{
@@ -9103,8 +10007,30 @@ setInterval(()=>{ if(S.view==='dash') renderClock(); }, 20000);
   if(g) g.onclick=open;
   if(a) a.onclick=()=>{ hap(); switchGroup('ask'); };
   const n=$('#notifBtn');
-  if(n) n.onclick=()=>{ hap(); switchView('areas'); };
+  if(n) n.onclick=()=>{ hap('medium'); switchView('notif'); };
+  const nc=$('#notifClear'); if(nc) nc.onclick=()=>{ hap(); markNotifSeen(); };
 }
+
+/* Поиск по справке */
+{ const fq=$('#faqQ');
+  if(fq){ let t=null; fq.oninput=()=>{ clearTimeout(t); t=setTimeout(()=>{ FAQ_Q=fq.value; renderFaq(); },200); }; }
+}
+/* Добавление порта: тот же поиск портов, что в проверке маршрута */
+{ const inp=$('#pnew');
+  if(inp){
+    setupPort('#pnew','#snew', name=>portAction('action=add&name='+encodeURIComponent(name)));
+    inp.onkeydown=e=>{
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      const v=inp.value.trim(); if(!v) return;
+      inp.value=''; hap('medium');
+      portAction('action=add&name='+encodeURIComponent(v));
+    };
+  }
+}
+/* Уведомления подтягиваем при запуске, чтобы колокольчик был честным */
+loadNotifications(true);
+setInterval(()=>{ if(S.view!=='notif') loadNotifications(true); }, 180000);
 document.querySelectorAll('#corr .cat').forEach((c,i)=>
   c.insertAdjacentHTML('afterbegin', ico(['gauge','gauge','wave','compass'][i]||'gauge')));
 

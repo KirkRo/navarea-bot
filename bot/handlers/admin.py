@@ -50,6 +50,84 @@ async def cmd_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.message.reply_text(f"Разослано: {sent}, не доставлено: {failed}")
 
 
+async def cmd_notice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Объявление в колокольчик всем пользователям.
+
+    В отличие от /broadcast ничего не рассылает: запись ложится в ленту
+    уведомлений и ждёт, пока человек сам откроет приложение. Так уместнее
+    для новостей и обновлений -- они не будят людей на вахте."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    raw = " ".join(context.args)
+    if not raw:
+        await update.message.reply_text(
+            "Использование: /notice Заголовок | текст\n"
+            "Заголовок появится в колокольчике у всех пользователей."
+        )
+        return
+
+    title, _, body = raw.partition("|")
+    db.add_notice(title.strip()[:120], body.strip(), kind="news")
+    await update.message.reply_text("Объявление добавлено в ленту уведомлений.")
+
+
+async def cmd_support_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Владельцу -- список обращений, всем остальным -- как написать."""
+    db: Database = context.bot_data["db"]
+
+    if not _is_owner(update.effective_user.id):
+        await update.message.reply_text(
+            "Написать мне можно прямо в приложении: открой WatchKeeper → "
+            "«Моё судно» → «Настройки» → «Написать в поддержку». "
+            "Переписка идёт здесь же, ответ придёт сообщением от бота."
+        )
+        return
+
+    threads = db.support_threads(limit=30)
+    if not threads:
+        await update.message.reply_text("Обращений пока нет.")
+        return
+
+    lines = ["<b>Обращения в поддержку</b>", ""]
+    for t in threads:
+        mark = f"🔴 {t['unread']}" if t["unread"] else "✅"
+        lines.append(f"{mark} id <code>{t['user_id']}</code> · сообщений {t['total']} · "
+                     f"{str(t['last_at'])[:16].replace('T', ' ')}")
+    lines.append("")
+    lines.append("Ответить: <code>/reply id текст</code>")
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
+
+async def cmd_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Ответ пользователю в чат поддержки: /reply <id> <текст>.
+
+    Ответ ложится в переписку внутри приложения и одновременно уходит
+    человеку сообщением в Telegram -- он может не открывать приложение."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    if len(context.args) < 2 or not context.args[0].lstrip("-").isdigit():
+        await update.message.reply_text("Использование: /reply id текста ответа")
+        return
+
+    uid = int(context.args[0])
+    text = " ".join(context.args[1:]).strip()
+    db.add_support_message(uid, "owner", text[:2000])
+    db.mark_support_seen(uid, "owner")
+
+    try:
+        await context.bot.send_message(uid, f"💬 Ответ поддержки WatchKeeper:\n\n{text}")
+        await update.message.reply_text("Отправлено и записано в переписку.")
+    except Exception:
+        await update.message.reply_text(
+            "Записано в переписку, но сообщением не доставлено — "
+            "возможно, человек не начинал диалог с ботом."
+        )
+
+
 async def cmd_diag(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Проверка всех источников по запросу: что отвечает, что нет и почему.
 
