@@ -21,7 +21,7 @@ MINI_APP_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Watchkeeper</title>
+<title>WatchKeeper</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
@@ -396,37 +396,42 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .geouse:active{border-color:var(--amber);color:var(--amber)}
 
 /* ---- Тренажёр ЦИВ: корпус Furuno FS-2575C ----
-   Проверено рендером в headless-браузере и сверено с фото реальной
-   station. Сетка на клавиатуре -- flexbox, не CSS grid: так надёжнее
-   на разных WebView внутри Telegram. */
+   Сверено с фотографиями реальной станции. Сетка на клавиатуре --
+   flexbox, не CSS grid: так надёжнее на разных WebView внутри Telegram.
+
+   Экран вынесен над органами управления и занимает всю ширину корпуса:
+   на телефоне трёхколоночная раскладка настоящего прибора оставляла
+   дисплею меньше полутора сантиметров, читать на нём было нечего. */
 .radio{
   background:linear-gradient(155deg,#48463f,#282621);
   border:1px solid #55534b;border-radius:12px;padding:12px 12px 14px;
   box-shadow:0 20px 46px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
-  max-width:400px;margin:0 auto;
+  max-width:520px;margin:0 auto;
 }
 .rplates{display:flex;justify-content:center;gap:8px;margin:0 0 9px;flex-wrap:wrap}
 .rplate{
-  background:#e9ecef;color:#15181c;font-size:9px;font-weight:800;letter-spacing:.3px;
-  border-radius:3px;padding:5px 9px;text-align:center;line-height:1.25;
+  background:#e9ecef;color:#15181c;font-size:10px;font-weight:800;letter-spacing:.3px;
+  border-radius:3px;padding:5px 10px;text-align:center;line-height:1.25;
   border:1px solid #b8bec4;box-shadow:0 1px 2px rgba(0,0,0,.3);
 }
 .rhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px;gap:8px}
 .rnameplate{
-  background:#dfe3e6;color:#1a1d20;font-size:6.6px;font-weight:700;line-height:1.35;
+  background:#dfe3e6;color:#1a1d20;font-size:7.4px;font-weight:700;line-height:1.35;
   border-radius:2px;padding:3px 6px;border:1px solid #aab0b6;flex:1;min-width:0;
 }
 .rfuruno{
-  flex:none;font-weight:800;font-size:13px;letter-spacing:1px;font-style:italic;
+  flex:none;font-weight:800;font-size:15px;letter-spacing:1px;font-style:italic;
   background-image:linear-gradient(180deg,#e8ebee,#9ba1a8);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 
-.rbody{display:flex;gap:8px}
-.rleft{width:70px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.rbody{display:flex;flex-direction:column;gap:9px}
+.rctrls{display:flex;gap:8px;align-items:stretch}
+.rleft{width:74px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.rmid{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;padding-top:2px}
 .rspeaker{width:100%;background:#1a1c1e;border-radius:5px;padding:6px 8px}
-.rspeaker i{display:block;height:2.6px;background:#000;border-radius:2px;margin:2.6px 0}
-.rknob{width:32px;height:32px;border-radius:50%;
+.rspeaker i{display:block;height:2.8px;background:#000;border-radius:2px;margin:2.8px 0}
+.rknob{width:38px;height:38px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#54595f,#1c1e20 72%);
   border:1px solid #61656b;position:relative;box-shadow:0 2px 4px rgba(0,0,0,.5)}
 .rknob{touch-action:none;user-select:none;-webkit-user-select:none}
@@ -435,131 +440,240 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .rbigknob.turning{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft),0 3px 6px rgba(0,0,0,.5)}
 .knobval{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  font-size:10px;font-weight:800;color:var(--amber);pointer-events:none;
+  font-size:11px;font-weight:800;color:var(--amber);pointer-events:none;
   text-shadow:0 0 4px rgba(0,0,0,.9);opacity:0;transition:opacity .15s;
 }
 .rknob.turning .knobval,.rbigknob.turning .knobval{opacity:1}
-.rknob::after{content:'';position:absolute;top:3px;left:50%;width:2px;height:10px;
+.rknob::after{content:'';position:absolute;top:3px;left:50%;width:2px;height:12px;
   background:#8a9096;transform:translateX(-50%);border-radius:1px}
-.rklabel{font-size:6.3px;color:#a8aeb4;text-align:center;font-weight:700;letter-spacing:.2px;line-height:1.2}
-.rleds{display:flex;flex-direction:column;gap:4px;align-items:center;margin-top:1px}
+.rklabel{font-size:7.2px;color:#a8aeb4;text-align:center;font-weight:700;letter-spacing:.2px;line-height:1.2}
+.rleds{display:flex;gap:10px;align-items:center;margin-top:1px}
 .rled{display:flex;align-items:center;gap:4px}
-.rled i{width:5.5px;height:5.5px;border-radius:50%;background:#3a3d40;flex:none}
+.rled i{width:6.5px;height:6.5px;border-radius:50%;background:#3a3d40;flex:none}
 .rled i.amber{background:#ffb020;box-shadow:0 0 5px #ffb020}
 .rled i.green{background:#3fc97f;box-shadow:0 0 5px #3fc97f}
-.rled span{font-size:6px;color:#a8aeb4;font-weight:700}
+.rled span{font-size:7px;color:#a8aeb4;font-weight:700}
 
-.rdistwrap{width:100%;text-align:center;margin-top:2px}
+.rdistwrap{width:100%;text-align:center}
 .rdistcover{
-  width:44px;height:32px;margin:0 auto;position:relative;cursor:pointer;
+  width:58px;height:42px;margin:0 auto;position:relative;cursor:pointer;
   background:linear-gradient(160deg,rgba(220,230,240,.1),rgba(220,230,240,.02));
   border:1.5px solid #62666c;border-radius:5px;
 }
-.rdistbtn{position:absolute;inset:5px;border-radius:3px;
+.rdistbtn{position:absolute;inset:6px;border-radius:3px;
   background:linear-gradient(160deg,#f0503e,#b8281a);border:1px solid #ff7a68;
+  display:flex;align-items:center;justify-content:center;
+  font-size:6.4px;font-weight:800;color:#ffe4de;letter-spacing:.3px;
   box-shadow:0 0 6px rgba(240,80,62,.55), inset 0 1px 1px rgba(255,255,255,.3)}
 .rdistbtn.arming{animation:rarmpulse .45s infinite}
 @keyframes rarmpulse{50%{background:linear-gradient(160deg,#ff7a68,#e0402c);box-shadow:0 0 14px rgba(255,90,68,.85)}}
-.rpwroff{font-size:6px;color:#a8aeb4;font-weight:700;margin-top:4px;letter-spacing:.3px}
-.rdistcap{font-size:5.6px;color:#8a9098;text-align:center;line-height:1.35;margin-top:4px;padding:0 1px}
+.rpwroff{font-size:7px;color:#a8aeb4;font-weight:700;margin-top:4px;letter-spacing:.3px}
+.rdistcap{font-size:6.6px;color:#8a9098;text-align:center;line-height:1.35;margin-top:4px;padding:0 3px;max-width:150px}
 
 /* --- экран --- */
-.rscreen{flex:1;min-width:0}
+.rscreen{width:100%;display:flex;gap:6px;align-items:stretch}
+.rsoft{width:16px;flex:none;display:flex;flex-direction:column;justify-content:space-evenly;padding:26px 0}
+.rsoft i{display:block;height:2px;background:#8a9096;border-radius:1px}
 .lcd{
+  flex:1;min-width:0;
   background:linear-gradient(175deg,#0f2440,#0a1a30);
-  border:2px solid #05070a;border-radius:5px;padding:6px 7px;
-  min-height:172px;display:flex;flex-direction:column;
+  border:2px solid #05070a;border-radius:5px;padding:9px 10px;
+  min-height:300px;display:flex;flex-direction:column;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  color:#dce8f4;font-size:8.4px;position:relative;overflow:hidden;
+  color:#dce8f4;font-size:12px;position:relative;overflow:hidden;
+  transition:filter .18s;
 }
+/* Яркость и контраст: дневной, ночной и зелёный режимы -- как кнопка
+   BRILL на настоящей станции. Ночной приглушён и уведён в красный,
+   чтобы не сажать адаптацию глаз на тёмном мостике. */
+.lcd.br-day{filter:brightness(1.14) contrast(1.08) saturate(1.05)}
+.lcd.br-night{filter:brightness(.5) contrast(1.2) sepia(.6) hue-rotate(-38deg) saturate(2.8)}
+.lcd.br-green{filter:hue-rotate(-88deg) saturate(1.35) brightness(1.04)}
 .lcd.alert{background:linear-gradient(175deg,#3a1210,#280a08)}
-.lcdtop{display:flex;justify-content:space-between;align-items:center;font-size:6.8px;
-  color:#8fa8c4;margin-bottom:3px;flex:none}
-.lrow1{display:flex;gap:4px;align-items:stretch;margin-bottom:3px;flex:none}
+.lcdtop{display:flex;justify-content:space-between;align-items:center;font-size:9.6px;
+  color:#8fa8c4;margin-bottom:5px;flex:none;gap:6px}
+.lcdtop .ssb{border:1px solid #2c4468;border-radius:8px;padding:0 5px;font-weight:800;color:#cfe0f2}
+.lcdfoot{
+  display:flex;justify-content:space-between;gap:6px;font-size:8.6px;color:#8fa8c4;
+  border-top:1px solid #24406a;margin-top:auto;padding-top:4px;flex:none;
+}
+.lcdfoot b{color:#fff;font-weight:800}
+.lcdfoot .k{border:1px solid #2c4468;border-radius:3px;padding:0 3px;color:#cfe0f2;font-weight:800}
+.lcdfoot .go{color:#ffd79a;font-weight:800}
+.lcdfoot .go.on{background:#ffd79a;color:#1a1408;border-radius:3px;padding:0 4px}
+
+/* заголовок раздела внутри экрана */
+.lhead{background:#1e3155;color:#e8eef5;font-size:11px;font-weight:800;letter-spacing:.4px;
+  padding:2px 6px;margin-bottom:5px;flex:none}
+.lhead.red{background:#a5231a}
+
+/* --- дежурный экран: CH / TX / RX --- */
+.lrow1{display:flex;gap:5px;align-items:stretch;margin-bottom:5px;flex:none}
 .ldist{
-  background:#1a2c48;color:#e8eef5;font-size:6.4px;font-weight:800;text-align:center;
-  border-radius:2px;padding:3px 3px;line-height:1.2;flex:none;width:26px;
+  background:#1a2c48;color:#e8eef5;font-size:8.6px;font-weight:800;text-align:center;
+  border-radius:2px;padding:3px;line-height:1.2;flex:none;width:34px;
   display:flex;align-items:center;justify-content:center;border:1px solid #2c4468;
 }
 .ldist.alert{background:#c0281c;animation:rdblink 1s steps(2) infinite}
 @keyframes rdblink{50%{opacity:.4}}
 .lch{
   flex:1;min-width:0;background:linear-gradient(180deg,#e9dfc4,#d8cba4);color:#1a1408;
-  border-radius:2px;padding:2px 6px;display:flex;align-items:baseline;gap:4px;
+  border-radius:2px;padding:3px 8px;display:flex;align-items:baseline;gap:6px;
+  border:2px solid transparent;
 }
-.lch .l{font-size:6.6px;font-weight:800}
-.lch .n{font-size:16px;font-weight:800;letter-spacing:.3px}
-.lnb{flex:none;width:15px;display:flex;align-items:center;justify-content:center;
-  font-size:5.6px;font-weight:800;color:#9db6d4;border:1px solid #2c4468;border-radius:50%;}
-.lmenu{flex:none;width:44px;display:flex;flex-direction:column;justify-content:space-around;gap:1px}
-.lmenu .mi{display:flex;align-items:center;gap:2px;font-size:5.3px;color:#c2d4e8;line-height:1.05}
+.lch.sel{border-color:#ffb020;box-shadow:0 0 0 2px rgba(255,176,32,.35)}
+.lch.edit{border-color:#fff;animation:ledit .8s steps(2) infinite}
+@keyframes ledit{50%{box-shadow:0 0 0 3px rgba(255,255,255,.6)}}
+.lch .l{font-size:9px;font-weight:800}
+.lch .n{font-size:23px;font-weight:800;letter-spacing:.3px}
+.lch .bd{font-size:8px;font-weight:800;margin-left:auto;opacity:.75}
+.lnb{flex:none;width:20px;display:flex;align-items:center;justify-content:center;
+  font-size:7.6px;font-weight:800;color:#9db6d4;border:1px solid #2c4468;border-radius:50%;}
+.lmenu{flex:none;width:60px;display:flex;flex-direction:column;justify-content:space-around;gap:1px}
+.lmenu .mi{display:flex;align-items:center;gap:3px;font-size:7.4px;color:#c2d4e8;line-height:1.05}
 .lmenu .mi b{color:#fff;font-weight:800}
-.lfreq{font-size:7.6px;display:flex;gap:5px;margin:2px 0;flex:none}
-.lfreq .lb{color:#8fa8c4;width:15px}
-.lfreq .v{color:#fff;font-weight:700}
+.lfreq{font-size:11px;display:flex;gap:6px;align-items:baseline;margin:3px 0;flex:none;
+  padding:1px 4px;border:2px solid transparent;border-radius:3px}
+.lfreq.sel{border-color:#5ba6e8;background:rgba(93,166,232,.14)}
+.lfreq.edit{border-color:#ffb020;background:rgba(255,176,32,.16);animation:ledit .8s steps(2) infinite}
+.lfreq .lb{color:#8fa8c4;width:20px;font-weight:800}
+.lfreq .v{color:#fff;font-weight:700;font-size:13px}
 .lfreq .u{color:#8fa8c4}
-.lmode{font-size:6.1px;color:#9db6d4;display:flex;gap:6px;margin:3px 0 2px;font-weight:700;flex:none}
-.lmeter{font-size:5.7px;color:#8fa8c4;display:flex;align-items:center;gap:3px;margin-bottom:2px;flex:none}
-.lbars{display:flex;gap:1px}
-.lbars i{width:2.4px;height:5.5px;background:#274568;border-radius:.5px;display:block}
+.lmode{font-size:8.6px;color:#9db6d4;display:flex;gap:9px;margin:4px 0 3px;font-weight:700;flex:none}
+.lmeter{font-size:8px;color:#8fa8c4;display:flex;align-items:center;gap:4px;margin-bottom:3px;flex:none}
+.lbars{display:flex;gap:1.5px}
+.lbars i{width:3.4px;height:8px;background:#274568;border-radius:.5px;display:block}
 .lbars i.on{background:#5ba6e8}
-.lag{display:flex;justify-content:space-between;align-items:center;font-size:5.7px;color:#9db6d4;margin-bottom:3px;flex:none}
-.lag .attb{border:1px solid #2c4468;border-radius:8px;padding:1px 6px;font-weight:800}
-.lgps{background:#152540;border:1px solid #24406a;border-radius:2px;padding:3px 5px;
-  display:flex;justify-content:space-between;font-size:5.9px;color:#cfe0f2;margin-bottom:3px;flex:none}
-.lgps b{color:#fff;font-weight:800;display:block;font-size:5.7px;text-align:right;opacity:.85}
-.lmem{display:flex;gap:2px;flex:none;margin-top:auto}
-.lmem i{flex:1;height:7px;border:1px solid #24406a;border-radius:1px;display:block}
+.lag{display:flex;justify-content:space-between;align-items:center;font-size:8px;color:#9db6d4;margin-bottom:4px;flex:none}
+.lag .attb{border:1px solid #2c4468;border-radius:8px;padding:1px 7px;font-weight:800}
+.lgps{background:#152540;border:1px solid #24406a;border-radius:2px;padding:4px 6px;
+  display:flex;justify-content:space-between;font-size:8.4px;color:#cfe0f2;margin-bottom:4px;flex:none}
+.lgps b{color:#fff;font-weight:800;display:block;font-size:8px;text-align:right;opacity:.85}
+.lmem{display:flex;gap:2px;flex:none}
+.lmem i{flex:1;height:9px;border:1px solid #24406a;border-radius:1px;display:block}
 
-/* --- меню/список поверх того же экрана (навигация по MENU) --- */
-.lmenuscreen{flex:1;overflow-y:auto;font-size:9.5px;line-height:1.7}
-.lmenuscreen::-webkit-scrollbar{width:0}
+/* --- MENU: слева разделы, справа их содержимое --- */
+.lmenuwrap{flex:1;display:flex;gap:6px;min-height:0}
+.lmcol{
+  width:96px;flex:none;border:1px solid #3d5b86;background:#0c1e38;
+  padding:2px;overflow-y:auto;
+}
+.lmcol::-webkit-scrollbar,.lmpanel::-webkit-scrollbar,.lmenuscreen::-webkit-scrollbar,
+.llog::-webkit-scrollbar,.laddr::-webkit-scrollbar{width:0}
+.lmcap{background:#7fd4ff;color:#04121f;font-size:8.6px;font-weight:800;padding:0 4px;letter-spacing:.5px}
+.lmi{display:flex;align-items:center;gap:4px;font-size:9.6px;padding:1.5px 3px;color:#dce8f4;line-height:1.35}
+.lmi .nn{
+  flex:none;width:11px;height:11px;border:1px solid #5f83b5;border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-size:7.4px;font-weight:800;color:#9db6d4;
+}
+.lmi.dim{color:#5c7799}
+.lmi.dim .nn{visibility:hidden}
+.lmi.sel{background:#c9d6e4;color:#0b1728;font-weight:800}
+.lmi.sel .nn{border-color:#0b1728;color:#0b1728}
+.lmi.act{outline:1px solid #ffb020}
+.lmpanel{flex:1;min-width:0;border:1px solid #3d5b86;background:#08182e;padding:2px 3px;overflow-y:auto}
+.lmpanel .ph{background:#c9d6e4;color:#0b1728;font-size:9px;font-weight:800;padding:0 4px;margin-bottom:2px}
+.lmr{display:flex;align-items:center;gap:5px;font-size:9.6px;padding:1.5px 3px;color:#dce8f4;line-height:1.4}
+.lmr .sq{width:7px;height:7px;flex:none;border:1px solid #5f83b5;background:#123054}
+.lmr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmr .vl{color:#9fc4ee;font-weight:700;flex:none}
+.lmr .ar{color:#9db6d4;flex:none;font-weight:800}
+.lmr.sel{background:#c9d6e4;color:#0b1728}
+.lmr.sel .vl{color:#12365e}
+.lmr.sel .ar{color:#0b1728}
+.lmr.dim{color:#5c7799}
+
+/* --- COMPOSE MESSAGE --- */
+.lcomp{flex:1;min-height:0;overflow-y:auto;position:relative}
+.lcrow{display:flex;align-items:baseline;gap:6px;font-size:11px;padding:2px 3px;line-height:1.45}
+.lcrow .k{width:76px;flex:none;color:#dce8f4;font-weight:700}
+.lcrow .v{flex:1;min-width:0;color:#fff;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcrow.sel{background:#c9d6e4}
+.lcrow.sel .k,.lcrow.sel .v{color:#0b1728}
+.lcrow.edit{background:#ffd79a}
+.lcrow.edit .k,.lcrow.edit .v{color:#1a1408}
+.lcrow.dim .v{color:#8fa8c4}
+.lpop{
+  position:absolute;left:74px;right:6px;top:0;background:#08182e;border:1px solid #7fa4d4;
+  padding:2px 3px;max-height:100%;overflow-y:auto;
+}
+.lpop .ph{color:#9db6d4;font-size:9px;border-bottom:1px dashed #5f83b5;margin-bottom:2px;padding-bottom:1px}
+.lpop .it{font-size:10.4px;padding:1.5px 4px;color:#dce8f4;line-height:1.4}
+.lpop .it.sel{background:#c9d6e4;color:#0b1728;font-weight:800}
+.lnote{font-size:9px;color:#9db6d4;text-align:center;line-height:1.4;margin-top:5px;flex:none}
+.lnote b{color:#fff;display:block;font-weight:800}
+
+/* --- WATCH KEEPING / SCAN --- */
+.lwk{flex:1;min-height:0;display:flex;flex-direction:column;gap:3px}
+.lwkcap{font-size:9.4px;color:#dce8f4;display:flex;gap:14px;font-weight:800;letter-spacing:.4px}
+.lwktab{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #3d5b86}
+.lwktab i{
+  border:1px solid #24406a;font-style:normal;font-size:10.4px;color:#dce8f4;
+  padding:2px 4px;min-height:18px;display:flex;align-items:center;gap:3px;
+  font-variant-numeric:tabular-nums;
+}
+.lwktab i.on{background:#c9d6e4;color:#0b1728;font-weight:800}
+.lwktab i.hit{background:#ffb020;color:#1a1408;font-weight:800}
+.lwktab i b{color:#7fd4ff;font-weight:800}
+.lwktab i.on b{color:#0b1728}
+.lscanmsg{font-size:9.4px;color:#ffd79a;text-align:center;min-height:13px;font-weight:700}
+
+/* --- список/лог на весь экран --- */
+.lmenuscreen{flex:1;overflow-y:auto;font-size:12px;line-height:1.75}
 .lmenuscreen .it{padding-left:2px}
-.lmenuscreen .it.sel{background:rgba(93,166,232,.18);border-left:2px solid #5ba6e8;padding-left:6px;margin-left:-8px;color:#fff}
-.llog{flex:1;overflow-y:auto;font-size:9px;line-height:1.6;white-space:pre-wrap;color:#dce8f4}
-.llog::-webkit-scrollbar{width:0}
+.lmenuscreen .it.sel{background:rgba(93,166,232,.2);border-left:2px solid #5ba6e8;padding-left:7px;margin-left:-9px;color:#fff}
+.llog{flex:1;overflow-y:auto;font-size:11.4px;line-height:1.6;white-space:pre-wrap;color:#dce8f4}
+.laddr{flex:1;overflow-y:auto;font-size:10.6px;line-height:1.6}
+.laddr .it{display:flex;gap:6px;padding:1px 3px}
+.laddr .it.sel{background:#c9d6e4;color:#0b1728;font-weight:800}
+.laddr .it .mm{color:#9fc4ee;font-variant-numeric:tabular-nums}
+.laddr .it.sel .mm{color:#12365e}
 .blink{animation:lcdblink 1.1s steps(2) infinite}
 @keyframes lcdblink{50%{opacity:.25}}
 
-/* --- правая колонка: клавиатура --- */
-.rright{width:126px;flex:none;display:flex;flex-direction:column;gap:5px}
+/* --- клавиатура --- */
+.rright{width:150px;flex:none;display:flex;flex-direction:column;gap:5px}
 .rkgrid{display:flex;flex-wrap:wrap;gap:4px}
 .rkgrid .rkey{width:calc((100% - 8px)/3)}
 .rfngrid{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .rfngrid .rkey{width:calc((100% - 4px)/2)}
 .rkey{
   background:linear-gradient(180deg,#3d4249,#26292d);border:1px solid #4a4f55;border-radius:5px;
-  padding:5px 2px;text-align:center;box-shadow:0 1.5px 0 #17181a, inset 0 1px 0 rgba(255,255,255,.08);
+  padding:6px 2px;text-align:center;box-shadow:0 1.5px 0 #17181a, inset 0 1px 0 rgba(255,255,255,.08);
   cursor:pointer;transition:transform .08s;box-sizing:border-box;
 }
 .rkey:active{transform:translateY(1.5px);box-shadow:0 0 0 #17181a, inset 0 1px 0 rgba(255,255,255,.05)}
-.rkey .kt{font-size:7.2px;font-weight:800;color:#e6eaee;line-height:1}
-.rkey .ks{font-size:4.8px;font-weight:700;color:#8a9098;margin-top:1px}
+.rkey .kt{font-size:8.6px;font-weight:800;color:#e6eaee;line-height:1}
+.rkey .ks{font-size:5.8px;font-weight:700;color:#8a9098;margin-top:1px}
+.rkey.on{background:linear-gradient(180deg,#8a6a24,#5f4715);border-color:#c79a3a}
+.rkey.on .kt{color:#ffe9c2}
 .rkey.ok{background:linear-gradient(180deg,#2f6b46,#1f4a30);border-color:#3d7d54}
 .rkey.ok .kt{color:#d8ffe6}
 .rkey.warn{background:linear-gradient(180deg,#7a5a20,#5a4116);border-color:#8d6a28}
 .rkey.warn .kt{color:#ffe9c2}
 .rbigknob{
-  width:48px;height:48px;border-radius:50%;margin:4px auto 0;cursor:pointer;
+  width:62px;height:62px;border-radius:50%;margin:6px auto 2px;cursor:pointer;
   background:radial-gradient(circle at 32% 28%,#565b62,#1c1e20 70%);
   border:1px solid #63686e;box-shadow:0 3px 6px rgba(0,0,0,.5);position:relative;
 }
+.rbigknob.pushed{border-color:#ffb020;box-shadow:0 0 0 3px rgba(255,176,32,.35),0 3px 6px rgba(0,0,0,.5)}
 .rbigknob .kdial{
   position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;
   transition:none;pointer-events:none;
 }
-.rbigknob .kdial::after{content:'';position:absolute;top:5px;left:50%;width:3px;height:14px;
+.rbigknob .kdial::after{content:'';position:absolute;top:6px;left:50%;width:3.5px;height:17px;
   background:#a2a8ae;transform:translateX(-50%);border-radius:1.5px}
-.rbigknob .cap{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
-  font-size:5.1px;color:#a8aeb4;font-weight:700;white-space:nowrap}
+.rbigknob .cap{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
+  font-size:5.8px;color:#a8aeb4;font-weight:700;white-space:nowrap}
 
-.rcompose{display:flex;gap:7px;align-items:flex-end;margin-top:16px}
+.rcompose{display:flex;gap:7px;align-items:flex-end;margin-top:14px}
 .rcbtn{
   flex:1;background:linear-gradient(180deg,#3d4249,#26292d);border:1px solid #4a4f55;border-radius:5px;
-  padding:7px 3px;font-size:6.2px;font-weight:800;color:#dfe4e8;text-align:center;line-height:1.15;
+  padding:8px 3px;font-size:7.4px;font-weight:800;color:#dfe4e8;text-align:center;line-height:1.15;
   cursor:pointer;
 }
-.rbracket{border-top:1px solid #4a4f55;margin-top:3px;padding-top:2px;font-size:4.8px;
+.rcbtn.on{background:linear-gradient(180deg,#8a6a24,#5f4715);border-color:#c79a3a;color:#ffe9c2}
+.rbracket{border-top:1px solid #4a4f55;margin-top:3px;padding-top:2px;font-size:5.6px;
   color:#8a9098;text-align:center;font-weight:700;letter-spacing:.2px}
 
 .rfooter{
@@ -567,7 +681,24 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   border-radius:3px;padding:6px 12px;text-align:center;margin:10px auto 0;max-width:180px;
   border:1px solid #b8bec4;box-shadow:0 1px 2px rgba(0,0,0,.3);
 }
+/* Подсказка по органам управления под корпусом */
+.rlegend2{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;justify-content:center;
+}
+.rlegend2 span{
+  font-size:10.5px;color:var(--muted);background:var(--surf2);border:1px solid var(--line);
+  border-radius:8px;padding:4px 9px;
+}
+.rlegend2 b{color:var(--amber);font-weight:800}
 
+/* На широком экране корпус ближе к оригиналу: экран остаётся сверху,
+   но органы управления расходятся шире и всё становится крупнее. */
+@media(min-width:520px){
+  .lcd{min-height:340px;font-size:13px}
+  .rleft{width:88px}
+  .rright{width:172px}
+  .rkey .kt{font-size:9.6px}
+}
 .dsctip{
   background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--amber);
   border-radius:var(--r-md);padding:12px 14px;margin-top:13px;font-size:12.5px;
@@ -821,7 +952,7 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .needin:focus{border-color:var(--amber)}
 .amsg.colreg{border-left:3px solid var(--amber)}
 
-/* ---- Ask Watchkeeper ---- */
+/* ---- Ask WatchKeeper ---- */
 .askbox{
   min-height:200px;padding-bottom:8px;
 }
@@ -1097,6 +1228,93 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .plan li::before{content:'';position:absolute;left:2px;top:11px;width:7px;height:7px;
   border-radius:50%;background:var(--amber);opacity:.75}
 .plan.gray li::before{background:var(--muted);opacity:.5}
+.buystate{font-size:12.5px;line-height:1.45;color:var(--muted);margin-top:10px;text-align:center}
+.buystate:empty{display:none}
+.buystate.ok{color:var(--ok)}
+.buystate.no{color:var(--hot)}
+
+/* ---- Выбор даты ----
+   Свой календарь вместо системного: системный на телефоне присылает
+   change на каждый прокрученный барабан, и раздел, который на это
+   перерисовывается, закрывал окно на середине выбора. Здесь дата
+   уходит наружу один раз -- по кнопке «Готово». */
+.dpick{
+  position:fixed;inset:0;z-index:140;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(4,10,17,.66);backdrop-filter:blur(5px);
+}
+.dpick.on{display:flex}
+.dpbox{
+  width:100%;max-width:430px;background:var(--bg2);border:1px solid var(--line);
+  border-bottom:0;border-radius:var(--r-xl) var(--r-xl) 0 0;box-shadow:var(--sh);
+  padding:15px 15px calc(15px + env(safe-area-inset-bottom,0px));
+  animation:dpup .2s ease-out;
+}
+@keyframes dpup{from{transform:translateY(26px);opacity:0}}
+.dplabel{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--dim);text-align:center;margin-bottom:11px}
+.dphead{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.dpnav{
+  width:36px;height:36px;flex:none;border-radius:11px;border:1px solid var(--line);
+  background:var(--surf2);color:var(--text);font-size:17px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.dpnav:active{border-color:var(--amber);color:var(--amber)}
+.dptitle{
+  flex:1;min-width:0;text-align:center;font-size:16px;font-weight:750;cursor:pointer;
+  padding:7px 6px;border-radius:11px;border:1px solid transparent;
+}
+.dptitle:active{border-color:var(--amber);color:var(--amber)}
+.dpwk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:5px}
+.dpwk span{text-align:center;font-size:9.5px;font-weight:800;color:var(--dim);letter-spacing:.4px}
+.dpgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dpd{
+  height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;
+  font-size:14.5px;cursor:pointer;font-variant-numeric:tabular-nums;color:var(--text);
+  border:1px solid transparent;
+}
+.dpd.mut{color:var(--dim);opacity:.5}
+.dpd.today{border-color:rgba(240,160,60,.5)}
+.dpd.on{background:linear-gradient(150deg,var(--amber),var(--amber2));color:#160d02;font-weight:800}
+.dpgrid2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:238px;overflow-y:auto}
+.dpc{
+  padding:10px 4px;text-align:center;border-radius:11px;font-size:13.5px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surf2);color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+.dpc.on{background:linear-gradient(150deg,var(--amber),var(--amber2));color:#160d02;font-weight:800;border-color:transparent}
+.dpsel{text-align:center;font-size:13px;color:var(--muted);margin-top:12px;min-height:18px}
+.dpsel b{color:var(--amber)}
+.dpbar{display:flex;gap:8px;margin-top:12px}
+.dpbar .btn{flex:1;margin:0}
+.dpbar .btn[disabled]{opacity:.4;pointer-events:none}
+.datefield{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:12px 14px;font-size:15px;color:var(--text);cursor:pointer;text-align:left;
+}
+.datefield:active{border-color:var(--amber)}
+.datefield .dv{font-variant-numeric:tabular-nums;font-weight:650}
+.datefield .dv.none{color:var(--dim);font-weight:400}
+.datefield .dico{color:var(--amber);display:flex;flex:none}
+
+/* ---- Список выбора (вахта и прочее) ---- */
+.pkopt{
+  display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:var(--r-md);
+  border:1px solid var(--line);background:var(--surf2);cursor:pointer;margin-bottom:7px;
+}
+.pkopt:active{border-color:var(--amber)}
+.pkopt.on{border-color:rgba(240,160,60,.5);
+  background:linear-gradient(150deg,rgba(240,160,60,.12),var(--surf2))}
+.pkopt .mark{
+  width:19px;height:19px;flex:none;border-radius:50%;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+}
+.pkopt.on .mark{border-color:var(--amber)}
+.pkopt.on .mark::after{content:'';width:9px;height:9px;border-radius:50%;background:var(--amber)}
+.pkopt .pkt{flex:1;min-width:0}
+.pkopt .pk1{font-size:14.5px;font-weight:650;line-height:1.25}
+.pkopt .pk2{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.pklist{max-height:56vh;overflow-y:auto;margin:0 -2px;padding:0 2px}
 
 
 
@@ -1581,7 +1799,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
   <!-- ASK WATCHKEEPER -->
   <section id="v-ask" class="hidden">
-    <div class="vhead"><button class="vback" data-back></button><h3>Ask Watchkeeper</h3>
+    <div class="vhead"><button class="vback" data-back></button><h3>Ask WatchKeeper</h3>
       <a id="askClear" class="vsub">Очистить</a></div>
     <div id="askBox" class="askbox"></div>
     <div class="askbar">
@@ -2960,7 +3178,7 @@ Object.assign(DICT,{
  'Показать остальные':'Show the rest','отмечено':'checked'
 });
 Object.assign(DICT,{
- 'Ask Watchkeeper':'Ask Watchkeeper','Спроси обычными словами':'Ask in plain words',
+ 'Ask WatchKeeper':'Ask WatchKeeper','Спроси обычными словами':'Ask in plain words',
  'Числа из вопроса подставятся в нужный расчёт. Простые вопросы разбираются без связи.':
    'Numbers from your question go straight into the right calculator. Simple questions are handled offline.',
  'Открыть расчёт':'Open calculator','Открыть с этими числами':'Open with these numbers',
@@ -2994,6 +3212,80 @@ Object.assign(DICT,{
  'Это подсказка по правилам, а не указание. Решение принимает судоводитель по обстановке.':
    'This is a reminder of the rules, not an instruction. The decision rests with the navigator.',
  'Пеленг на цель':'Target bearing','Предупреждения':'Warnings','Моя позиция':'My position'
+});
+/* ---- Оплата, календарь, выбор вахты ---- */
+Object.assign(DICT,{
+ 'Готовлю счёт…':'Preparing invoice…','Оформить за':'Subscribe for','в месяц':'per month',
+ 'Оплачено. Premium активирован.':'Paid. Premium is active.',
+ 'Оплата отменена.':'Payment cancelled.',
+ 'Оплата не прошла. Попробуй ещё раз.':'Payment failed. Try again.',
+ 'Счёт закрыт. Подписка не оформлена.':'Invoice closed, no subscription.',
+ 'Оплата доступна только внутри Telegram — открой приложение кнопкой в чате с ботом.':
+   'Payment works only inside Telegram — open the app from the chat with the bot.',
+ 'Подписка уже активна.':'Subscription is already active.',
+ 'Ты владелец бота, Premium и так открыт.':'You own the bot, Premium is already open.',
+ 'Бот не настроен: не задан токен.':'Bot is not configured: token missing.',
+ 'Нет связи с Telegram. Попробуй ещё раз, когда появится сеть.':
+   'No connection to Telegram. Try again when the network is back.',
+ 'Telegram не выдал счёт. Проверь, что у бота включены платежи звёздами.':
+   'Telegram did not issue an invoice. Check that Stars payments are enabled for the bot.',
+ 'Выбери дату':'Pick a date','Выбери год':'Pick a year','Выбери день':'Pick a day',
+ 'Выбрано':'Selected','Не задана':'Not set','Действует до':'Valid until',
+ 'Январь':'January','Февраль':'February','Март':'March','Апрель':'April','Май':'May',
+ 'Июнь':'June','Июль':'July','Август':'August','Сентябрь':'September','Октябрь':'October',
+ 'Ноябрь':'November','Декабрь':'December',
+ 'Янв':'Jan','Фев':'Feb','Мар':'Mar','Апр':'Apr','Июн':'Jun','Июл':'Jul','Авг':'Aug',
+ 'Сен':'Sep','Окт':'Oct','Ноя':'Nov','Дек':'Dec',
+ 'Пн':'Mo','Вт':'Tu','Ср':'We','Чт':'Th','Пт':'Fr','Сб':'Sa','Вс':'Su',
+ 'Какая у тебя вахта':'Which watch do you keep',
+ 'Второй помощник':'Second mate','Старший помощник':'Chief mate','Третий помощник':'Third mate',
+ 'Шесть через шесть':'Six on, six off','Дневная работа':'Day work',
+ '08-17, без ходовой вахты':'08-17, no bridge watch'
+});
+/* ---- Тренажёр ЦИВ: подписи новых экранов ---- */
+Object.assign(DICT,{
+ 'Ролик':'Dial','крутить: выбор, нажать: ввод':'turn to select, push to enter',
+ 'разделы станции':'station menu','день / ночь / зелёный':'day / night / green',
+ 'вахтенный приём':'watch keeping',
+ 'Крути — выбор CH/TX/RX':'Turn — pick CH/TX/RX','Крути — меняется значение':'Turn — value changes',
+ 'BRILL — ещё раз, чтобы сменить':'BRILL again to change',
+ 'СКАНИРОВАНИЕ…':'SCANNING…','SCAN — начать сканирование':'SCAN to start scanning',
+ 'CANCEL — продолжить':'CANCEL to resume','Раздел недоступен':'Section unavailable',
+ 'Удерживай 3 секунды':'Hold for 3 seconds','нет данных GPS':'no GPS data',
+ 'Ввод значения':'Editing the value','Выбор поля':'Choosing a field',
+ 'Крути ролик: вправо — больше, влево — меньше. Нажми ещё раз, чтобы зафиксировать.':
+   'Turn the dial: clockwise up, counter-clockwise down. Push again to confirm.',
+ 'Крути ролик, чтобы перейти между CH, TX и RX. Нажатие открывает поле на изменение.':
+   'Turn the dial to move between CH, TX and RX. Pushing opens the field for editing.',
+ 'Адрес подставлен':'Address filled in',
+ 'Позывной из книги ушёл в поле TO. Дальше выбери приоритет, режим связи и рабочую частоту.':
+   'The station from the book went into TO. Now pick priority, comm mode and working frequency.',
+ 'Тип сообщения':'Message type',
+ 'Срочность (PAN PAN) и безопасность (SECURITE) на станции задаются полем PRIORITY, а не отдельным типом сообщения. Тип отвечает только за то, кому уходит вызов.':
+   'Urgency (PAN PAN) and safety (SECURITE) are set by the PRIORITY field, not by a separate message type. The type only decides who the call goes to.',
+ 'Вахтенный приём':'Watch keeping',
+ 'Станция обязана непрерывно слушать частоты бедствия. SCAN проходит их по кругу: верхняя строка — 2187.5 кГц, ниже береговые вызывные ЦИВ. Приём вызова сканирование останавливает.':
+   'The station must keep a continuous watch on the distress frequencies. SCAN steps through them: the top row is 2187.5 kHz, below are the coast DSC calling channels. An incoming call stops the scan.',
+ '2182 кГц':'2182 kHz',
+ 'Симплексная частота бедствия и вызова на ПВ. После вызова ЦИВ на 2187.5 разговор идёт голосом именно здесь.':
+   'The MF simplex distress and calling frequency. After a DSC call on 2187.5 the voice traffic goes here.',
+ 'Слева от экрана выбирается либо готовый канал (CH), либо частоты вручную (TX и RX). Ролик крутит то, что подсвечено.':
+   'You either work on a ready channel (CH) or set the frequencies by hand (TX and RX). The dial changes whatever is highlighted.',
+ 'Яркость экрана':'Display brilliance',
+ 'День — полная яркость и контраст. Ночь — приглушённый красный, чтобы не сбивать адаптацию глаз на тёмном мостике. Зелёный — старый люминофорный режим, привычный по прежним станциям.':
+   'Day is full brightness and contrast. Night is dimmed red so it does not spoil dark adaptation on the bridge. Green is the old phosphor look of earlier sets.',
+ 'Динамик выключен':'Speaker muted','Динамик включён':'Speaker on',
+ 'На вахте так делать нельзя: дежурный приём должен быть слышен.':
+   'Never do this on watch: the distress watch must stay audible.',
+ 'Дежурный приём снова слышен.':'The distress watch is audible again.',
+ 'Канал выбран':'Channel selected','Особые сообщения':'Special messages',
+ 'Здесь живёт ретрансляция бедствия: её подают за другое судно, когда берег не подтвердил его тревогу. Свой вызов бедствия при этом не подаётся.':
+   'This is where the distress relay lives: you send it for another vessel when the shore has not acknowledged its alert. You never send your own distress alert instead.',
+ 'Прочти обстановку и подай тот вызов, который положен: DISTRESS MSG — бедствие, OTHER DSC MSG — всё остальное. Срочность и безопасность задаются полем PRIORITY, а не отдельным типом сообщения.':
+   'Read the situation and send the right call: DISTRESS MSG for distress, OTHER DSC MSG for everything else. Urgency and safety are set by the PRIORITY field, not by a separate message type.',
+ 'Не удалось получить счёт. Попробуй ещё раз.':'Could not get an invoice. Try again.',
+ 'Звук тренажёра':'Simulator sound',
+ 'Посылка ЦИВ, подтверждение и сигнал тревоги':'DSC burst, acknowledgement and alarm tone'
 });
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
@@ -3739,7 +4031,7 @@ const GROUPS={
     {v:'tools',t:'Инструменты',i:'sliders'},
     {v:'bridge',t:'Чек-листы',i:'flag'},
     {v:'refs',t:'Справка',i:'archive'}]},
-  ask:{t:'Ask Watchkeeper',i:'compass',subs:[{v:'ask',t:'Ask Watchkeeper',i:'compass'}]},
+  ask:{t:'Ask WatchKeeper',i:'compass',subs:[{v:'ask',t:'Ask WatchKeeper',i:'compass'}]},
   map:{t:'Карта',i:'map',subs:[
     {v:'map',t:'Обстановка',i:'map'},
     {v:'voy',t:'Маршрут',i:'route'},
@@ -4158,13 +4450,25 @@ function openCertForm(){
     <div class="fld"><label>Номер (необязательно)</label>
       <input class="tinput" id="cNum" placeholder="№"></div>
     <div class="fld"><label>Действует до</label>
-      <input class="tinput" id="cExp" type="date"></div>
+      <button type="button" class="datefield" id="cExp" data-iso="">
+        <span class="dv none">${esc(tr('Не задана'))}</span>
+        <span class="dico">${ico('clock','sm')}</span>
+      </button></div>
     <div class="fld"><label>Заметка (необязательно)</label>
       <input class="tinput" id="cNote" placeholder="Где выдан, что нужно для продления"></div>`;
+  $('#cExp').onclick=()=>{
+    const b=$('#cExp');
+    dpOpen(b.dataset.iso||'', 'Действует до', iso=>{
+      b.dataset.iso=iso;
+      const v=b.querySelector('.dv');
+      v.className='dv'+(iso?'':' none');
+      v.textContent=iso?dpHuman(iso):tr('Не задана');
+    });
+  };
   $('#tResults').innerHTML=
     `<button class="btn wide" id="cSave">Сохранить сертификат</button>`;
   $('#cSave').onclick=async()=>{
-    const n=$('#cName').value.trim(), e=$('#cExp').value;
+    const n=$('#cName').value.trim(), e=$('#cExp').dataset.iso;
     if(!n||!e){ $('#tResults').insertAdjacentHTML('beforeend',
       '<div class="tres warn" style="margin-top:9px"><span class="tl">Заполни название и дату</span></div>'); return; }
     hap('medium');
@@ -4572,19 +4876,270 @@ function openPlans(){
     <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда — брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
   $('#tResults').innerHTML = isPaid()
     ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(ACC?ACC.title:'')}</span></div>`
-    : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>`;
+    : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>
+       <div class="buystate" id="buyState"></div>`;
   $('#tool').classList.add('on');
   document.body.style.overflow='hidden';
   curTool=null;
   applyLang();
 
   const bb=$('#buyBtn');
-  if(bb) bb.onclick=()=>{
-    hap('medium');
-    try{ TG.close(); }catch(e){}
-    // оплата идёт в чате: там Telegram сам открывает окно платежа по /subscribe
-  };
+  if(bb) bb.onclick=()=>startPurchase(bb);
 }
+
+/* ---- Оплата подписки прямо из приложения ----
+   Сервер делает ссылку на счёт (createInvoiceLink со звёздами), а Telegram
+   открывает по ней своё окно оплаты поверх приложения. Раньше кнопка просто
+   закрывала Mini App -- со стороны это и выглядело как «выкинуло на главную».*/
+const BUY_ERR={
+  unauthorized:'Оплата доступна только внутри Telegram — открой приложение кнопкой в чате с ботом.',
+  already_premium:'Подписка уже активна.',
+  owner:'Ты владелец бота, Premium и так открыт.',
+  no_token:'Бот не настроен: не задан токен.',
+  network:'Нет связи с Telegram. Попробуй ещё раз, когда появится сеть.',
+  telegram_error:'Telegram не выдал счёт. Проверь, что у бота включены платежи звёздами.'
+};
+function buySay(text, cls){
+  const el=$('#buyState'); if(!el) return;
+  el.className='buystate'+(cls?' '+cls:'');
+  el.textContent=text||'';
+}
+async function startPurchase(btn){
+  hap('medium');
+  if(btn){ btn.disabled=true; btn.textContent=tr('Готовлю счёт…'); }
+  buySay('');
+  let r=null;
+  try{ r=await api('/api/invoice'); }
+  catch(e){ r={error:'network'}; }
+
+  const restore=()=>{
+    if(!btn) return;
+    btn.disabled=false;
+    btn.textContent=tr('Оформить за')+' '+((ACC&&ACC.price_stars)||100)+' ⭐ '+tr('в месяц');
+  };
+
+  if(!r||r.error||!r.link){
+    restore();
+    const key=(r&&r.error)||'network';
+    buySay(tr(BUY_ERR[key]||'Не удалось получить счёт. Попробуй ещё раз.')
+           +((r&&r.detail)?(' ('+r.detail+')'):''),'no');
+    if(key==='already_premium'){ loadAccess().then(()=>{ closeTool(); renderSettings(); }); }
+    return;
+  }
+
+  restore();
+
+  // openInvoice есть начиная с Bot API 6.1; если WebView старее -- открываем
+  // ссылку обычным способом, окно оплаты всё равно появится.
+  if(TG&&typeof TG.openInvoice==='function'){
+    try{
+      TG.openInvoice(r.link, async status=>{
+        if(status==='paid'){
+          hap('heavy');
+          buySay(tr('Оплачено. Premium активирован.'),'ok');
+          await loadAccess();
+          closeTool(); renderSettings(); render();
+          // Бот отмечает подписку, когда до него дойдёт сообщение об оплате.
+          // Иногда это на секунду позже окна -- перечитываем ещё раз.
+          setTimeout(()=>loadAccess().then(()=>{ renderSettings(); render(); }), 2500);
+        } else if(status==='cancelled'){
+          buySay(tr('Оплата отменена.'));
+        } else if(status==='failed'){
+          buySay(tr('Оплата не прошла. Попробуй ещё раз.'),'no');
+        } else {
+          buySay(tr('Счёт закрыт. Подписка не оформлена.'));
+        }
+      });
+      return;
+    }catch(e){}
+  }
+  try{ TG.openTelegramLink(r.link); }
+  catch(e){ window.open(r.link,'_blank'); }
+}
+
+
+/* ================= Выбор даты =================
+   Свой календарь. Системный на телефоне отдаёт change на каждый
+   прокрученный барабан -- год, месяц, день по отдельности, -- и раздел,
+   который на это перерисовывается, закрывал окно на середине выбора.
+   Здесь наружу уходит одна готовая дата и только по кнопке «Готово». */
+const DP_MON=['Январь','Февраль','Март','Апрель','Май','Июнь',
+              'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DP_MON_SHORT=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+const DP_WK=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const DP={y:0,m:0,d:0,cb:null,mode:'day',title:''};
+
+const dpPad=n=>String(n).padStart(2,'0');
+const dpIso=(y,m,d)=>y+'-'+dpPad(m+1)+'-'+dpPad(d);
+function dpParse(iso){
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||''));
+  return m?{y:+m[1],m:+m[2]-1,d:+m[3]}:null;
+}
+function dpHuman(iso){
+  const p=dpParse(iso);
+  return p?dpPad(p.d)+' '+tr(DP_MON_SHORT[p.m])+' '+p.y:'';
+}
+const dpDaysIn=(y,m)=>new Date(Date.UTC(y,m+1,0)).getUTCDate();
+
+/* Открыть календарь. value -- ГГГГ-ММ-ДД или пусто, cb получает
+   готовую строку (или пустую, если нажали «Очистить»). */
+function dpOpen(value,title,cb){
+  const p=dpParse(value), now=new Date();
+  DP.y = p?p.y:now.getFullYear();
+  DP.m = p?p.m:now.getMonth();
+  DP.d = p?p.d:0;              // 0 -- день ещё не выбран, «Готово» не активна
+  DP.cb=cb; DP.mode='day'; DP.title=title||'Выбери дату';
+  dpEnsure();
+  $('#dpick').classList.add('on');
+  document.body.style.overflow='hidden';
+  dpDraw();
+  hap();
+}
+function dpClose(){
+  const el=$('#dpick'); if(!el) return;
+  el.classList.remove('on');
+  if(!$('#tool').classList.contains('on')&&!$('#detail').classList.contains('on'))
+    document.body.style.overflow='';
+  DP.cb=null;
+}
+function dpEnsure(){
+  if($('#dpick')) return;
+  const el=document.createElement('div');
+  el.className='dpick'; el.id='dpick';
+  el.innerHTML='<div class="dpbox" id="dpbox"></div>';
+  document.body.appendChild(el);
+  // тап мимо окна -- то же, что «Отмена»: ничего не сохраняем
+  el.addEventListener('pointerdown',e=>{ if(e.target===el) dpClose(); });
+}
+function dpDraw(){
+  const box=$('#dpbox'); if(!box) return;
+  const today=new Date();
+  const tY=today.getFullYear(), tM=today.getMonth(), tD=today.getDate();
+
+  let body='';
+  if(DP.mode==='year'){
+    const from=Math.min(DP.y,tY)-6, list=[];
+    for(let y=from;y<from+24;y++) list.push(y);
+    body=`<div class="dpgrid2">${list.map(y=>
+      `<div class="dpc ${y===DP.y?'on':''}" data-dpy="${y}">${y}</div>`).join('')}</div>`;
+  } else if(DP.mode==='month'){
+    body=`<div class="dpgrid2">${DP_MON_SHORT.map((n,i)=>
+      `<div class="dpc ${i===DP.m?'on':''}" data-dpm="${i}">${esc(tr(n))}</div>`).join('')}</div>`;
+  } else {
+    // понедельник первым, как принято в судовых документах
+    const first=new Date(Date.UTC(DP.y,DP.m,1)).getUTCDay();
+    const lead=(first+6)%7;
+    const days=dpDaysIn(DP.y,DP.m), prev=dpDaysIn(DP.y,DP.m-1);
+    let cells='';
+    for(let i=lead;i>0;i--) cells+=`<div class="dpd mut">${prev-i+1}</div>`;
+    for(let d=1;d<=days;d++){
+      const isToday=(DP.y===tY&&DP.m===tM&&d===tD);
+      cells+=`<div class="dpd ${DP.d===d?'on':''} ${isToday?'today':''}" data-dpd="${d}">${d}</div>`;
+    }
+    const tail=(7-((lead+days)%7))%7;
+    for(let d=1;d<=tail;d++) cells+=`<div class="dpd mut">${d}</div>`;
+    body=`<div class="dpwk">${DP_WK.map(w=>`<span>${esc(tr(w))}</span>`).join('')}</div>
+          <div class="dpgrid">${cells}</div>`;
+  }
+
+  box.innerHTML=`
+    <div class="dplabel">${esc(tr(DP.title))}</div>
+    <div class="dphead">
+      <button class="dpnav" id="dpPrev">‹</button>
+      <div class="dptitle" id="dpTitle">${DP.mode==='year'
+        ? esc(tr('Выбери год'))
+        : DP.mode==='month'
+          ? DP.y
+          : esc(tr(DP_MON[DP.m]))+' '+DP.y}</div>
+      <button class="dpnav" id="dpNext">›</button>
+    </div>
+    ${body}
+    <div class="dpsel">${DP.d
+      ? esc(tr('Выбрано'))+': <b>'+dpPad(DP.d)+' '+esc(tr(DP_MON[DP.m]))+' '+DP.y+'</b>'
+      : esc(tr('Выбери день'))}</div>
+    <div class="dpbar">
+      <button class="btn g" id="dpCancel">${esc(tr('Отмена'))}</button>
+      <button class="btn g" id="dpClear">${esc(tr('Очистить'))}</button>
+      <button class="btn" id="dpOk" ${DP.d?'':'disabled'}>${esc(tr('Готово'))}</button>
+    </div>`;
+
+  const step=dir=>{
+    if(DP.mode==='year'){ DP.y+=dir*24; }
+    else if(DP.mode==='month'){ DP.y+=dir; }
+    else {
+      DP.m+=dir;
+      if(DP.m<0){ DP.m=11; DP.y--; }
+      if(DP.m>11){ DP.m=0; DP.y++; }
+      if(DP.d>dpDaysIn(DP.y,DP.m)) DP.d=dpDaysIn(DP.y,DP.m);
+    }
+    hap(); dpDraw();
+  };
+  $('#dpPrev').onclick=()=>step(-1);
+  $('#dpNext').onclick=()=>step(1);
+  // заголовок листает уровни: месяц -> месяцы -> годы
+  $('#dpTitle').onclick=()=>{
+    DP.mode = DP.mode==='day' ? 'month' : DP.mode==='month' ? 'year' : 'day';
+    hap(); dpDraw();
+  };
+  box.querySelectorAll('[data-dpd]').forEach(el=>el.onclick=()=>{
+    DP.d=+el.dataset.dpd; hap(); dpDraw();
+  });
+  box.querySelectorAll('[data-dpm]').forEach(el=>el.onclick=()=>{
+    DP.m=+el.dataset.dpm; DP.mode='day';
+    if(DP.d>dpDaysIn(DP.y,DP.m)) DP.d=dpDaysIn(DP.y,DP.m);
+    hap(); dpDraw();
+  });
+  box.querySelectorAll('[data-dpy]').forEach(el=>el.onclick=()=>{
+    DP.y=+el.dataset.dpy; DP.mode='month'; hap(); dpDraw();
+  });
+  $('#dpCancel').onclick=()=>{ hap(); dpClose(); };
+  $('#dpClear').onclick=()=>{ const cb=DP.cb; hap('medium'); dpClose(); if(cb) cb(''); };
+  $('#dpOk').onclick=()=>{
+    if(!DP.d) return;
+    const cb=DP.cb, iso=dpIso(DP.y,DP.m,DP.d);
+    hap('medium'); dpClose(); if(cb) cb(iso);
+  };
+  applyLang();
+}
+
+
+/* ================= Список выбора =================
+   То же окно снизу, но со списком вариантов. Нужен там, где раньше
+   значение перебиралось тапом по строке и угадать состав было нельзя. */
+function pickOpen(title, options, current, cb){
+  dpEnsure();
+  const box=$('#dpbox');
+  $('#dpick').classList.add('on');
+  document.body.style.overflow='hidden';
+  hap();
+  box.innerHTML=`
+    <div class="dplabel">${esc(tr(title))}</div>
+    <div class="pklist">${options.map(o=>`
+      <div class="pkopt ${o.v===current?'on':''}" data-pk="${esc(o.v)}">
+        <span class="mark"></span>
+        <span class="pkt"><span class="pk1">${esc(tr(o.t))}</span>
+          ${o.s?`<span class="pk2">${esc(tr(o.s))}</span>`:''}</span>
+      </div>`).join('')}</div>
+    <div class="dpbar"><button class="btn g" id="pkClose">${esc(tr('Закрыть'))}</button></div>`;
+  box.querySelectorAll('[data-pk]').forEach(el=>el.onclick=()=>{
+    const v=el.dataset.pk;
+    hap('medium'); dpClose(); if(cb) cb(v);
+  });
+  $('#pkClose').onclick=()=>{ hap(); dpClose(); };
+  applyLang();
+}
+
+/* Ходовые вахты. Ключи совпадают с WATCH_SCHEDULES на сервере --
+   по ним считается время до заступления в разделе Ask. */
+const WATCH_LIST=[
+  {v:'2nd', t:'Второй помощник',   s:'00-04 / 12-16'},
+  {v:'ch',  t:'Старший помощник',  s:'04-08 / 16-20'},
+  {v:'3rd', t:'Третий помощник',   s:'08-12 / 20-24'},
+  {v:'6a',  t:'Шесть через шесть', s:'00-06 / 12-18'},
+  {v:'6b',  t:'Шесть через шесть', s:'06-12 / 18-24'},
+  {v:'day', t:'Дневная работа',    s:'08-17, без ходовой вахты'}
+];
+const watchInfo=v=>WATCH_LIST.find(w=>w.v===v)||WATCH_LIST[0];
 
 
 /* ---- Профиль: настройки, подписка, о приложении ---- */
@@ -4613,6 +5168,11 @@ function renderSettings(){
           <div class="d">Лёгкая вибрация на кнопках и ручках</div></div>
         <div class="toggle ${HAPTIC?'on':''}"></div>
       </div>
+      <div class="sw" data-set="dscsnd">
+        <div style="min-width:0"><div class="t">${ico('radar','sm')}Звук тренажёра</div>
+          <div class="d">Посылка ЦИВ, подтверждение и сигнал тревоги</div></div>
+        <div class="toggle ${DSC_SND?'on':''}"></div>
+      </div>
     </div>
 
     <div class="dpanel"><h4>Позиция</h4>
@@ -4635,8 +5195,8 @@ function renderSettings(){
     <div class="dpanel"><h4>Вахта</h4>
       <div class="sw" data-set="watch">
         <div style="min-width:0"><div class="t">${ico('clock','sm')}Моя вахта</div>
-          <div class="d">По ней считается время до заступления</div></div>
-        <span class="rtag am">${WATCH_ROLE==='2nd'?'00-04 / 12-16':WATCH_ROLE==='3rd'?'08-12 / 20-24':'04-08 / 16-20'}</span>
+          <div class="d">${esc(tr(watchInfo(WATCH_ROLE).t))}. По ней считается время до заступления</div></div>
+        <span class="rtag am">${esc(watchInfo(WATCH_ROLE).s.split(',')[0])}</span>
       </div>
     </div>
 
@@ -4685,7 +5245,7 @@ function renderSettings(){
     </div>
 
     <div class="dpanel"><h4>О приложении</h4>
-      <div class="tres"><span class="tl">Watchkeeper</span><span class="tv" style="font-size:13px">${APP_VERSION}</span></div>
+      <div class="tres"><span class="tl">WatchKeeper</span><span class="tv" style="font-size:13px">${APP_VERSION}</span></div>
       <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Данные справочные. Официальный источник — оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.</div>
     </div>`;
 
@@ -4707,6 +5267,13 @@ function renderSettings(){
     if(HAPTIC) hap('medium');
     renderSettings();
   };
+  const ds=box.querySelector('[data-set="dscsnd"]');
+  if(ds) ds.onclick=()=>{
+    DSC_SND=!DSC_SND; localStorage.setItem('navarea_dscsnd',DSC_SND?'1':'0');
+    hap('medium');
+    if(DSC_SND) snd('ack');   // сразу слышно, что включилось
+    renderSettings();
+  };
   const gn=$('#setGeoNow');
   if(gn) gn.onclick=async()=>{
     hap('medium');
@@ -4726,8 +5293,11 @@ function renderSettings(){
   };
   const wt=box.querySelector('[data-set="watch"]');
   if(wt) wt.onclick=()=>{
-    WATCH_ROLE = WATCH_ROLE==='2nd'?'3rd':WATCH_ROLE==='3rd'?'ch':'2nd';
-    localStorage.setItem('navarea_watch',WATCH_ROLE); hap('medium'); renderSettings();
+    pickOpen('Какая у тебя вахта', WATCH_LIST, WATCH_ROLE, v=>{
+      WATCH_ROLE=v;
+      localStorage.setItem('navarea_watch',WATCH_ROLE);
+      renderSettings();
+    });
   };
   const cf=box.querySelector('[data-set="coordfmt"]');
   if(cf) cf.onclick=()=>{
@@ -4876,7 +5446,7 @@ function renderCyclones(){
 }
 const CYC_OPEN={};
 
-/* ================= Ask Watchkeeper =================
+/* ================= Ask WatchKeeper =================
    Разговор с приложением обычными словами. Смысл не в переписке, а в том,
    чтобы вопрос сразу превращался в действие: расчёт с подставленными
    числами, проверка маршрута, время вахты.
@@ -5145,20 +5715,197 @@ function bindAskInput(){
    сервер незачем -- и он продолжает работать в рейсе без связи. С сервера
    данные подхватываются только если там окажется более свежая версия. */
 const DSC_BUILTIN={"freqs":[{"band":"MF","dsc":2187.5,"rt":2182.0,"nbdp":2174.5,"note":"Средние волны. Дальность порядка 150 миль днём, ночью больше."},{"band":"HF 4","dsc":4207.5,"rt":4125.0,"nbdp":4177.5,"note":"Ночью и на рассвете, дальность до 300 миль."},{"band":"HF 6","dsc":6312.0,"rt":6215.0,"nbdp":6268.0,"note":"Круглосуточно, средние дистанции."},{"band":"HF 8","dsc":8414.5,"rt":8291.0,"nbdp":8376.5,"note":"Самый универсальный диапазон, работает днём и ночью."},{"band":"HF 12","dsc":12577.0,"rt":12290.0,"nbdp":12520.0,"note":"День, большие дистанции."},{"band":"HF 16","dsc":16804.5,"rt":16420.0,"nbdp":16695.0,"note":"День, максимальная дальность."}],"nature":[{"id":"fire","t":"Fire, explosion","ru":"Пожар, взрыв"},{"id":"flooding","t":"Flooding","ru":"Поступление воды"},{"id":"collision","t":"Collision","ru":"Столкновение"},{"id":"grounding","t":"Grounding","ru":"Посадка на мель"},{"id":"listing","t":"Listing, danger of capsizing","ru":"Крен, опасность опрокидывания"},{"id":"sinking","t":"Sinking","ru":"Затопление"},{"id":"adrift","t":"Disabled and adrift","ru":"Потеря хода, дрейф"},{"id":"undesign","t":"Undesignated distress","ru":"Бедствие без уточнения"},{"id":"abandon","t":"Abandoning ship","ru":"Оставление судна"},{"id":"piracy","t":"Piracy / armed robbery","ru":"Пиратское нападение"},{"id":"mob","t":"Man overboard","ru":"Человек за бортом"}],"calls":[{"id":"distress","t":"Distress Alert","ru":"Вызов бедствия","cat":"Distress","needs":["nature","position"],"why":"Подаётся только при непосредственной опасности для судна или людей. Станция сама подставляет позицию от приёмника и передаёт по всем диапазонам. Ждём подтверждения от берегового центра, не от судов."},{"id":"relay","t":"Distress Relay","ru":"Ретрансляция бедствия","cat":"Distress","needs":["nature","position","mmsi_opt"],"why":"Передаём за другое судно: приняли сигнал бедствия, а берег его не подтвердил. Свой сигнал бедствия при этом не подаём -- иначе спасатели будут искать нас, а не терпящего бедствие."},{"id":"urgency","t":"Urgency Call","ru":"Срочность (PAN PAN)","cat":"Urgency","needs":[],"why":"Серьёзная ситуация, но непосредственной опасности гибели нет: потеря хода в стороне от судоходства, тяжёлый больной на борту."},{"id":"safety","t":"Safety Call","ru":"Безопасность (SECURITE)","cat":"Safety","needs":[],"why":"Навигационные и метеорологические предупреждения: плавающий объект, неработающий буй, шторм."},{"id":"individual","t":"Individual Call","ru":"Индивидуальный вызов","cat":"Routine","needs":["mmsi","freq"],"why":"Вызов конкретного судна или береговой станции по её MMSI. Указываем рабочую частоту, на которой будем говорить."},{"id":"allships","t":"All Ships Call","ru":"Вызов всем судам","cat":"Safety","needs":["freq"],"why":"Всем, кто в зоне слышимости. В обычной обстановке применяется только с категорией срочности или безопасности."},{"id":"group","t":"Group Call","ru":"Групповой вызов","cat":"Routine","needs":["mmsi","freq"],"why":"Судам одной группы: флот компании, суда в конвое. Групповой MMSI начинается с нуля и заранее прописан в станции."},{"id":"test","t":"Test Call","ru":"Тестовый вызов","cat":"Safety","needs":["mmsi"],"why":"Проверка работоспособности ЦИВ на ВЧ и ПВ. Направляется береговой станции, она отвечает подтверждением. На 2187.5 кГц проверка делается именно тестовым вызовом, а не вызовом бедствия."},{"id":"position","t":"Position Request","ru":"Запрос позиции","cat":"Routine","needs":["mmsi"],"why":"Запрос координат другого судна. Оно может ответить автоматически или отклонить запрос -- это его право."},{"id":"polling","t":"Polling","ru":"Опрос присутствия","cat":"Routine","needs":["mmsi"],"why":"Проверка, находится ли станция в зоне связи. Ответ приходит автоматически, без участия вахтенного на той стороне."}],"lessons":{"ack":"Подтверждение (ACK) означает, что вызов принят. При бедствии подтверждать имеет право береговой центр -- судно подтверждает только если берег молчит и судно способно помочь.","freq":"Диапазон выбирают по дальности и времени суток. Ночью проходят низкие частоты (2, 4 МГц), днём высокие (12, 16 МГц). 8 МГц работает почти всегда -- с него и начинают.","rt":"После вызова ЦИВ переходим на парную радиотелефонную частоту того же диапазона и говорим уже голосом. ЦИВ -- только для того, чтобы привлечь внимание.","distress":"Кнопка бедствия закрыта крышкой и требует удержания около пяти секунд -- защита от случайного нажатия. Если подал по ошибке, не выключай станцию: сообщи голосом на 2182 кГц, что тревога ложная, и отмени её.","mmsi":"MMSI из девяти цифр. У судна первые три -- код страны, у береговой станции первые две цифры нули, у группы -- один ноль в начале.","test":"Тестовый вызов не тревожит спасателей и не поднимает никого по тревоге. Именно им проверяют ЦИВ, как требует ежедневная проверка по ГМССБ."},"exam":[{"id":"e1","situation":"В машинном отделении пожар, экипаж не справляется, судно теряет ход. Твои действия по ЦИВ.","expect":{"call":"distress","nature":"fire"},"explain":"Непосредственная опасность для судна и людей -- это вызов бедствия с указанием характера «пожар, взрыв»."},{"id":"e2","situation":"Судно село на мель, поступления воды нет, крена нет, опасности для людей нет, но сняться самостоятельно не можешь.","expect":{"call":"urgency"},"explain":"Прямой угрозы гибели нет, значит бедствие подавать рано. Это срочность (PAN PAN). Если начнёт поступать вода или появится крен -- переходим на бедствие."},{"id":"e3","situation":"Приняли вызов бедствия с соседнего судна на 8414.5 кГц. Прошло пять минут, береговая станция не подтвердила приём.","expect":{"call":"relay"},"explain":"Передаём ретрансляцию бедствия. Свой вызов бедствия подавать нельзя -- у нас самих ничего не случилось, и спасатели пойдут не туда."},{"id":"e4","situation":"Обнаружили в море полузатопленный контейнер, представляющий опасность для судоходства.","expect":{"call":"safety"},"explain":"Навигационная опасность для других судов -- категория безопасности (SECURITE), обычно вызовом всем судам."},{"id":"e5","situation":"Нужно проверить работу ЦИВ на ПВ, как того требует ежедневная проверка ГМССБ.","expect":{"call":"test"},"explain":"Для этого есть тестовый вызов береговой станции. Вызов бедствия для проверки не применяют ни при каких обстоятельствах."},{"id":"e6","situation":"Человек упал за борт, судно развернулось на циркуляции, идёт поиск.","expect":{"call":"distress","nature":"mob"},"explain":"Жизни человека угрожает непосредственная опасность -- вызов бедствия с характером «человек за бортом»."},{"id":"e7","situation":"Нужно связаться с агентом через береговую станцию Lyngby Radio для передачи заявки на снабжение.","expect":{"call":"individual"},"explain":"Обычная деловая связь -- индивидуальный вызов береговой станции с указанием рабочей частоты."},{"id":"e8","situation":"На борту тяжелобольной, нужна консультация врача, но судно на ходу и опасности нет.","expect":{"call":"urgency"},"explain":"Медицинская консультация без угрозы гибели судна -- срочность (PAN PAN), обычно с пометкой MEDICO."},{"id":"e9","situation":"Судно атаковано вооружёнными лицами при подходе к якорной стоянке.","expect":{"call":"distress","nature":"piracy"},"explain":"Пиратское нападение -- отдельный вид бедствия по ITU-R M.493, подаётся вызов бедствия."},{"id":"e10","situation":"Нужно узнать, где сейчас находится судно компании, идущее тем же районом.","expect":{"call":"position"},"explain":"Запрос позиции. Судно вправе отклонить запрос, это нормально."}],"note":"Тренажёр. Ничего в эфир не уходит. Перед экзаменом и работой на судне сверяйся с ALRS Volume 5 и инструкцией своей станции."};
-let DSC=DSC_BUILTIN, DS={
-  screen:'home',       // 'home' -- дежурный экран (как в жизни), 'main' -- меню видов вызова,
-                       // 'nature'/'band'/'mmsi' -- списки выбора, 'log' -- ход вызова
-  sel:0,              // выбранная строка меню
-  call:null,          // выбранный вид вызова
-  nature:null,        // вид бедствия
-  mmsi:'',            // набранный MMSI
-  band:3,             // индекс диапазона, по умолчанию 8 МГц
-  log:[],             // строки на дисплее
-  busy:false,
-  armed:false,        // крышка кнопки бедствия открыта
-  hold:0,
+let DSC=DSC_BUILTIN;
+
+/* ---- Каналы ПВ/КВ ----
+   Дуплексные радиотелефонные каналы по Приложению 17 Регламента радиосвязи:
+   в каждой полосе частота передачи судна и приёма от берега идут с шагом
+   3 кГц от начала полосы. Плюс 2182 кГц -- симплексная частота бедствия
+   и вызова на ПВ, с неё станция и начинает. */
+function buildChannels(){
+  const out=[{ch:'2182',tx:2182.0,rx:2182.0,band:'MF'}];
+  [[401,4065,4357,27,'4 MHz'],[601,6200,6501,8,'6 MHz'],
+   [801,8195,8719,32,'8 MHz'],[1201,12230,13077,40,'12 MHz'],
+   [1601,16360,17242,41,'16 MHz']].forEach(g=>{
+    for(let i=0;i<g[3];i++) out.push({ch:String(g[0]+i),tx:g[1]+3*i,rx:g[2]+3*i,band:g[4]});
+  });
+  return out;
+}
+const CHANS=buildChannels();
+
+/* Частоты обычной (не бедственной) связи ЦИВ: межсудовые вызывные
+   и парные им радиотелефонные. */
+const ROUTINE_FREQS=[
+  {band:'MF',     dsc:2177.0,  rt:2170.0},
+  {band:'HF 4',   dsc:4208.0,  rt:4146.0},
+  {band:'HF 6',   dsc:6312.5,  rt:6224.0},
+  {band:'HF 8',   dsc:8415.0,  rt:8297.0},
+  {band:'HF 12',  dsc:12577.5, rt:12353.0},
+  {band:'HF 16',  dsc:16805.0, rt:16528.0}
+];
+
+/* Частоты, которые станция держит на приёме постоянно (экран WATCH KEEPING).
+   Верхняя строка -- бедствие, ниже -- береговые вызывные ЦИВ. */
+const WATCH_DISTRESS=[2187.5];
+const WATCH_ROUTINE=[2177.0,4219.5,6331.0,8436.5,12657.0,19703.5];
+
+/* Береговые станции для адресной книги */
+const ADDR_BOOK=[
+  {n:'ODESSA RADIO',    m:'002734411'},
+  {n:'ISTANBUL TURK',   m:'002710000'},
+  {n:'LYNGBY RADIO',    m:'002191000'},
+  {n:'ROGALAND RADIO',  m:'002570300'},
+  {n:'FALMOUTH MRCC',   m:'002320014'},
+  {n:'OLYMPIA RADIO',   m:'002371000'},
+  {n:'MADRID RADIO',    m:'002241022'},
+  {n:'GROUP FLEET',     m:'023712000'}
+];
+
+const MSG_TYPES=[
+  {id:'individual', t:'INDIVIDUAL MSG'},
+  {id:'group',      t:'GROUP MSG'},
+  {id:'pstn',       t:'PSTN MSG'},
+  {id:'area',       t:'AREA MSG'},
+  {id:'position',   t:'POSITION MSG'},
+  {id:'test',       t:'TEST MSG'},
+  {id:'special',    t:'SPECIAL MSG'}
+];
+const SPECIAL_MSGS=[
+  {t:'DISTRESS RELAY',   call:'relay'},
+  {t:'POLLING',          call:'polling'},
+  {t:'NEUTRAL CRAFT',    call:'safety'},
+  {t:'MEDICAL TRANSPORT',call:'urgency'}
+];
+const PRIORITIES=['ROUTINE','SAFETY','URGENCY'];
+const COMM_MODES=['TELEPHONE','NBDP-ARQ','NBDP-FEC'];
+
+/* ---- Дерево MENU, как на самом приборе ----
+   Номера пунктов и порядок сверены с фотографиями FS-2575C: INTERCOM
+   стоит четвёртым без номера и недоступен -- он и на станции серый,
+   пока не подключён второй пост. */
+const MENU_TREE=[
+  {n:'1', t:'TEST', items:[
+    {t:'DAILY TEST',   act:'dailytest'},
+    {t:'TX SELF TEST', act:'txtest'},
+    {t:'TONE TEST',    act:'tonetest'}]},
+  {n:'2', t:'USER CH', items:[
+    {t:'MF/HF CH',  v:'2182',  act:'userch'},
+    {t:'MF/HF CH',  v:'821',   act:'userch'},
+    {t:'MF/HF CH',  v:'1221',  act:'userch'},
+    {t:'ADD NEW CH', act:'info', info:['Свои каналы заводят под связь с','конкретной береговой станцией или','флотом компании. На тренажёре список','фиксированный.']}]},
+  {n:'3', t:'LOG', items:[
+    {t:'TRANSMITTED',       act:'log', kind:'tx'},
+    {t:'RECEIVED ORDINARY', act:'log', kind:'rx'},
+    {t:'RECEIVED DISTRESS', act:'log', kind:'dist'}]},
+  {n:'',  t:'INTERCOM', dim:true, items:[]},
+  {n:'5', t:'SYSTEM', items:[
+    {t:'SQ FREQ', v:'1000Hz', act:'info', info:['Частота тонального шумоподавителя.','Ниже 1000 Гц слышнее слабые сигналы,','выше -- меньше шума в динамике.']},
+    {t:'KEY ASSIGN',     sub:true, act:'info', info:['Назначение цифровых клавиш на','быстрые команды дежурного экрана.']},
+    {t:'PRINT',          sub:true, act:'info', info:['Печать журнала на судовой принтер.','По ГМССБ распечатка вызовов бедствия','хранится вместе с радиожурналом.']},
+    {t:'POSITION SETUP', sub:true, act:'position'},
+    {t:'DATE/TIME',      act:'datetime'},
+    {t:'TIMEOUT',        sub:true, act:'info', info:['Время, через которое станция сама','возвращается на дежурный экран.']},
+    {t:'RX SETUP',       sub:true, act:'info', info:['Настройки приёмника: АРУ, аттенюатор,','режим полосы.']},
+    {t:'EXTERNAL ALARM', sub:true, act:'info', info:['Вынос тревоги на мостик и в каюту','капитана -- обязателен по ГМССБ.']},
+    {t:'NETWORK',        act:'info', info:['Обмен с судовой сетью: приёмник GPS,','ЭКНИС, судовой журнал.']}]},
+  {n:'6', t:'DSC', items:[
+    {t:'ADDRESS BOOK', act:'addr'},
+    {t:'MSG FILE',     act:'compose'},
+    {t:'ACK SETTINGS', sub:true, act:'ack'},
+    {t:'SPECIAL MSG',  sub:true, act:'special'},
+    {t:'ROUTINE SCAN', act:'scan'}]},
+  {n:'7', t:'AUDIO', items:[
+    {t:'SPEAKER',   v:'ON',  act:'info', info:['Динамик дежурного приёма. Выключать','его на вахте нельзя.']},
+    {t:'HANDSET',   v:'ON',  act:'info', info:['Трубка. Разговор после вызова ЦИВ','идёт именно по ней.']},
+    {t:'SIDE TONE', v:'OFF', act:'info', info:['Самопрослушивание своей передачи.']},
+    {t:'AF LEVEL',  v:'5',   act:'info', info:['Уровень низкой частоты. Ручкой VOLUME','на панели он же и крутится.']}]},
+  {n:'8', t:'ALARM', items:[
+    {t:'DISTRESS ALARM', v:'ON',  act:'info', info:['Тревога при приёме бедствия.','Отключить её штатно нельзя.']},
+    {t:'ROUTINE ALARM',  v:'ON',  act:'info', info:['Звук при обычном вызове в свой адрес.']},
+    {t:'BUZZER',         v:'ON',  act:'info', info:['Зуммер нажатия клавиш.']}]},
+  {n:'9', t:'SERVICE', items:[
+    {t:'SYSTEM INFO',   act:'sysinfo'},
+    {t:'SELF CHECK',    act:'txtest'},
+    {t:'DEFAULT SET',   sub:true, act:'info', info:['Сброс к заводским настройкам.','MMSI при этом не стирается.']}]}
+];
+
+/* ---- Состояние тренажёра ---- */
+let DS={
+  screen:'home',
+  // дежурный экран
+  chi:0, tx:2182.0, rx:2182.0, homeSel:0, homeEdit:false,
+  // меню
+  mCol:0, mSel:0, mSub:0,
+  // информационный экран и журналы
+  info:null, addrSel:0,
+  // сообщение
+  call:null, nature:null, mmsi:'', band:3,
+  log:[], busy:false, armed:false, hold:0,
+  // сканирование
+  scan:{on:false, i:0, hit:-1, msg:'', timer:null},
   exam:null, examIdx:0, examScore:0, examTotal:0
 };
+
+/* Составление сообщения: и обычного, и бедствия */
+let CM={pick:true, type:0, spec:0, sel:0, edit:false,
+        to:'', prio:0, mode:0, fi:0};
+let DM={sel:0, edit:false, nature:7, mode:0, fi:0};
+
+/* ---- Яркость экрана (кнопка BRILL) ---- */
+const BRILL_MODES=['day','night','green'];
+const BRILL_NAME={day:'DAY',night:'NIGHT',green:'GREEN'};
+let BRILL = localStorage.getItem('navarea_brill')||'day';
+let BRILL_TIP=0;
+
+/* ---- Звук ----
+   Web Audio, без единого файла: тон формируется на месте. Посылка ЦИВ на
+   ПВ/КВ -- это частотная манипуляция двумя тонами 1615 и 1785 Гц, её и
+   воспроизводим; сигнал тревоги -- двухтональный 2200/1300 Гц по 250 мс,
+   как он звучит в эфире на 2182 кГц. */
+let DSC_SND = localStorage.getItem('navarea_dscsnd')!=='0';
+let AC=null, MUTED=false;
+function actx(){
+  if(AC!==null) return AC;
+  try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }
+  catch(e){ AC=false; }
+  return AC;
+}
+function tone(freq,at,dur,vol,type){
+  const c=actx(); if(!c) return;
+  const t0=c.currentTime+at;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine';
+  o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002,vol),t0+0.006);
+  g.gain.setValueAtTime(Math.max(0.0002,vol),t0+Math.max(0.01,dur-0.008));
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t0); o.stop(t0+dur+0.02);
+}
+function snd(kind){
+  if(!DSC_SND||MUTED) return;
+  const c=actx(); if(!c) return;
+  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
+  const v=Math.max(.03, Math.min(.34, (KNOB.vol/10)*0.3));
+  if(kind==='key'){ tone(1400,0,.018,v*.22,'square'); return; }
+  if(kind==='tx'){        // уходящая посылка ЦИВ
+    for(let i=0;i<36;i++) tone(i%2?1785:1615, i*0.021, .02, v*.55,'square');
+    return;
+  }
+  if(kind==='rx'){        // приём чужой посылки, следом сигнал вызова
+    for(let i=0;i<24;i++) tone(i%2?1615:1785, i*0.021, .02, v*.45,'square');
+    tone(880,.55,.1,v*.6); tone(1320,.68,.14,v*.6);
+    return;
+  }
+  if(kind==='ack'){ tone(880,0,.1,v*.6); tone(1320,.13,.16,v*.6); return; }
+  if(kind==='alarm'){     // двухтональный сигнал тревоги
+    for(let i=0;i<8;i++) tone(i%2?1300:2200, i*.25, .24, v*.7);
+    return;
+  }
+  if(kind==='tone'){ tone(1000,0,1.1,v*.55); return; }
+  if(kind==='err'){ tone(260,0,.2,v*.5,'square'); return; }
+}
 
 async function loadDSC(){
   // Данные уже есть (зашиты), поэтому запрос к серверу необязателен:
@@ -5171,143 +5918,350 @@ async function loadDSC(){
 }
 
 const dscBand = ()=> (DSC&&DSC.freqs[DS.band]) || {band:'HF 8',dsc:8414.5,rt:8291.0};
-function dscPrint(line){ DS.log.push(line); if(DS.log.length>14) DS.log.shift(); drawDSC(); }
+const curChan = ()=> CHANS[DS.chi]||CHANS[0];
+function dscPrint(line){ DS.log.push(line); if(DS.log.length>16) DS.log.shift(); drawDSC(); }
 function dscClear(){ DS.log=[]; }
 
-/* ---- дисплей ----
-   Дежурный экран ('home') собран по фото настоящей FS-2575C: рамка CH,
-   строки TX/RX, GPS DATA и так далее. Остальные экраны -- меню выбора,
-   ввод MMSI, ход вызова -- используют ту же рамку, но простое содержимое
-   списком, как оно и есть на реальной станции при заходе в MENU. */
-function lcdMenuList(){
-  if(DS.screen==='main'){
-    return (DSC.calls||[]).map((c,i)=>
-      `<div class="it ${i===DS.sel?'sel':''}">${i===DS.sel?'▸':' '} ${esc(c.t)}</div>`).join('');
-  }
-  if(DS.screen==='nature'){
-    return (DSC.nature||[]).map((n,i)=>
-      `<div class="it ${i===DS.sel?'sel':''}">${i===DS.sel?'▸':' '} ${esc(n.t)}</div>`).join('');
-  }
-  if(DS.screen==='band'){
-    return (DSC.freqs||[]).map((f,i)=>
-      `<div class="it ${i===DS.sel?'sel':''}">${i===DS.sel?'▸':' '} ${f.band}  ${f.dsc} kHz</div>`).join('');
-  }
-  return '';
+/* Смена экрана в одном месте: заодно гасим сканирование, иначе таймер
+   продолжает крутиться уже на другом экране. */
+function setScreen(s){
+  if(s!=='watch') scanStop();
+  DS.screen=s;
 }
 
-/* Шкала S-метра: чем больше усиление, тем больше делений. Это не
-   имитация эфира, а отклик на ручку -- как на станции, где RF GAIN
-   двигает уровень шума и сигнала. */
+/* ================= Дисплей ================= */
 function sBars(){
   const n=Math.round((KNOB.rf/99)*8);
   return Array.from({length:8},(_,i)=>i<Math.max(1,n)?1:0);
 }
+function lcdTop(right){
+  const c=curChan();
+  const r = right!==undefined ? right
+    : `<span class="ssb">SSB</span> TX ${DS.tx.toFixed(1)}/RX ${DS.rx.toFixed(2)} kHz`;
+  return `<div class="lcdtop"><span>⚓ ✉ ✉</span><span>${r}</span></div>`;
+}
+function lcdFoot(extra){
+  return `<div class="lcdfoot">
+    <span><span class="k">⏎</span>:<b>SELECT</b></span>
+    <span><span class="k">CANCEL</span>:<b>BACK</b></span>
+    <span><span class="k">MENU</span>:<b>CLOSE</b></span>
+    ${extra||''}</div>`;
+}
+function gpsLat(){ return geoFresh()?geoFmtLat(GEO.lat):((VES&&VES.active&&VES.active.lat)||"12°41.1831'N"); }
+function gpsLon(){ return geoFresh()?geoFmtLon(GEO.lon):((VES&&VES.active&&VES.active.lon)||"074°09.2407'W"); }
+function utcHM(){
+  const n=new Date();
+  return String(n.getUTCHours()).padStart(2,'0')+':'+String(n.getUTCMinutes()).padStart(2,'0');
+}
+function myMmsi(){ return (VES&&VES.active&&VES.active.mmsi)?VES.active.mmsi:'210210000'; }
+
 function drawDSC(){
   const box=$('#lcd'); if(!box||!DSC) return;
-  const b=dscBand();
-  const alert=DS.screen==='log'&&DS.log.some(l=>/DISTRESS|MAYDAY/.test(l));
-  box.className='lcd'+(alert?' alert':'');
-
-  const mmsi=(VES&&VES.active&&VES.active.mmsi)?VES.active.mmsi:'210210000';
-  const now=new Date(), hh=String(now.getUTCHours()).padStart(2,'0'), mm=String(now.getUTCMinutes()).padStart(2,'0');
-  // Позиция с устройства, если она свежая -- как на станции, где
-  // координаты приходят от приёмника, а не набираются руками.
-  const lat = geoFresh() ? geoFmtLat(GEO.lat) : ((VES&&VES.active&&VES.active.lat)||'46-29.4N');
-  const lon = geoFresh() ? geoFmtLon(GEO.lon) : ((VES&&VES.active&&VES.active.lon)||'030-44.3E');
+  const alert=(DS.screen==='log'&&DS.log.some(l=>/DISTRESS|MAYDAY/.test(l)));
+  box.className='lcd br-'+BRILL+(alert?' alert':'');
 
   { const v=$('#volVal'); if(v) v.textContent=Math.round(KNOB.vol);
     const r=$('#rfVal'); if(r) r.textContent=Math.round(KNOB.rf); }
 
-  if(DS.screen==='home'){
-    box.innerHTML=`
-      <div class="lcdtop"><span>⚓ ✉ ✉</span><span>MMSI:${esc(mmsi)}</span></div>
-      <div class="lrow1">
-        <div class="ldist">DIST-<br>RESS</div>
-        <div class="lch"><span class="l">CH</span><span class="n">200</span></div>
-        <div class="lnb">NB</div>
-        <div class="lmenu">
-          <div class="mi"><b>1</b>RX FREQ</div>
-          <div class="mi"><b>4</b>DAILY TEST</div>
-          <div class="mi"><b>7</b>TEST CALL</div>
-        </div>
-      </div>
-      <div class="lfreq"><span class="lb">TX</span><span class="v">${b.dsc.toFixed(1)}</span><span class="u">kHz</span></div>
-      <div class="lfreq"><span class="lb">RX</span><span class="v">${b.rt.toFixed(2)}</span><span class="u">kHz</span></div>
-      <div class="lmode"><span>SSB</span><span>MID</span><span>FAST</span><span>SIMP</span></div>
-      <div class="lmeter">S<div class="lbars">${sBars().map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div></div>
-      <div class="lmeter">IC<div class="lbars">${[1,1,1,0,0,0,0,0].map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div><span style="margin-left:3px">0.0A</span></div>
-      <div class="lag"><span class="attb">ATT</span><span>AF ${Math.round(KNOB.vol)} · RF GAIN ${Math.round(KNOB.rf)}</span></div>
-      <div class="lgps"><span>LAT ${esc(String(lat))}<br>LON ${esc(String(lon))}</span><b>GPS DATA<br>${hh}:${mm} UTC</b></div>
-      <div class="lmem">${Array(8).fill('<i></i>').join('')}</div>`;
-    return;
-  }
-
-  if(DS.screen==='mmsi'){
-    box.innerHTML=`
-      <div class="lcdtop"><span>ENTER MMSI</span><span>${b.band}</span></div>
-      <div class="llog" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
-        <div style="font-size:15px;letter-spacing:2px;color:#fff">${esc(DS.mmsi.padEnd(9,'_'))}</div>
-        <div style="opacity:.8">${DS.mmsi.length===9?'<span class="blink">PRESS SEND</span>':'9 digits required'}</div>
+  if(BRILL_TIP>Date.now()){
+    box.innerHTML=`${lcdTop()}
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;
+                  flex-direction:column;gap:8px">
+        <div style="font-size:15px;font-weight:800;letter-spacing:2px">BRILLIANCE</div>
+        <div style="font-size:26px;font-weight:800;color:#fff">${BRILL_NAME[BRILL]}</div>
+        <div style="font-size:9.4px;color:#9db6d4">${esc(tr('BRILL — ещё раз, чтобы сменить'))}</div>
       </div>`;
     return;
   }
 
-  if(DS.screen==='log'){
-    box.innerHTML=`
-      <div class="lcdtop"><span>${DS.busy?'TX':'RX'}</span><span>${b.band} · ${b.dsc} kHz</span></div>
-      <div class="llog">${DS.log.map(esc).join('\n')}</div>`;
-    return;
-  }
-
-  // main / nature / band -- списки меню в той же рамке
-  const titles={main:'SELECT CALL TYPE',nature:'NATURE OF DISTRESS',band:'SELECT FREQUENCY'};
-  box.innerHTML=`
-    <div class="lcdtop"><span>${titles[DS.screen]||'MENU'}</span><span>${b.band}</span></div>
-    <div class="lmenuscreen">${lcdMenuList()}</div>`;
+  const fn={home:lcdHome, menu:lcdMenu, info:lcdInfo, addr:lcdAddr,
+            compose:lcdCompose, distress:lcdDistress, watch:lcdWatch,
+            mmsi:lcdMmsi, log:lcdLog, calls:lcdCalls}[DS.screen];
+  box.innerHTML=(fn||lcdHome)();
 }
 
-/* ---- имитация обмена ---- */
+/* ---- дежурный экран: CH / TX / RX ---- */
+function lcdHome(){
+  const c=curChan(), b=dscBand();
+  const sel=i=>DS.homeSel===i?(DS.homeEdit?' edit':' sel'):'';
+  return `${lcdTop()}
+    <div class="lrow1">
+      <div class="ldist">DIST-<br>RESS</div>
+      <div class="lch${sel(0)}"><span class="l">CH</span><span class="n">${esc(c.ch)}</span>
+        <span class="bd">${esc(c.band)}</span></div>
+      <div class="lnb">NB</div>
+      <div class="lmenu">
+        <div class="mi"><b>1</b>RX FREQ</div>
+        <div class="mi"><b>4</b>DAILY TEST</div>
+        <div class="mi"><b>7</b>TEST CALL</div>
+      </div>
+    </div>
+    <div class="lfreq${sel(1)}"><span class="lb">TX</span><span class="v">${DS.tx.toFixed(1)}</span><span class="u">kHz</span></div>
+    <div class="lfreq${sel(2)}"><span class="lb">RX</span><span class="v">${DS.rx.toFixed(2)}</span><span class="u">kHz</span></div>
+    <div class="lmode"><span>SSB</span><span>MID</span><span>FAST</span><span>SIMP</span>${MUTED?'<span>MUTE</span>':''}</div>
+    <div class="lmeter">S<div class="lbars">${sBars().map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div></div>
+    <div class="lmeter">IC<div class="lbars">${[1,1,1,0,0,0,0,0].map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div><span style="margin-left:4px">0.0A</span></div>
+    <div class="lag"><span class="attb">ATT</span><span>AF ${Math.round(KNOB.vol)} · RF GAIN ${Math.round(KNOB.rf)}</span></div>
+    <div class="lgps"><span>LAT ${esc(gpsLat())}<br>LON ${esc(gpsLon())}</span><b>GPS DATA<br>${utcHM()} UTC</b></div>
+    <div class="lmem">${Array(8).fill('<i></i>').join('')}</div>
+    <div class="lcdfoot" style="margin-top:5px">
+      <span>${esc(tr(DS.homeEdit?'Крути — меняется значение':'Крути — выбор CH/TX/RX'))}</span>
+      <span><span class="k">⏎</span>:<b>${DS.homeEdit?'OK':'EDIT'}</b></span>
+    </div>`;
+}
+
+/* ---- MENU ---- */
+function lcdMenu(){
+  const sec=MENU_TREE[DS.mSel]||MENU_TREE[0];
+  const left=MENU_TREE.map((m,i)=>
+    `<div class="lmi ${m.dim?'dim':''} ${i===DS.mSel?'sel':''} ${(i===DS.mSel&&DS.mCol===0)?'act':''}">
+       <span class="nn">${esc(m.n)}</span>${esc(m.t)}${m.items.length?' ▸':''}</div>`).join('');
+  const right=(sec.items||[]).map((it,i)=>
+    `<div class="lmr ${(DS.mCol===1&&i===DS.mSub)?'sel':''}">
+       <span class="sq"></span><span class="nm">${esc(it.t)}</span>
+       ${it.v?`<span class="vl">: ${esc(it.v)}</span>`:''}
+       ${it.sub?'<span class="ar">▸</span>':''}</div>`).join('');
+  return `${lcdTop()}
+    <div class="lmenuwrap">
+      <div class="lmcol"><div class="lmcap">MENU</div>${left}</div>
+      <div class="lmpanel"><div class="ph">${esc(sec.t)}</div>${right||
+        `<div class="lmr dim"><span class="nm">${esc(tr('Раздел недоступен'))}</span></div>`}</div>
+    </div>
+    ${lcdFoot()}`;
+}
+
+/* ---- информационный экран пункта меню ---- */
+function lcdInfo(){
+  const inf=DS.info||{t:'',lines:[]};
+  return `${lcdTop()}
+    <div class="lhead">${esc(inf.t)}</div>
+    <div class="llog">${(inf.lines||[]).map(l=>esc(tr(l))).join('\n')}</div>
+    ${lcdFoot()}`;
+}
+
+/* ---- адресная книга ---- */
+function lcdAddr(){
+  return `${lcdTop()}
+    <div class="lhead">ADDRESS BOOK</div>
+    <div class="laddr">${ADDR_BOOK.map((a,i)=>
+      `<div class="it ${i===DS.addrSel?'sel':''}">
+         <span style="flex:1">${esc(a.n)}</span><span class="mm">${esc(a.m)}</span></div>`).join('')}</div>
+    ${lcdFoot()}`;
+}
+
+/* ---- COMPOSE MESSAGE (OTHER DSC MSG) ---- */
+function composeRows(){
+  const t=MSG_TYPES[CM.type];
+  const f=ROUTINE_FREQS[CM.fi]||ROUTINE_FREQS[0];
+  const rows=[
+    {k:'MSG TYPE', v:t.t, ed:'type'},
+    {k:'TO',       v:CM.to?CM.to:'- - - - - - - - -', ed:'to'},
+    {k:'PRIORITY', v:PRIORITIES[CM.prio], ed:'prio'},
+    {k:'COMM MODE',v:COMM_MODES[CM.mode], ed:'mode'},
+    {k:'COMM FREQ',v:f.rt.toFixed(1)+'kHz', ed:'freq'},
+    {k:'DSC FREQ', v:f.dsc.toFixed(1)+'kHz', ed:'freq'}
+  ];
+  if(t.id==='special') rows.splice(1,0,{k:'CONTENT', v:SPECIAL_MSGS[CM.spec].t, ed:'spec'});
+  if(t.id==='area') rows[1]={k:'AREA', v:'ALL SHIPS', ed:null};
+  if(t.id==='position') rows[2]={k:'PRIORITY', v:'ROUTINE', ed:null};
+  return rows;
+}
+function lcdCompose(){
+  const rows=composeRows();
+  let pop='';
+  if(CM.pick){
+    pop=`<div class="lpop"><div class="ph">MESSAGE FILE</div>
+      ${MSG_TYPES.map((m,i)=>
+        `<div class="it ${i===CM.type?'sel':''}">${esc(m.t)}</div>`).join('')}</div>`;
+  } else if(CM.edit&&rows[CM.sel]&&rows[CM.sel].ed==='spec'){
+    pop=`<div class="lpop" style="top:20px"><div class="ph">SPECIAL MSG</div>
+      ${SPECIAL_MSGS.map((m,i)=>
+        `<div class="it ${i===CM.spec?'sel':''}">${esc(m.t)}</div>`).join('')}</div>`;
+  }
+  const goSel = !CM.pick && CM.sel===rows.length;
+  return `${lcdTop()}
+    <div class="lhead">COMPOSE MESSAGE</div>
+    <div class="lcomp">
+      ${rows.map((r,i)=>
+        `<div class="lcrow ${(!CM.pick&&i===CM.sel)?(CM.edit?'edit':'sel'):''} ${r.ed?'':'dim'}">
+           <span class="k">${esc(r.k)}</span><span class="v">: ${esc(r.v)}</span></div>`).join('')}
+      ${pop}
+    </div>
+    <div class="lcdfoot">
+      <span><span class="k">CANCEL</span>:<b>BACK</b></span>
+      <span class="go ${goSel?'on':''}">GO TO CALL</span>
+    </div>`;
+}
+
+/* ---- COMPOSE MESSAGE: DISTRESS ALERT ---- */
+function distressRows(){
+  const nat=(DSC.nature||[])[DM.nature]||{t:'Undesignated distress'};
+  const b=DSC.freqs[0];
+  return [
+    {k:'MSG TYPE', v:'DISTRESS ALERT', ed:null},
+    {k:'NATURE',   v:nat.t.toUpperCase(), ed:'nature'},
+    {k:'LAT',      v:gpsLat(), ed:null},
+    {k:'LON/UTC',  v:gpsLon()+' / '+utcHM(), ed:null},
+    {k:'COMM MODE',v:COMM_MODES[DM.mode]+' / '+b.rt.toFixed(1)+'kHz', ed:'mode'},
+    {k:'DSC FREQ', v:(DSC.freqs[DM.fi]||b).dsc.toFixed(1)+' kHz', ed:'freq'}
+  ];
+}
+function lcdDistress(){
+  const rows=distressRows();
+  const nat=(DSC.nature||[]);
+  const pop = (DM.edit&&rows[DM.sel]&&rows[DM.sel].ed==='nature')
+    ? `<div class="lpop" style="top:16px"><div class="ph">NATURE OF DISTRESS</div>
+       ${nat.map((n,i)=>`<div class="it ${i===DM.nature?'sel':''}">${esc(n.t)}</div>`).join('')}</div>`
+    : '';
+  return `${lcdTop()}
+    <div class="lhead red">COMPOSE MESSAGE</div>
+    <div class="lcomp">
+      ${rows.map((r,i)=>
+        `<div class="lcrow ${i===DM.sel?(DM.edit?'edit':'sel'):''} ${r.ed?'':'dim'}">
+           <span class="k">${esc(r.k)}</span><span class="v">: ${esc(r.v)}</span></div>`).join('')}
+      ${pop}
+    </div>
+    <div class="lnote"><b>PRESS DISTRESS BUTTON</b>TO SEND DISTRESS ALERT.</div>
+    <div class="lcdfoot"><span><span class="k">CANCEL</span>:<b>BACK</b></span></div>`;
+}
+
+/* ---- WATCH KEEPING / сканирование ---- */
+function lcdWatch(){
+  const sc=DS.scan;
+  const cell=(f,idx)=>{
+    const on = sc.on && sc.i===idx;
+    const hit = sc.hit===idx;
+    return `<i class="${hit?'hit':(on?'on':'')}">${on||hit?'<b>▸</b>':' '}${f.toFixed(1)}</i>`;
+  };
+  const dist=WATCH_DISTRESS.map((f,i)=>cell(f,i)).join('')+'<i></i><i></i>';
+  const rout=WATCH_ROUTINE.map((f,i)=>cell(f,i+1)).join('');
+  return `${lcdTop('MMSI:'+esc(myMmsi()))}
+    <div class="lhead">WATCH KEEPING</div>
+    <div class="lwk">
+      <div class="lwkcap"><span>DISTRESS</span><span>WR</span></div>
+      <div class="lwktab">${dist}</div>
+      <div class="lwkcap" style="margin-top:3px"><span>ROUTINE</span><span>RX</span></div>
+      <div class="lwktab">${rout}</div>
+      <div class="lgps" style="margin-top:4px">
+        <span>LAT: ${esc(gpsLat())}<br>LON: ${esc(gpsLon())}</span>
+        <b>GPS DATA<br>${utcHM()} (UTC)</b></div>
+      <div class="lmeter">RF GAIN
+        <div class="lbars">${sBars().map(x=>`<i class="${x?'on':''}"></i>`).join('')}</div>
+        <span style="margin-left:4px">${Math.round(KNOB.rf)}</span></div>
+      <div class="lscanmsg">${esc(sc.msg||(sc.on?tr('СКАНИРОВАНИЕ…'):tr('SCAN — начать сканирование')))}</div>
+    </div>
+    ${lcdFoot()}`;
+}
+
+/* ---- ввод MMSI ---- */
+function lcdMmsi(){
+  return `${lcdTop()}
+    <div class="lhead">ENTER MMSI</div>
+    <div class="llog" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+      <div style="font-size:20px;letter-spacing:3px;color:#fff">${esc(DS.mmsi.padEnd(9,'_'))}</div>
+      <div style="opacity:.8;font-size:10px">${DS.mmsi.length===9?'<span class="blink">PRESS ⏎ TO SEND</span>':'9 digits required'}</div>
+    </div>
+    ${lcdFoot()}`;
+}
+
+/* ---- ход вызова ---- */
+function lcdLog(){
+  const b=DS.freq||dscBand();
+  return `${lcdTop((DS.busy?'TX ':'RX ')+b.band+' · '+b.dsc+' kHz')}
+    <div class="llog">${DS.log.map(esc).join('\n')}</div>
+    ${lcdFoot()}`;
+}
+
+/* ---- список видов вызова (режим экзамена и клавиша 4) ---- */
+function lcdCalls(){
+  return `${lcdTop()}
+    <div class="lhead">SELECT CALL TYPE</div>
+    <div class="lmenuscreen">${(DSC.calls||[]).map((c,i)=>
+      `<div class="it ${i===DS.mSub?'sel':''}">${i===DS.mSub?'▸':' '} ${esc(c.t)}</div>`).join('')}</div>
+    ${lcdFoot()}`;
+}
+
+/* ================= Сканирование ================= */
+function scanStop(){
+  if(DS.scan.timer){ clearInterval(DS.scan.timer); DS.scan.timer=null; }
+  DS.scan.on=false;
+}
+function scanStart(){
+  scanStop();
+  DS.scan.on=true; DS.scan.i=0; DS.scan.hit=-1; DS.scan.msg='';
+  DS.scan.timer=setInterval(()=>{
+    // если ушли с экрана -- останавливаемся сами
+    if(DS.screen!=='watch'||S.view!=='dsc'){ scanStop(); return; }
+    DS.scan.i=(DS.scan.i+1)%(1+WATCH_ROUTINE.length);
+    // изредка на одной из частот появляется чужой вызов
+    if(Math.random()<0.07){
+      const idx=DS.scan.i;
+      DS.scan.hit=idx;
+      const from=ADDR_BOOK[Math.floor(Math.random()*ADDR_BOOK.length)];
+      DS.scan.msg = idx===0
+        ? 'DISTRESS ALERT RECEIVED · '+from.m
+        : 'ROUTINE CALL · '+from.n+' '+from.m;
+      snd(idx===0?'alarm':'rx');
+      hap(idx===0?'heavy':'medium');
+      scanStop();
+      DS.scan.msg += ' · '+tr('CANCEL — продолжить');
+      showLesson(idx===0?'ack':'freq');
+    }
+    drawDSC();
+  }, 900);
+  drawDSC();
+}
+
+/* ================= Имитация обмена ================= */
 function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-async function dscSend(){
-  if(DS.busy||!DSC) return;
-  const b=dscBand();
+/* Какой вид вызова получается из того, что набрано в COMPOSE.
+   Срочность и безопасность на настоящей станции задаются не типом
+   сообщения, а полем PRIORITY -- этому и учим. */
+function composeCallId(){
+  const t=MSG_TYPES[CM.type];
+  if(t.id==='special') return SPECIAL_MSGS[CM.spec].call;
+  if(t.id==='test')     return 'test';
+  if(t.id==='position') return 'position';
+  const p=PRIORITIES[CM.prio];
+  if(p==='URGENCY') return 'urgency';
+  if(p==='SAFETY')  return 'safety';
+  if(t.id==='group') return 'group';
+  if(t.id==='area')  return 'allships';
+  return 'individual';
+}
+const callById = id => (DSC.calls||[]).find(c=>c.id===id);
 
-  if(DS.screen==='main'){
-    const c=DSC.calls[DS.sel];
-    DS.call=c;
-    if(c.needs.includes('nature')){ DS.screen='nature'; DS.sel=0; drawDSC(); showTip(c); return; }
-    if(c.needs.includes('mmsi')){ DS.screen='mmsi'; DS.mmsi=''; drawDSC(); showTip(c); return; }
-    return runCall(c);
+function composeSend(){
+  const id=composeCallId(), c=callById(id);
+  if(!c){ snd('err'); return; }
+  const needsMmsi = ['individual','group','test','position','polling'].includes(id);
+  if(needsMmsi && CM.to.length!==9){
+    snd('err'); hap('heavy');
+    DS.info={t:'ERROR',lines:['Не задан адрес вызова.','Поле TO -- девять цифр MMSI.','','У судна первые три цифры -- код страны,','у береговой станции первые две нули,','у группы -- ноль в начале.']};
+    setScreen('info'); drawDSC(); return;
   }
-  if(DS.screen==='nature'){
-    DS.nature=DSC.nature[DS.sel];
-    return runCall(DS.call);
-  }
-  if(DS.screen==='mmsi'){
-    if(DS.mmsi.length!==9) return;
-    return runCall(DS.call);
-  }
-  if(DS.screen==='band'){
-    DS.band=DS.sel; DS.screen='main'; DS.sel=0; drawDSC();
-    showLesson('freq');
-    return;
-  }
+  DS.mmsi=CM.to;
+  DS.band = Math.min(DSC.freqs.length-1, CM.fi);
+  DS.nature=null;
+  // Обычный вызов идёт на межсудовой вызывной частоте, а не на бедственной:
+  // 2177.0 вместо 2187.5 и так далее по диапазонам.
+  runCall(c, ROUTINE_FREQS[CM.fi]||ROUTINE_FREQS[0]);
 }
 
-async function runCall(c){
-  if(!c) return;
-  DS.busy=true; DS.screen='log'; dscClear();
-  const b=dscBand();
-  hap('medium');
+async function runCall(c, freq){
+  if(!c||DS.busy) return;
+  DS.busy=true; setScreen('log'); dscClear();
+  const b=freq||dscBand();
+  DS.freq=b;                       // на этой паре идёт весь обмен и заголовок экрана
+  hap('medium'); snd('tx');
 
   const isDistress = c.id==='distress';
-  dscPrint(`${c.t.toUpperCase()}`);
+  dscPrint(c.t.toUpperCase());
   dscPrint(`FREQ ${b.dsc} kHz`);
   if(DS.mmsi) dscPrint(`TO   ${DS.mmsi}`);
   if(DS.nature) dscPrint(`NATURE ${DS.nature.t}`);
-  dscPrint('POS  '+(geoFresh()?(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):'46-29.4N 030-44.3E')
-           +(geoFresh()?'':'  (нет данных GPS)'));
+  dscPrint('POS  '+gpsLat()+' '+gpsLon()+(geoFresh()?'':'  ('+tr('нет данных GPS')+')'));
   dscPrint('');
   dscPrint(isDistress?'TRANSMITTING DISTRESS...':'TRANSMITTING...');
 
@@ -5315,6 +6269,7 @@ async function runCall(c){
   dscPrint(isDistress?'DISTRESS SENT':'CALL SENT');
   dscPrint('WAITING FOR ACK...');
   await wait(isDistress?2200:1600);
+  snd(isDistress?'alarm':'ack');
 
   if(c.id==='distress'){
     dscPrint('');
@@ -5326,34 +6281,25 @@ async function runCall(c){
     dscPrint('NATURE, ASSISTANCE, POB');
     showLesson('rt');
   } else if(c.id==='relay'){
-    dscPrint('');
-    dscPrint('RELAY ACK RECEIVED');
-    dscPrint('RCC ACKNOWLEDGED');
+    dscPrint(''); dscPrint('RELAY ACK RECEIVED'); dscPrint('RCC ACKNOWLEDGED');
     showLesson('ack');
   } else if(c.id==='test'){
-    dscPrint('');
-    dscPrint('TEST ACK RECEIVED');
+    dscPrint(''); dscPrint('TEST ACK RECEIVED');
     dscPrint(`FROM ${DS.mmsi||'002371000'}`);
     dscPrint('DSC OPERATION NORMAL');
     showLesson('test');
   } else if(c.id==='position'){
-    dscPrint('');
-    dscPrint('POSITION RECEIVED');
-    dscPrint('44-12.8N 033-51.6E');
-    dscPrint('AT 1420 UTC');
+    dscPrint(''); dscPrint('POSITION RECEIVED');
+    dscPrint('44-12.8N 033-51.6E'); dscPrint('AT '+utcHM()+' UTC');
   } else if(c.id==='polling'){
-    dscPrint('');
-    dscPrint('POLLING ACK RECEIVED');
-    dscPrint('STATION IN RANGE');
+    dscPrint(''); dscPrint('POLLING ACK RECEIVED'); dscPrint('STATION IN RANGE');
   } else if(c.id==='allships'||c.id==='safety'||c.id==='urgency'){
-    dscPrint('');
-    dscPrint('CALL COMPLETED');
+    dscPrint(''); dscPrint('CALL COMPLETED');
     dscPrint(`SWITCH TO ${b.rt} kHz`);
     dscPrint(c.id==='urgency'?'SPEAK: PAN PAN x3':'SPEAK: SECURITE x3');
     showLesson('rt');
   } else {
-    dscPrint('');
-    dscPrint('ACK RECEIVED');
+    dscPrint(''); dscPrint('ACK RECEIVED');
     dscPrint(`SWITCH TO ${b.rt} kHz`);
     showLesson('rt');
   }
@@ -5362,27 +6308,74 @@ async function runCall(c){
   if(DS.exam) checkExam(c);
 }
 
-/* ---- кнопка бедствия ---- */
-function armDistress(){
-  DS.armed=true; hap('medium'); renderDSC();
+/* ---- ежедневная проверка и самотест ---- */
+async function dailyTest(){
+  if(DS.busy) return;
+  DS.busy=true; setScreen('log'); dscClear(); snd('tx'); hap('medium');
+  DS.freq=DSC.freqs[0];
+  dscPrint('DAILY TEST');
+  dscPrint('TEST CALL TO COAST STATION');
+  dscPrint('002734411 ODESSA RADIO');
+  dscPrint(`FREQ ${DSC.freqs[0].dsc} kHz`);
+  dscPrint(''); dscPrint('TRANSMITTING...');
+  await wait(1400);
+  dscPrint('WAITING FOR ACK...');
+  await wait(1800);
+  snd('ack');
+  dscPrint(''); dscPrint('TEST ACK RECEIVED');
+  dscPrint('DSC OPERATION NORMAL');
+  dscPrint('RESULT: PASS');
+  DS.busy=false; drawDSC();
+  showLesson('test');
 }
+async function txSelfTest(){
+  if(DS.busy) return;
+  DS.busy=true; setScreen('log'); dscClear(); hap('medium');
+  DS.freq=DSC.freqs[0];
+  const steps=[['TX SELF TEST','']," ",['SYNTHESIZER','OK'],['PA MODULE','OK'],
+               ['ANTENNA TUNER','OK'],['VSWR','1.3 : 1'],['DSC MODEM','OK'],
+               ['BATTERY','26.4 V'],[' ',''],['RESULT','PASS']];
+  for(const s of steps){
+    dscPrint(Array.isArray(s)?(s[0].padEnd(16,' ')+s[1]):s);
+    await wait(320);
+  }
+  snd('ack');
+  DS.busy=false; drawDSC();
+}
+
+/* ================= Кнопка бедствия ================= */
+function armDistress(){ DS.armed=true; hap('medium'); snd('key'); renderDSC(); }
 function holdDistress(down){
   const btn=$('#dbtn'); if(!btn) return;
   if(down){
     btn.classList.add('arming');
     DS.hold=setTimeout(async()=>{
       btn.classList.remove('arming');
-      DS.call=(DSC.calls||[]).find(c=>c.id==='distress');
-      DS.screen='nature'; DS.sel=0; DS.armed=false;
-      hap('heavy'); renderDSC();
-      showLesson('distress');
-    },1800);
+      DS.armed=false;
+      hap('heavy');
+      if(DS.screen==='distress'){
+        // экран составления уже открыт -- это и есть подача тревоги
+        const c=callById('distress');
+        DS.call=c; DS.nature=(DSC.nature||[])[DM.nature]||null;
+        DS.mmsi=''; DS.band=DM.fi;
+        renderDSC();
+        runCall(c, DSC.freqs[DM.fi]||DSC.freqs[0]);
+      } else {
+        openDistressCompose();
+        renderDSC();
+        showLesson('distress');
+      }
+    },3000);
   } else {
     clearTimeout(DS.hold); btn.classList.remove('arming');
   }
 }
+function openDistressCompose(){
+  DM.sel=1; DM.edit=false; DM.fi=0;
+  setScreen('distress');
+}
 
-/* ---- пояснения ---- */
+/* ================= Пояснения ================= */
 function showTip(c){
   const el=$('#dsctip'); if(!el||!c) return;
   el.innerHTML=`<b>${esc(c.ru)}</b>${esc(c.why)}`;
@@ -5392,12 +6385,19 @@ function showLesson(key){
   const t=(DSC.lessons||{})[key]; if(!t) return;
   el.innerHTML=`<b>${esc(tr('Как это работает'))}</b>${esc(t)}`;
 }
+function showText(title,text){
+  const el=$('#dsctip'); if(!el) return;
+  el.innerHTML=`<b>${esc(tr(title))}</b>${esc(tr(text))}`;
+}
 
-/* ---- экзамен ---- */
+/* ================= Экзамен ================= */
 function startExam(){
   DS.exam=(DSC.exam||[]).slice().sort(()=>Math.random()-0.5);
   DS.examIdx=0; DS.examScore=0; DS.examTotal=DS.exam.length;
-  DS.screen='main'; DS.sel=0; dscClear(); hap('medium'); renderDSC();
+  setScreen('home'); dscClear(); hap('medium'); renderDSC();
+  showText('Режим экзамена','Прочти обстановку и подай тот вызов, который положен: '+
+    'DISTRESS MSG — бедствие, OTHER DSC MSG — всё остальное. Срочность и безопасность '+
+    'задаются полем PRIORITY, а не отдельным типом сообщения.');
 }
 function stopExam(){ DS.exam=null; renderDSC(); }
 function checkExam(c){
@@ -5415,12 +6415,13 @@ function checkExam(c){
   hap(ok?'light':'heavy');
   setTimeout(()=>{
     DS.examIdx++;
-    DS.nature=null; DS.mmsi=''; DS.screen='main'; DS.sel=0;
+    DS.nature=null; DS.mmsi=''; CM.to=''; CM.prio=0; CM.pick=true; CM.type=0;
+    setScreen('home');
     renderDSC();
   },3600);
 }
 
-/* ---- отрисовка раздела ---- */
+/* ================= Отрисовка раздела ================= */
 function renderDSC(){
   const box=$('#dscBox'); if(!box) return;
   if(!DSC){ box.innerHTML='<div class="sk card"></div>'; return; }
@@ -5444,73 +6445,88 @@ function renderDSC(){
     <div class="radio">
       <div class="rplates">
         <div class="rplate">MF/HF<br>CONTROL UNIT</div>
-        <div class="rplate">MMSI ${esc((VES&&VES.active&&VES.active.mmsi)||'210210000')}</div>
+        <div class="rplate">MMSI ${esc(myMmsi())}</div>
       </div>
       <div class="rhdr">
         <div class="rnameplate">CONTROL UNIT TYPE FS-2575C<br>SER.NO. 106667</div>
         <div class="rfuruno">FURUNO</div>
       </div>
       <div class="rbody">
-        <div class="rleft">
-          <div class="rspeaker"><i></i><i></i><i></i><i></i></div>
-          <div class="rklabel">HANDSET</div>
-          <div class="rknob" id="knobVol"></div>
-          <div class="rklabel">VOLUME · <b id="volVal">5</b></div>
-          <div class="rknob" id="knobRf"></div>
-          <div class="rklabel">RF GAIN · <b id="rfVal">28</b><br>PUSH TO ATT</div>
-          <div class="rleds">
-            <div class="rled"><i class="amber"></i><span>ALARM</span></div>
-            <div class="rled"><i class="${DS.busy?'green':''}"></i><span>OVEN</span></div>
-          </div>
-          <div class="rdistwrap">
-            ${DS.armed
-              ? `<div class="rdistcover"><div class="rdistbtn arming" id="dbtn"></div></div>
-                 <div class="rpwroff">PWR OFF</div>
-                 <div class="rdistcap">${esc(tr('Удерживай 2 секунды'))}</div>`
-              : `<div class="rdistcover" id="dlid"><div class="rdistbtn" style="opacity:.45"></div></div>
-                 <div class="rpwroff">PWR OFF</div>
-                 <div class="rdistcap">${esc(tr('Keep pressed 4 sec for DISTRESS'))}</div>`}
-          </div>
+        <div class="rscreen">
+          <div class="lcd" id="lcd"></div>
+          <div class="rsoft"><i></i><i></i><i></i></div>
         </div>
 
-        <div class="rscreen"><div class="lcd" id="lcd"></div></div>
+        <div class="rctrls">
+          <div class="rleft">
+            <div class="rspeaker"><i></i><i></i><i></i><i></i></div>
+            <div class="rklabel">HANDSET</div>
+            <div class="rknob" id="knobVol"></div>
+            <div class="rklabel">VOLUME · <b id="volVal">5</b></div>
+            <div class="rknob" id="knobRf"></div>
+            <div class="rklabel">RF GAIN · <b id="rfVal">28</b><br>PUSH TO ATT</div>
+          </div>
 
-        <div class="rright">
-          <div class="rkgrid">
-            <button class="rkey" data-dk="scan"><div class="kt">SCAN</div></button>
-            <button class="rkey" data-dk="2182"><div class="kt">2182</div></button>
-            <button class="rkey" data-dk="band"><div class="kt">RT/CH</div></button>
-            <button class="rkey" data-dk="1"><div class="kt">1</div></button>
-            <button class="rkey" data-dk="2"><div class="kt">2</div><div class="ks">NB</div></button>
-            <button class="rkey" data-dk="3"><div class="kt">3</div><div class="ks">SQ</div></button>
-            <button class="rkey" data-dk="4"><div class="kt">4</div></button>
-            <button class="rkey" data-dk="5"><div class="kt">5</div><div class="ks">NR</div></button>
-            <button class="rkey" data-dk="6"><div class="kt">6</div></button>
-            <button class="rkey" data-dk="7"><div class="kt">7</div></button>
-            <button class="rkey" data-dk="8"><div class="kt">8</div><div class="ks">NF</div></button>
-            <button class="rkey" data-dk="9"><div class="kt">9</div></button>
-            <button class="rkey" data-dk="up"><div class="kt">◄</div></button>
-            <button class="rkey" data-dk="0"><div class="kt">0</div><div class="ks">TUNE</div></button>
-            <button class="rkey" data-dk="down"><div class="kt">►</div></button>
+          <div class="rmid">
+            <div class="rleds">
+              <div class="rled"><i class="amber"></i><span>ALARM</span></div>
+              <div class="rled"><i class="${DS.busy?'green':''}"></i><span>OVEN</span></div>
+            </div>
+            <div class="rdistwrap">
+              ${DS.armed
+                ? `<div class="rdistcover"><div class="rdistbtn arming" id="dbtn">DISTRESS</div></div>
+                   <div class="rpwroff">PWR OFF</div>
+                   <div class="rdistcap">${esc(tr('Удерживай 3 секунды'))}</div>`
+                : `<div class="rdistcover" id="dlid"><div class="rdistbtn" style="opacity:.45">DISTRESS</div></div>
+                   <div class="rpwroff">PWR OFF</div>
+                   <div class="rdistcap">${esc(tr('Крышка кнопки бедствия — открыть'))}</div>`}
+            </div>
           </div>
-          <div class="rfngrid">
-            <button class="rkey" data-dk="tab"><div class="kt">TAB</div></button>
-            <button class="rkey" data-dk="menu"><div class="kt">MENU</div></button>
-            <button class="rkey" data-dk="mute"><div class="kt">🔇</div></button>
-            <button class="rkey warn" data-dk="cancel"><div class="kt">CANCEL</div></button>
+
+          <div class="rright">
+            <div class="rkgrid">
+              <button class="rkey ${DS.scan.on?'on':''}" data-dk="scan"><div class="kt">SCAN</div></button>
+              <button class="rkey" data-dk="2182"><div class="kt">2182</div></button>
+              <button class="rkey" data-dk="band"><div class="kt">RT/CH</div></button>
+              <button class="rkey" data-dk="1"><div class="kt">1</div></button>
+              <button class="rkey" data-dk="2"><div class="kt">2</div><div class="ks">NB</div></button>
+              <button class="rkey" data-dk="3"><div class="kt">3</div><div class="ks">SQ</div></button>
+              <button class="rkey" data-dk="4"><div class="kt">4</div></button>
+              <button class="rkey" data-dk="5"><div class="kt">5</div><div class="ks">NR</div></button>
+              <button class="rkey" data-dk="6"><div class="kt">6</div></button>
+              <button class="rkey" data-dk="7"><div class="kt">7</div></button>
+              <button class="rkey" data-dk="8"><div class="kt">8</div><div class="ks">NF</div></button>
+              <button class="rkey" data-dk="9"><div class="kt">9</div></button>
+              <button class="rkey" data-dk="up"><div class="kt">◄</div></button>
+              <button class="rkey" data-dk="0"><div class="kt">0</div><div class="ks">TUNE</div></button>
+              <button class="rkey" data-dk="down"><div class="kt">►</div></button>
+            </div>
+            <div class="rfngrid">
+              <button class="rkey" data-dk="tab"><div class="kt">TAB</div></button>
+              <button class="rkey ${DS.screen==='menu'?'on':''}" data-dk="menu"><div class="kt">MENU</div></button>
+              <button class="rkey ${MUTED?'on':''}" data-dk="mute"><div class="kt">🔇</div></button>
+              <button class="rkey warn" data-dk="cancel"><div class="kt">CANCEL</div></button>
+            </div>
+            <div class="rbigknob" id="dkEnter"><span class="kdial"></span><span class="cap">PUSH TO ENTER</span></div>
           </div>
-          <div class="rbigknob" id="dkEnter"><span class="kdial"></span><span class="cap">PUSH TO ENTER</span></div>
         </div>
       </div>
 
       <div class="rcompose">
-        <button class="rcbtn" data-dk="distmsg">DISTRESS<br>MSG</button>
-        <button class="rcbtn" data-dk="othermsg">OTHER<br>DSC MSG</button>
+        <button class="rcbtn ${DS.screen==='distress'?'on':''}" data-dk="distmsg">DISTRESS<br>MSG</button>
+        <button class="rcbtn ${DS.screen==='compose'?'on':''}" data-dk="othermsg">OTHER<br>DSC MSG</button>
         <button class="rcbtn" data-dk="brill">BRILL</button>
       </div>
       <div class="rbracket">COMPOSE DSC MSG</div>
     </div>
     <div class="rfooter">BATTERY MONITOR</div>
+
+    <div class="rlegend2">
+      <span><b>${esc(tr('Ролик'))}</b> — ${esc(tr('крутить: выбор, нажать: ввод'))}</span>
+      <span><b>MENU</b> — ${esc(tr('разделы станции'))}</span>
+      <span><b>BRILL</b> — ${esc(tr('день / ночь / зелёный'))}</span>
+      <span><b>SCAN</b> — ${esc(tr('вахтенный приём'))}</span>
+    </div>
 
     <div class="dsctip" id="dsctip"><b>${esc(tr('Тренажёр'))}</b>${esc((DSC.note||''))}</div>
     <div style="display:flex;gap:9px;margin-top:13px">
@@ -5542,45 +6558,367 @@ function renderDSC(){
   applyLang();
 }
 
+/* ================= Ролик: выбор и ввод =================
+   Один и тот же поворот означает разное на разных экранах, поэтому
+   разбор собран в двух местах: dscTurn -- поворот, dscEnter -- нажатие. */
+function dscTurn(dir){
+  const s=DS.screen;
+
+  if(s==='home'){
+    if(DS.homeEdit){
+      if(DS.homeSel===0){                       // канал
+        DS.chi=(DS.chi+dir+CHANS.length)%CHANS.length;
+        const c=curChan(); DS.tx=c.tx; DS.rx=c.rx;
+      } else if(DS.homeSel===1){                // частота передачи
+        DS.tx=Math.max(1600,Math.min(27500, +(DS.tx+dir*0.1).toFixed(1)));
+      } else {                                  // частота приёма
+        DS.rx=Math.max(1600,Math.min(27500, +(DS.rx+dir*0.1).toFixed(1)));
+      }
+    } else {
+      DS.homeSel=(DS.homeSel+dir+3)%3;
+    }
+    drawDSC(); return;
+  }
+
+  if(s==='menu'){
+    if(DS.mCol===0){
+      DS.mSel=(DS.mSel+dir+MENU_TREE.length)%MENU_TREE.length;
+      DS.mSub=0;
+    } else {
+      const n=(MENU_TREE[DS.mSel].items||[]).length||1;
+      DS.mSub=(DS.mSub+dir+n)%n;
+    }
+    drawDSC(); return;
+  }
+
+  if(s==='addr'){
+    DS.addrSel=(DS.addrSel+dir+ADDR_BOOK.length)%ADDR_BOOK.length;
+    drawDSC(); return;
+  }
+
+  if(s==='calls'){
+    const n=(DSC.calls||[]).length||1;
+    DS.mSub=(DS.mSub+dir+n)%n;
+    showTip(DSC.calls[DS.mSub]);
+    drawDSC(); return;
+  }
+
+  if(s==='compose'){
+    if(CM.pick){
+      CM.type=(CM.type+dir+MSG_TYPES.length)%MSG_TYPES.length;
+    } else if(CM.edit){
+      const row=composeRows()[CM.sel]||{};
+      if(row.ed==='spec') CM.spec=(CM.spec+dir+SPECIAL_MSGS.length)%SPECIAL_MSGS.length;
+      else if(row.ed==='prio') CM.prio=(CM.prio+dir+PRIORITIES.length)%PRIORITIES.length;
+      else if(row.ed==='mode') CM.mode=(CM.mode+dir+COMM_MODES.length)%COMM_MODES.length;
+      else if(row.ed==='freq') CM.fi=(CM.fi+dir+ROUTINE_FREQS.length)%ROUTINE_FREQS.length;
+      else if(row.ed==='type'){ CM.pick=true; CM.edit=false; }
+    } else {
+      const n=composeRows().length+1;           // +1 -- строка GO TO CALL
+      CM.sel=(CM.sel+dir+n)%n;
+    }
+    drawDSC(); return;
+  }
+
+  if(s==='distress'){
+    if(DM.edit){
+      const row=distressRows()[DM.sel]||{};
+      if(row.ed==='nature') DM.nature=(DM.nature+dir+(DSC.nature||[]).length)%((DSC.nature||[]).length||1);
+      else if(row.ed==='mode') DM.mode=(DM.mode+dir+COMM_MODES.length)%COMM_MODES.length;
+      else if(row.ed==='freq') DM.fi=(DM.fi+dir+DSC.freqs.length)%DSC.freqs.length;
+    } else {
+      const rows=distressRows();
+      let i=DM.sel;
+      do{ i=(i+dir+rows.length)%rows.length; }while(!rows[i].ed);
+      DM.sel=i;
+    }
+    drawDSC(); return;
+  }
+
+  if(s==='watch'){ if(dir>0) scanStart(); else scanStop(); drawDSC(); return; }
+}
+
+function dscEnter(){
+  const s=DS.screen;
+
+  if(s==='home'){
+    DS.homeEdit=!DS.homeEdit;
+    snd('key'); drawDSC();
+    showText(DS.homeEdit?'Ввод значения':'Выбор поля',
+      DS.homeEdit
+        ? 'Крути ролик: вправо — больше, влево — меньше. Нажми ещё раз, чтобы зафиксировать.'
+        : 'Крути ролик, чтобы перейти между CH, TX и RX. Нажатие открывает поле на изменение.');
+    return;
+  }
+
+  if(s==='menu'){
+    if(DS.mCol===0){
+      const sec=MENU_TREE[DS.mSel];
+      if(sec.dim||!(sec.items||[]).length){ snd('err'); return; }
+      DS.mCol=1; DS.mSub=0; drawDSC(); return;
+    }
+    runMenuItem(MENU_TREE[DS.mSel], (MENU_TREE[DS.mSel].items||[])[DS.mSub]);
+    return;
+  }
+
+  if(s==='addr'){
+    // выбранная станция подставляется адресатом в обычное сообщение
+    CM.to=ADDR_BOOK[DS.addrSel].m;
+    CM.pick=false; CM.sel=1; CM.edit=false;
+    setScreen('compose'); drawDSC();
+    showText('Адрес подставлен','Позывной из книги ушёл в поле TO. Дальше выбери приоритет, режим связи и рабочую частоту.');
+    return;
+  }
+
+  if(s==='calls'){
+    const c=(DSC.calls||[])[DS.mSub];
+    if(!c) return;
+    DS.call=c;
+    if(c.id==='distress'){ openDistressCompose(); renderDSC(); return; }
+    if(c.needs&&c.needs.includes('mmsi')){ setScreen('mmsi'); DS.mmsi=''; drawDSC(); showTip(c); return; }
+    runCall(c); return;
+  }
+
+  if(s==='compose'){
+    if(CM.pick){
+      CM.pick=false; CM.sel=0; CM.edit=false;
+      if(MSG_TYPES[CM.type].id==='test') CM.prio=1;
+      drawDSC();
+      showText('Тип сообщения',
+        'Срочность (PAN PAN) и безопасность (SECURITE) на станции задаются полем PRIORITY, '+
+        'а не отдельным типом сообщения. Тип отвечает только за то, кому уходит вызов.');
+      return;
+    }
+    const rows=composeRows();
+    if(CM.sel===rows.length){ composeSend(); return; }   // строка GO TO CALL
+    const row=rows[CM.sel];
+    if(!row||!row.ed){ snd('err'); return; }
+    if(row.ed==='type'){ CM.pick=true; drawDSC(); return; }
+    if(row.ed==='to'){
+      CM.edit=true; CM.to=''; setScreen('mmsi'); DS.mmsi=''; drawDSC();
+      showLesson('mmsi'); return;
+    }
+    CM.edit=!CM.edit; snd('key'); drawDSC(); return;
+  }
+
+  if(s==='distress'){
+    const row=distressRows()[DM.sel];
+    if(!row||!row.ed){ snd('err'); return; }
+    DM.edit=!DM.edit; snd('key'); drawDSC(); return;
+  }
+
+  if(s==='mmsi'){
+    if(DS.mmsi.length!==9){ snd('err'); return; }
+    if(CM.edit){                       // адрес набирали для COMPOSE
+      CM.to=DS.mmsi; CM.edit=false;
+      setScreen('compose'); drawDSC(); return;
+    }
+    runCall(DS.call||callById('test'));
+    return;
+  }
+
+  if(s==='watch'){ DS.scan.on?scanStop():scanStart(); drawDSC(); return; }
+  if(s==='info'||s==='log'){ setScreen('home'); drawDSC(); return; }
+}
+
+/* ---- что делает выбранный пункт меню ---- */
+function runMenuItem(sec,it){
+  if(!it){ snd('err'); return; }
+  snd('key');
+  const act=it.act||'info';
+
+  if(act==='dailytest'){ dailyTest(); return; }
+  if(act==='txtest'){ txSelfTest(); return; }
+  if(act==='tonetest'){
+    snd('tone');
+    DS.info={t:'TONE TEST',lines:['1000 Hz · 1 s','','Контрольный тон подаётся в тракт','низкой частоты. Если его не слышно','в динамике и в трубке -- неисправен','усилитель, а не приёмник.']};
+    setScreen('info'); drawDSC(); return;
+  }
+  if(act==='scan'){ setScreen('watch'); scanStart(); renderDSC(); return; }
+  if(act==='addr'){ setScreen('addr'); DS.addrSel=0; drawDSC(); return; }
+  if(act==='compose'){ openCompose(); return; }
+  if(act==='special'){
+    openCompose(); CM.pick=false; CM.type=6; CM.sel=1; CM.edit=true; drawDSC();
+    showText('Особые сообщения','Здесь живёт ретрансляция бедствия: её подают за другое судно, когда берег не подтвердил его тревогу. Свой вызов бедствия при этом не подаётся.');
+    return;
+  }
+  if(act==='ack'){
+    DS.info={t:'ACK SETTINGS',lines:[
+      'DISTRESS ACK      MANUAL',
+      'ROUTINE ACK       AUTO',
+      'POSITION REQ      MANUAL',
+      'POLLING           AUTO','',
+      'Подтверждение бедствия всегда ручное:',
+      'первым его даёт береговой центр, а не',
+      'судно. Автоматический ответ на чужое',
+      'бедствие правилами запрещён.']};
+    setScreen('info'); drawDSC(); return;
+  }
+  if(act==='position'){
+    DS.info={t:'POSITION SETUP',lines:[
+      'SOURCE            GPS (auto)',
+      'LAT               '+gpsLat(),
+      'LON               '+gpsLon(),
+      'UTC               '+utcHM(),'',
+      'Если приёмник отказал, позицию вводят',
+      'вручную и обновляют не реже чем раз',
+      'в четыре часа -- иначе в тревоге уйдут',
+      'старые координаты.']};
+    setScreen('info'); drawDSC(); return;
+  }
+  if(act==='datetime'){
+    const d=new Date();
+    DS.info={t:'DATE/TIME',lines:[
+      'DATE              '+String(d.getUTCDate()).padStart(2,'0')+'.'+
+        String(d.getUTCMonth()+1).padStart(2,'0')+'.'+d.getUTCFullYear(),
+      'TIME              '+utcHM()+' UTC',
+      'SOURCE            GPS','',
+      'В журнал ЦИВ время пишется всемирное.',
+      'Судовое время в радиожурнале не',
+      'используется.']};
+    setScreen('info'); drawDSC(); return;
+  }
+  if(act==='sysinfo'){
+    DS.info={t:'SYSTEM INFO',lines:[
+      'MODEL             FS-2575C',
+      'SER.NO.           106667',
+      'MMSI              '+myMmsi(),
+      'TX POWER          250 W',
+      'PROGRAM           2451003-01.05','',
+      'Тренажёр. Ничего в эфир не уходит.']};
+    setScreen('info'); drawDSC(); return;
+  }
+  if(act==='userch'){
+    const c=CHANS.find(x=>x.ch===it.v)||CHANS[0];
+    DS.chi=CHANS.indexOf(c); DS.tx=c.tx; DS.rx=c.rx;
+    setScreen('home'); DS.homeEdit=false; drawDSC();
+    showText('Канал выбран','CH '+c.ch+' · TX '+c.tx.toFixed(1)+' / RX '+c.rx.toFixed(1)+' кГц.');
+    return;
+  }
+  if(act==='log'){
+    const kind=it.kind;
+    const lines = kind==='dist'
+      ? ['Записей нет.','','Принятые вызовы бедствия хранятся','отдельно и не стираются вахтенным.']
+      : kind==='tx'
+        ? (DS.log.length?DS.log.slice():['Записей нет.','','Здесь останется всё, что станция','передала за рейс.'])
+        : ['Записей нет.','','Обычные принятые вызовы хранятся','до заполнения памяти, потом','затираются самыми старыми.'];
+    DS.info={t:it.t,lines:lines};
+    setScreen('info'); drawDSC(); return;
+  }
+
+  DS.info={t:it.t,lines:(it.info||['Настройка станции.'])};
+  setScreen('info'); drawDSC();
+}
+
+function openCompose(){
+  CM.pick=true; CM.sel=0; CM.edit=false;
+  setScreen('compose'); renderDSC();
+}
+
+/* ================= Клавиатура ================= */
 function dscKey(k){
   if(!DSC) return;
   hap();
-  const lists={main:(DSC.calls||[]).length,nature:(DSC.nature||[]).length,band:(DSC.freqs||[]).length};
-  const len=lists[DS.screen]||0;
+  if(k!=='send') snd('key');
 
-  // На дежурном экране цифры 1/4/7 -- те же ярлыки, что подписаны на
-  // самом экране (RX FREQ / DAILY TEST / TEST CALL), как на настоящей
-  // станции. Остальные цифры уводят в набор MMSI, как обычно.
-  if(DS.screen==='home'){
-    if(k==='1'){ DS.screen='band'; DS.sel=DS.band; drawDSC(); return; }
-    if(k==='4'||k==='7'){
-      const t=(DSC.calls||[]).find(c=>c.id==='test');
-      if(t){ DS.call=t; DS.screen='mmsi'; DS.mmsi=''; drawDSC(); showTip(t); return; }
-    }
-    if(k==='menu'||k==='2182'){ DS.screen='main'; DS.sel=0; drawDSC(); return; }
+  if(k==='menu'){
+    if(DS.screen==='menu'){ setScreen('home'); }
+    else { setScreen('menu'); DS.mCol=0; DS.mSub=0; }
+    renderDSC(); return;
   }
 
-  if(k==='up'){ DS.sel=(DS.sel-1+len)%(len||1); if(DS.screen==='main') showTip(DSC.calls[DS.sel]); drawDSC(); return; }
-  if(k==='down'){ DS.sel=(DS.sel+1)%(len||1); if(DS.screen==='main') showTip(DSC.calls[DS.sel]); drawDSC(); return; }
-  if(k==='menu'){ DS.screen='main'; DS.sel=0; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); return; }
-  if(k==='home'||k==='mute'||k==='tab'||k==='brill'){ DS.screen='home'; DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); return; }
-  if(k==='band'||k==='2182'||k==='scan'){ DS.screen='band'; DS.sel=DS.band; drawDSC(); return; }
   if(k==='cancel'){
-    DS.screen='home';
-    DS.nature=null; DS.mmsi=''; dscClear(); drawDSC(); showLesson('distress'); return;
+    if(DS.screen==='menu'&&DS.mCol===1){ DS.mCol=0; drawDSC(); return; }
+    if(DS.screen==='compose'){
+      if(CM.edit){ CM.edit=false; drawDSC(); return; }
+      if(!CM.pick){ CM.pick=true; drawDSC(); return; }
+    }
+    if(DS.screen==='distress'&&DM.edit){ DM.edit=false; drawDSC(); return; }
+    if(DS.screen==='watch'&&DS.scan.hit>=0){ DS.scan.hit=-1; DS.scan.msg=''; scanStart(); return; }
+    if(DS.screen==='home'&&DS.homeEdit){ DS.homeEdit=false; drawDSC(); return; }
+    setScreen('home'); DS.nature=null; DS.mmsi=''; dscClear();
+    renderDSC(); return;
   }
-  if(k==='del'){ if(DS.screen==='mmsi') DS.mmsi=DS.mmsi.slice(0,-1); drawDSC(); return; }
-  if(k==='distmsg'){
-    const dcall=(DSC.calls||[]).find(c=>c.id==='distress');
-    if(dcall){ DS.call=dcall; DS.screen='nature'; DS.sel=0; drawDSC(); showTip(dcall); }
+
+  if(k==='send'){ dscEnter(); return; }
+  if(k==='up'){ dscTurn(-1); return; }
+  if(k==='down'){ dscTurn(1); return; }
+
+  if(k==='tab'){
+    if(DS.screen==='menu'){ DS.mCol=DS.mCol?0:1; drawDSC(); return; }
+    if(DS.screen==='home'){ DS.homeSel=(DS.homeSel+1)%3; DS.homeEdit=false; drawDSC(); return; }
     return;
   }
-  if(k==='othermsg'){ DS.screen='main'; DS.sel=0; drawDSC(); return; }
-  if(k==='send'){ dscSend(); return; }
+
+  if(k==='scan'){
+    setScreen('watch');
+    DS.scan.on?scanStop():scanStart();
+    renderDSC();
+    showText('Вахтенный приём','Станция обязана непрерывно слушать частоты бедствия. SCAN проходит их по кругу: '+
+      'верхняя строка — 2187.5 кГц, ниже береговые вызывные ЦИВ. Приём вызова сканирование останавливает.');
+    return;
+  }
+
+  if(k==='2182'){
+    DS.chi=0; DS.tx=2182.0; DS.rx=2182.0; DS.band=0;
+    setScreen('home'); DS.homeEdit=false; DS.homeSel=0;
+    renderDSC();
+    showText('2182 кГц','Симплексная частота бедствия и вызова на ПВ. После вызова ЦИВ на 2187.5 разговор идёт голосом именно здесь.');
+    return;
+  }
+
+  if(k==='band'){
+    // RT/CH -- переключение между работой по каналу и по частоте
+    DS.homeSel = DS.homeSel===0?1:0;
+    DS.homeEdit=false;
+    setScreen('home'); renderDSC();
+    showText('RT/CH','Слева от экрана выбирается либо готовый канал (CH), либо частоты вручную (TX и RX). Ролик крутит то, что подсвечено.');
+    return;
+  }
+
+  if(k==='brill'){
+    BRILL=BRILL_MODES[(BRILL_MODES.indexOf(BRILL)+1)%BRILL_MODES.length];
+    localStorage.setItem('navarea_brill',BRILL);
+    BRILL_TIP=Date.now()+900;
+    drawDSC();
+    setTimeout(drawDSC,950);
+    showText('Яркость экрана','День — полная яркость и контраст. Ночь — приглушённый красный, чтобы не сбивать адаптацию глаз на тёмном мостике. Зелёный — старый люминофорный режим, привычный по прежним станциям.');
+    return;
+  }
+
+  if(k==='mute'){
+    MUTED=!MUTED; renderDSC();
+    showText(MUTED?'Динамик выключен':'Динамик включён',
+      MUTED?'На вахте так делать нельзя: дежурный приём должен быть слышен.':'Дежурный приём снова слышен.');
+    return;
+  }
+
+  if(k==='distmsg'){ openDistressCompose(); renderDSC(); showTip(callById('distress')); return; }
+  if(k==='othermsg'){ openCompose(); showLesson('freq'); return; }
+
   if(/^[0-9]$/.test(k)){
-    if(DS.screen!=='mmsi'){ DS.screen='mmsi'; DS.mmsi=''; }
-    if(DS.mmsi.length<9) DS.mmsi+=k;
-    drawDSC(); if(DS.mmsi.length===3) showLesson('mmsi');
+    // На дежурном экране цифры 1/4/7 -- те же ярлыки, что подписаны
+    // на самом экране, как на настоящей станции.
+    if(DS.screen==='home'){
+      if(k==='1'){ DS.homeSel=2; DS.homeEdit=true; drawDSC(); return; }
+      if(k==='4'){ dailyTest(); return; }
+      if(k==='7'){
+        openCompose(); CM.pick=false; CM.type=5; CM.sel=1; CM.prio=1;
+        drawDSC(); showLesson('test'); return;
+      }
+    }
+    if(DS.screen==='menu'){
+      const i=MENU_TREE.findIndex(m=>m.n===k);
+      if(i>=0){ DS.mSel=i; DS.mCol=0; DS.mSub=0; drawDSC(); }
+      return;
+    }
+    if(DS.screen==='mmsi'){
+      if(DS.mmsi.length<9) DS.mmsi+=k;
+      drawDSC(); if(DS.mmsi.length===3) showLesson('mmsi');
+      return;
+    }
+    // из любого другого места цифра начинает набор адреса
+    setScreen('mmsi'); DS.mmsi=k; drawDSC();
   }
 }
 
@@ -5785,7 +7123,13 @@ function coordPairsOf(tool){
    двигает S-метр), большая ручка -- энкодер выбора пунктов меню.
    Считаем угол от центра ручки до пальца, поэтому крутить можно с любой
    стороны, а не только тянуть вверх-вниз. */
-const KNOB={vol:5, rf:28, ent:0, entAngle:0};   // ent -- накопленный поворот энкодера
+const KNOB={vol:5, rf:28, ent:0, entAngle:0, entAt:0};   // ent -- накопленный поворот энкодера
+
+/* Насколько ручка отзывчива. Энкодер сознательно сделан вязким: на
+   стеклянном экране палец проходит полсотни пикселей незаметно, и на
+   прежних настройках список пролетал целиком от одного движения. */
+const ENC_STEP=55;      // градусов на один щелчок
+const ENC_GAP=120;      // мс -- минимум между щелчками, чтобы не частило
 
 function knobAngle(el, x, y){
   const r=el.getBoundingClientRect();
@@ -5795,6 +7139,8 @@ function knobAngle(el, x, y){
 function makeKnob(el, opts){
   if(!el||el._knob) return;
   el._knob=true;
+  const sens = opts.sens||1.8;          // градусов на пиксель при движении вверх-вниз
+  const wheel = opts.wheel||8;          // градусов на щелчок колеса мыши
   let prev=null, startY=0, mode=null, lastHap=0;
 
   const begin=(x,y)=>{
@@ -5819,7 +7165,7 @@ function makeKnob(el, opts){
 
     let delta=0;
     if(mode==='drag'){
-      delta=(startY-y)*1.8;    // вверх -- больше
+      delta=(startY-y)*sens;    // вверх -- больше
       startY=y;
     } else {
       const a=knobAngle(el,x,y);
@@ -5834,7 +7180,7 @@ function makeKnob(el, opts){
     // Отдача не чаще, чем раз в 60 мс: иначе на плавном повороте
     // телефон тарахтит без остановки.
     const now=Date.now();
-    if(now-lastHap>60){ hap(); lastHap=now; }
+    if(!opts.quiet&&now-lastHap>60){ hap(); lastHap=now; }
   };
 
   const end=()=>{
@@ -5851,7 +7197,7 @@ function makeKnob(el, opts){
   el.addEventListener('touchmove',e=>{ if(e.touches[0]&&prev!==null){ e.preventDefault(); move(e.touches[0].clientX,e.touches[0].clientY); } },{passive:false});
   el.addEventListener('touchend',end,{passive:true});
   // колесо мыши -- на настольном браузере привычнее всего
-  el.addEventListener('wheel',e=>{ e.preventDefault(); opts.onTurn(e.deltaY>0?-8:8); },{passive:false});
+  el.addEventListener('wheel',e=>{ e.preventDefault(); opts.onTurn(e.deltaY>0?-wheel:wheel); },{passive:false});
 }
 
 function knobRotate(el, deg){
@@ -5869,7 +7215,7 @@ function bindStationKnobs(){
   const vol=$('#knobVol'), rf=$('#knobRf'), ent=$('#dkEnter');
 
   makeKnob(vol,{onTurn:d=>{
-    KNOB.vol=Math.max(0,Math.min(10,KNOB.vol+d/28));
+    KNOB.vol=Math.max(0,Math.min(10,KNOB.vol+d/34));
     knobRotate(vol, (KNOB.vol/10)*270-135);
     knobBubble(vol, Math.round(KNOB.vol));
     drawDSC();
@@ -5877,30 +7223,43 @@ function bindStationKnobs(){
   knobRotate(vol,(KNOB.vol/10)*270-135);
 
   makeKnob(rf,{onTurn:d=>{
-    KNOB.rf=Math.max(0,Math.min(99,KNOB.rf+d/3.6));
+    KNOB.rf=Math.max(0,Math.min(99,KNOB.rf+d/4.4));
     knobRotate(rf, (KNOB.rf/99)*270-135);
     knobBubble(rf, Math.round(KNOB.rf));
     drawDSC();
   }});
   knobRotate(rf,(KNOB.rf/99)*270-135);
 
-  // Большая ручка: поворот листает список, нажатие -- подтверждение.
   // Большая ручка -- энкодер без упоров: крутится сколько угодно, а список
-  // листается щелчками. Раньше угол поворота и счётчик щелчков были одной
-  // переменной, поэтому ручка возвращалась назад после каждого щелчка и
-  // выглядела заклинившей.
-  makeKnob(ent,{onTurn:d=>{
+  // листается щелчками. Угол поворота и счётчик щелчков живут раздельно,
+  // иначе ручка отскакивала назад после каждого щелчка.
+  //
+  // Щелчок отрабатывает не чаще ENC_GAP: на прежних настройках одно
+  // движение пальцем пролистывало всё меню насквозь, и попасть в нужную
+  // строку было невозможно.
+  makeKnob(ent,{sens:1.1, wheel:28, quiet:true, onTurn:d=>{
     KNOB.entAngle=(KNOB.entAngle||0)+d;
     KNOB.ent=(KNOB.ent||0)+d;
-    const step=22;                       // столько градусов на один щелчок
-    while(KNOB.ent>=step){ KNOB.ent-=step; dscKey('down'); }
-    while(KNOB.ent<=-step){ KNOB.ent+=step; dscKey('up'); }
-    ent._turned=true;
     const dial=ent.querySelector('.kdial');
     knobRotate(dial||ent, KNOB.entAngle);
+    ent._turned=true;
+
+    const now=Date.now();
+    if(now-KNOB.entAt<ENC_GAP){
+      // копим поворот, но щелчок пока придержим
+      KNOB.ent=Math.max(-ENC_STEP*2,Math.min(ENC_STEP*2,KNOB.ent));
+      return;
+    }
+    if(KNOB.ent>=ENC_STEP){ KNOB.ent=0; KNOB.entAt=now; hap(); dscTurn(1); }
+    else if(KNOB.ent<=-ENC_STEP){ KNOB.ent=0; KNOB.entAt=now; hap(); dscTurn(-1); }
   }});
   { const dial=ent&&ent.querySelector('.kdial');
-    if(dial) knobRotate(dial, KNOB.entAngle||0); }
+    if(dial) knobRotate(dial, KNOB.entAngle||0);
+    // видно, что ручка «нажата» и крутит значение, а не выбирает поле
+    if(ent) ent.classList.toggle('pushed',
+      (DS.screen==='home'&&DS.homeEdit)||
+      (DS.screen==='compose'&&CM.edit)||
+      (DS.screen==='distress'&&DM.edit)); }
 }
 
 
@@ -6396,7 +7755,12 @@ function renderGmdss(kind){
 
     <div class="eqfield" style="margin-top:15px">
       <label>${esc(tr('Дата замены батареи'))}</label>
-      <input type="date" id="${kind}Expires" value="${esc(eq.battery_expires||'')}">
+      <button type="button" class="datefield" id="${kind}Expires" data-iso="${esc(eq.battery_expires||'')}">
+        <span class="dv ${eq.battery_expires?'':'none'}">${eq.battery_expires
+          ? esc(dpHuman(eq.battery_expires))
+          : esc(tr('Не задана'))}</span>
+        <span class="dico">${ico('clock','sm')}</span>
+      </button>
     </div>
 
     `;
@@ -6507,11 +7871,16 @@ function bindGmdssEvents(kind){
     catch(e){}
   };
 
+  // Дата батареи -- свой календарь: раздел перерисовывается только после
+  // «Готово», поэтому окно больше не захлопывается на выборе года и месяца.
   const exp=$('#'+kind+'Expires');
-  if(exp) exp.onchange=async()=>{
-    hap('medium');
-    try{ GMEQ=await api('/api/gmdss?action=save_equipment&kind='+kind+'&battery_expires='+encodeURIComponent(exp.value)); renderGmdss(kind); }
-    catch(e){}
+  if(exp) exp.onclick=()=>{
+    dpOpen(exp.dataset.iso||'', 'Дата замены батареи', async iso=>{
+      try{ GMEQ=await api('/api/gmdss?action=save_equipment&kind='+kind
+             +'&battery_expires='+encodeURIComponent(iso)); }
+      catch(e){}
+      renderGmdss(kind);
+    });
   };
 
   const st=$('#'+kind+'StartTest');

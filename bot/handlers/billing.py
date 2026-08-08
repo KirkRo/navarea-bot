@@ -44,7 +44,7 @@ async def cmd_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     link = await context.bot.create_invoice_link(
-        title="NAVAREA Bot Premium",
+        title="WatchKeeper Premium",
         description=(
             "Все районы NAVAREA и береговые, проверка маршрута, карточка судна, "
             "чек-листы и сертификаты, история, расширенные расчёты и вопросы без лимита. "

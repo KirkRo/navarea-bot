@@ -164,7 +164,7 @@ def _forecast_times(points: list[dict], issued: datetime | None = None) -> list[
 # Получение данных
 # ---------------------------------------------------------------------- #
 _HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; Watchkeeper/1.0; maritime safety app)",
+    "User-Agent": "Mozilla/5.0 (compatible; WatchKeeper/1.0; maritime safety app)",
     "Accept": "application/json,text/plain,*/*",
 }
 

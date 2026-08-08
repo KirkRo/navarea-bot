@@ -11,6 +11,7 @@ HTTP-сервер бота на стандартной библиотеке (б�
   /api/favorites     избранные районы (GET) и переключение
   /api/ports         поиск порта по названию
   /api/voyage        предупреждения вдоль маршрута между двумя портами
+  /api/invoice       ссылка на оплату подписки звёздами (кнопка в Mini App)
 
 Все /api/* отдают JSON. Данные, привязанные к пользователю (избранное),
 доступны только после проверки подписи Telegram initData -- иначе кто
@@ -420,6 +421,78 @@ def _api_dsc(query: dict) -> dict:
     return dsc_payload()
 
 
+def _api_invoice(query: dict) -> dict:
+    """Ссылка на оплату подписки звёздами для кнопки внутри Mini App.
+
+    Раньше кнопка «Оформить» просто закрывала приложение и рассчитывала,
+    что человек сам наберёт /subscribe в чате -- со стороны это выглядело
+    как «нажал и выкинуло на главную». Теперь ссылку делаем прямо здесь,
+    а приложение открывает по ней окно оплаты Telegram (openInvoice).
+
+    Обращаемся к Bot API напрямую по HTTP: веб-сервер живёт в своём потоке
+    и до объекта бота с его циклом событий отсюда не дотянуться, а метод
+    createInvoiceLink -- обычный POST.
+    """
+    import urllib.error
+    import urllib.request
+
+    from .config import config
+    from .handlers.billing import INVOICE_PAYLOAD, SUBSCRIPTION_PERIOD_SECONDS
+    from .services.access import is_owner
+
+    token = _state["bot_token"]
+    if not token:
+        return {"error": "no_token"}
+
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"error": "unauthorized"}
+
+    db = _state["db"]
+    if is_owner(user_id):
+        return {"error": "owner"}
+    if db is not None and db.is_premium_active(user_id):
+        return {"error": "already_premium"}
+
+    payload = {
+        "title": "WatchKeeper Premium",
+        "description": (
+            "Все районы NAVAREA и береговые, проверка маршрута, карточка судна, "
+            "чек-листы и сертификаты, история и расширенные расчёты. "
+            "Автопродление каждые 30 дней, отменить в любой момент."
+        ),
+        "payload": INVOICE_PAYLOAD,
+        "currency": "XTR",
+        "prices": [{"label": "Premium, 1 месяц", "amount": config.stars_price_monthly}],
+        "subscription_period": SUBSCRIPTION_PERIOD_SECONDS,
+    }
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/createInvoiceLink",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            answer = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        # Telegram кладёт причину отказа в тело ответа -- она полезнее кода
+        try:
+            answer = json.loads(e.read().decode("utf-8"))
+        except Exception:
+            logger.exception("createInvoiceLink не ответил")
+            return {"error": "telegram_error"}
+    except Exception:
+        logger.exception("createInvoiceLink не ответил")
+        return {"error": "network"}
+
+    if not answer.get("ok"):
+        logger.warning("createInvoiceLink отказал: %s", answer.get("description"))
+        return {"error": "telegram_error", "detail": answer.get("description", "")}
+
+    return {"link": answer["result"], "price_stars": config.stars_price_monthly}
+
+
 def _now_iso() -> str:
     from datetime import datetime, timezone
     return datetime.now(timezone.utc).isoformat()
@@ -446,10 +519,12 @@ def _api_gmdss(query: dict) -> dict:
 
     if action == "save_equipment" and kind in ("epirb", "sart"):
         eq = data[kind]
+        # Пишем только то, что реально пришло. Пустое значение -- это
+        # осознанная очистка поля (кнопка «Очистить» в календаре),
+        # а не повод оставить старое.
         for f in ("model", "mmsi_hex", "battery_expires", "notes"):
-            v = (query.get(f) or [""])[0].strip()
-            if v:
-                eq[f] = v
+            if f in query:
+                eq[f] = (query.get(f) or [""])[0].strip()
         db.save_gmdss(user_id, data)
 
     elif action == "save_checklist" and kind in ("epirb", "sart"):
@@ -519,7 +594,7 @@ def _api_cyclones(query: dict) -> dict:
 
 
 def _api_ask(query: dict) -> dict:
-    """Ask Watchkeeper: понимаем вопрос и говорим, что с ним делать.
+    """Ask WatchKeeper: понимаем вопрос и говорим, что с ним делать.
 
     Приложение присылает вместе с вопросом то, что уже знает о судне,
     позиции и маршруте. Это и есть главный смысл: человек спрашивает
@@ -700,6 +775,7 @@ API_ROUTES = {
     "/api/ask": _api_ask,
     "/api/gmdss": _api_gmdss,
     "/api/dsc": _api_dsc,
+    "/api/invoice": _api_invoice,
     "/api/ship-search": _api_ship_search,
     "/api/access": _api_access,
     "/api/vessel": _api_vessel,
