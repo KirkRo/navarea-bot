@@ -421,6 +421,12 @@ def _api_dsc(query: dict) -> dict:
     return dsc_payload()
 
 
+def _api_prompts(query: dict) -> dict:
+    """Библиотека готовых запросов к ассистенту и режимы ответа."""
+    from .services.prompts import prompts_payload
+    return prompts_payload()
+
+
 def _api_invoice(query: dict) -> dict:
     """Ссылка на оплату подписки звёздами для кнопки внутри Mini App.
 
@@ -621,6 +627,16 @@ def _api_ask(query: dict) -> dict:
     # потом расчёты. Иначе «через сколько часов моя вахта» уедет в ETA,
     # а «судно справа, что делать» -- в расчёт CPA вместо правил.
 
+    # 0. Погода и всё, что вокруг неё, уходит к ассистенту сразу.
+    #    Иначе «сколько идти до Сингапура и что там с ветром» перехватит
+    #    расчёт ETA и про ветер никто не ответит.
+    import re as _re
+    if _re.search(r"погод|ветер|ветра|ветром|волн\w*|зыб|шторм|циклон|тайфун|ураган|"
+                  r"туман|видимост|давлени\w*\s*\d*\s*(?:гпа|hpa)?|прогноз|"
+                  r"weather|wind|wave|swell|storm|cyclone|typhoon|forecast|visibility",
+                  text, _re.I):
+        return _ask_assistant(text, query, ctx, watch_role)
+
     # 1. Вахта
     w = match_watch(text, schedule=watch_role)
     if w:
@@ -650,17 +666,43 @@ def _api_ask(query: dict) -> dict:
     if view:
         return {"kind": "view", "q": text, **view}
 
-    # 5. Всё остальное -- обычный вопрос к Claude.
-    #    Сервер многопоточный, каждый запрос в своём потоке, поэтому
-    #    асинхронный вызов выполняется прямо здесь.
+    # 5. Всё остальное уходит к Claude с инструментами.
+    return _ask_assistant(text, query, ctx, watch_role)
+
+
+def _ask_assistant(text: str, query: dict, ctx: dict, watch_role: str) -> dict:
+    """Вопрос к Claude с инструментами: он сам возьмёт погоду на переходе,
+    предупреждения по району, сводку циклонов, карточку судна и позицию.
+
+    Сервер многопоточный, каждый запрос обрабатывается в своём потоке,
+    поэтому асинхронный вызов выполняется прямо здесь."""
     qa = _state.get("qa")
     if qa is None:
         return {"kind": "text", "intent": "GENERAL", "q": text,
                 "text": "Ассистент не настроен: в .env не задан ключ ANTHROPIC_API_KEY."}
+
+    pos = (ctx or {}).get("position") or {}
+    route = (ctx or {}).get("route") or {}
+    route_note = ""
+    if route.get("from") and route.get("to"):
+        route_note = f"{route['from']} — {route['to']}"
+        if route.get("distance"):
+            route_note += f", {route['distance']} миль"
+
+    agent_ctx = {
+        "db": _state["db"],
+        "user_id": _user_id_from_query(query),
+        "watch": watch_role,
+        "position": {"lat": pos["lat_dec"], "lon": pos["lon_dec"]}
+                    if pos.get("lat_dec") is not None else None,
+        "route": route_note or None,
+        "mode": (query.get("mode") or [""])[0],
+    }
+
     try:
         import asyncio
         return {"kind": "text", "intent": "GENERAL", "q": text,
-                "text": asyncio.run(qa.ask(text))}
+                "text": asyncio.run(qa.ask_agent(text, agent_ctx))}
     except Exception as e:
         logger.warning("Ассистент не ответил: %s", e)
         return {"kind": "text", "intent": "GENERAL", "q": text,
@@ -775,6 +817,7 @@ API_ROUTES = {
     "/api/ask": _api_ask,
     "/api/gmdss": _api_gmdss,
     "/api/dsc": _api_dsc,
+    "/api/prompts": _api_prompts,
     "/api/invoice": _api_invoice,
     "/api/ship-search": _api_ship_search,
     "/api/access": _api_access,

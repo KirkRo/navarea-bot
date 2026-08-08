@@ -26,8 +26,13 @@ async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return
 
     await update.message.chat.send_action("typing")
+    # В чате отвечает тот же ассистент, что и в приложении: с инструментами,
+    # чтобы «какая погода на переходе Констанца -- Сантос» отрабатывало
+    # цифрами, а не общими словами. Позиции с устройства здесь нет -- в чате
+    # её взять неоткуда, -- зато карточка судна доступна по user_id.
+    ctx = {"db": db, "user_id": user_id}
     try:
-        answer = await qa.ask(question)
+        answer = await qa.ask_agent(question, ctx)
     except Exception:
         await update.message.reply_text(
             "Не получилось получить ответ от Claude (проблема с API). Попробуй ещё раз чуть позже."

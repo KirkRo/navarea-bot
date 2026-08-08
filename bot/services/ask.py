@@ -458,11 +458,12 @@ def match_colreg(text: str) -> dict | None:
 def ask_payload() -> dict:
     return {
         "examples": [
+            "Какая погода на переходе Constanta — Santos?",
             "Посчитай UKC: глубина 15.8, осадка 11.4, прилив 0.8, squat 0.6",
-            "До Singapore 426 миль, скорость 14.5. Когда придём?",
+            "Сколько идти до Singapore и что там с ветром?",
             "Какие NAVAREA влияют на мой маршрут?",
             "Судно справа, пеленг 035, что делать?",
-            "Какой squat при 13 узлах?",
+            "Есть ли сейчас циклоны у меня по курсу?",
             "Через сколько часов моя вахта?",
         ],
         "intents": [i["id"] for i in INTENTS] + [v["id"] for v in VIEW_INTENTS] + ["WATCH", "COLREG", "GENERAL"],

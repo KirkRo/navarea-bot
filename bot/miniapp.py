@@ -31,6 +31,11 @@ MINI_APP_HTML = r"""<!DOCTYPE html>
   --text:#f4f8fc; --muted:#7f96ac; --dim:#5b7086;
   --amber:#f0a03c; --amber2:#ff8b3d; --amber-soft:rgba(240,160,60,.13);
   --ok:#3fc97f; --hot:#ff6b4a; --sea:#4d93d6;
+  /* Морская навигационная палитра: голубой -- навигация, зелёный -- норма,
+     жёлтый -- внимание, красный -- опасность, фиолетовый -- ассистент. */
+  --blue:#46b8ff; --cyan:#62dcff; --green:#26d69d; --purple:#d477ff;
+  --ai1:#1689d6; --ai2:#8d5cff; --ai3:#d96bff;
+  --ai:linear-gradient(90deg,var(--ai1),var(--ai2) 55%,var(--ai3));
   --line:rgba(127,150,172,.16);
   --r-xl:26px; --r-lg:20px; --r-md:15px; --r-sm:11px;
   --sh:0 14px 38px rgba(0,0,0,.45);
@@ -54,7 +59,10 @@ body::before{
     radial-gradient(760px 420px at 82% -8%, rgba(240,160,60,.16), transparent 62%),
     radial-gradient(620px 460px at -12% 6%, rgba(77,147,214,.14), transparent 60%);
 }
-.wrap{padding:16px 15px 0;max-width:940px;margin:0 auto;position:relative;z-index:1}
+/* Одна раскладка и на телефоне, и на компьютере: Mini App живёт в узком
+   окне Telegram, и вторая, «настольная» вёрстка только расходилась бы с
+   первой. Ширина ограничена, содержимое прокручивается вертикально. */
+.wrap{padding:max(10px,env(safe-area-inset-top)) 15px 0;max-width:430px;margin:0 auto;position:relative;z-index:1}
 .mono{font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
 
 /* ---- Шапка ---- */
@@ -321,26 +329,203 @@ body::before{
 .voyhead .big{font-size:17px;font-weight:750;margin-bottom:5px;letter-spacing:-.4px}
 .voyhead .sm{font-size:12.5px;color:var(--muted)}
 
-/* ---- Нижняя навигация ---- */
+/* ================= Главный экран =================
+   Собран по макету: шапка, судно, подсказки ассистента, сводка с мостика,
+   тревога, кнопка Ask AI. Плотной таблицы инструментов здесь сознательно
+   нет -- она уехала во вкладку «Инструменты»: с главного экрана человек
+   должен за три секунды понять, что это помощник вахтенного, а не список
+   калькуляторов. */
+
+/* --- шапка --- */
+.wkhdr{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.wkmark{
+  width:38px;height:38px;flex:none;border-radius:50%;background:#082a42;
+  border:1px solid #35aaff;display:flex;align-items:center;justify-content:center;color:#eef8ff;
+}
+body.light .wkmark{background:#dceefb;border-color:#2b8fd8;color:#0d3050}
+.wkmark svg{width:22px;height:22px}
+.wkname{flex:1;min-width:0}
+.wkname .n1{font-size:15px;font-weight:850;letter-spacing:.4px;line-height:1.1}
+.wkname .n2{font-size:9.5px;font-weight:700;color:var(--muted);margin-top:2px;letter-spacing:.2px}
+.wkclock{text-align:right;flex:none}
+.wkclock .t{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.wkclock .t span{font-size:8.5px;font-weight:700;color:var(--muted);margin-left:2px}
+.wkclock .d{font-size:8.5px;color:var(--muted);margin-top:2px}
+/* Второстепенные переключатели: язык, тема, позиция. Ушли под шапку,
+   чтобы не спорить за место с часами и уведомлениями. */
+.hdrtools{display:flex;align-items:center;gap:8px;margin-bottom:13px;flex-wrap:wrap}
+.hdrtools .hello{font-size:9.5px;color:var(--muted)}
+.wkbell{
+  width:34px;height:34px;flex:none;border-radius:50%;background:var(--surf2);
+  border:1px solid var(--line);color:var(--text);position:relative;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+.wkbell svg{width:17px;height:17px}
+.wkbell b{
+  position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:9px;
+  background:#ff4d58;color:#fff;font-size:9px;font-weight:800;line-height:16px;padding:0 4px;
+}
+.wkbell b:empty{display:none}
+
+/* --- герой: судно и приветствие --- */
+.wkhero{
+  position:relative;border-radius:var(--r-lg);overflow:hidden;border:1px solid #24526c;
+  background:linear-gradient(135deg,#092a40,#071c2d 55%,#10223a);
+  box-shadow:var(--sh);padding:17px 16px 13px;min-height:176px;
+}
+body.light .wkhero{background:linear-gradient(135deg,#dceaf6,#eaf2fa 55%,#e2ecf7);border-color:#b9d2e4}
+.wkhero .art{position:absolute;right:-6px;top:0;bottom:0;width:190px;pointer-events:none;opacity:.95}
+.wkhero .art svg{width:100%;height:100%}
+.wkhero .eyebrow{font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--cyan);position:relative}
+body.light .wkhero .eyebrow{color:#0a6ea8}
+.wkhero .greet{font-size:23px;font-weight:850;letter-spacing:-.6px;margin-top:12px;position:relative;max-width:200px}
+.wkhero .sub{font-size:10px;font-weight:700;color:var(--muted);margin-top:5px;position:relative;max-width:200px}
+.wkvessel{
+  display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:26px;
+  font-size:9.5px;position:relative;flex-wrap:wrap;
+}
+.wkvessel .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none;
+  box-shadow:0 0 8px rgba(38,214,157,.8)}
+.wkvessel .dot.off{background:var(--dim);box-shadow:none}
+.wkvessel .lb{font-weight:800;letter-spacing:.3px}
+.wkvessel .nm{color:var(--muted)}
+.wkvessel .st{color:var(--green);font-weight:800}
+.wkvessel .st.off{color:var(--dim)}
+
+/* --- подсказки ассистента --- */
+.wksech{display:flex;align-items:baseline;justify-content:space-between;margin:20px 0 11px;gap:10px}
+.wksech h3{font-size:15px;font-weight:850;margin:0;letter-spacing:-.3px}
+.wksech a{font-size:9px;font-weight:800;color:var(--blue);cursor:pointer;letter-spacing:.4px}
+.wkprompts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.wkprompt{
+  display:flex;align-items:center;gap:10px;padding:11px 10px;border-radius:12px;
+  background:linear-gradient(180deg,#0d2435,#081a28);border:1px solid #1d4057;
+  cursor:pointer;text-align:left;color:inherit;font-family:inherit;min-height:58px;
+  transition:transform .12s,border-color .18s;
+}
+body.light .wkprompt{background:linear-gradient(180deg,#fff,#eef4fa);border-color:#c7d8e6}
+.wkprompt:active{transform:scale(.975);border-color:var(--blue)}
+.wkprompt .ic{
+  width:30px;height:30px;flex:none;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:15px;font-weight:800;
+}
+.wkprompt .tx{min-width:0}
+.wkprompt .t1{font-size:10.5px;font-weight:800;line-height:1.2}
+.wkprompt .t2{font-size:8.5px;color:var(--muted);margin-top:3px;line-height:1.25}
+
+/* --- сводка с мостика --- */
+.wksnap{
+  display:flex;gap:0;border-radius:14px;padding:15px 0;
+  background:linear-gradient(180deg,#0d2435,#081a28);border:1px solid #1d4057;
+}
+body.light .wksnap{background:linear-gradient(180deg,#fff,#eef4fa);border-color:#c7d8e6}
+.wksnap>div{flex:1;min-width:0;padding:0 14px}
+.wksnap .divider{flex:none;width:1px;padding:0;background:#1d3b50;align-self:stretch}
+body.light .wksnap .divider{background:#cddced}
+.wklb{font-size:8px;font-weight:800;letter-spacing:.7px;color:var(--muted);text-transform:uppercase}
+.wkbig{font-size:20px;font-weight:850;letter-spacing:-.5px;margin-top:6px;line-height:1.1}
+.wkmid{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.wksm{font-size:9px;color:var(--muted);margin-top:3px}
+.wkbar{height:5px;border-radius:3px;background:#203447;margin-top:11px;overflow:hidden}
+body.light .wkbar{background:#d7e2ec}
+.wkbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#8d5cff,#b968ff)}
+.wkpct{font-size:9px;font-weight:800;color:var(--purple);margin-top:7px}
+.wkduo{display:flex;gap:14px;margin-top:6px}
+.wkok{
+  width:30px;height:30px;border-radius:50%;background:#0d3b31;border:1px solid var(--green);
+  color:var(--green);font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  float:right;margin-top:-6px;
+}
+.wkok.warn{background:#3b2f0d;border-color:var(--amber);color:var(--amber)}
+
+/* --- полоса тревоги --- */
+.wkalert{
+  display:flex;align-items:center;gap:11px;width:100%;margin-top:14px;padding:12px 13px;
+  border-radius:12px;background:#211b20;border:1px solid #60333a;cursor:pointer;
+  color:inherit;font-family:inherit;text-align:left;
+}
+body.light .wkalert{background:#fdeff0;border-color:#e9bcc0}
+.wkalert.ok{background:#132a26;border-color:#265046}
+body.light .wkalert.ok{background:#e8f7f1;border-color:#a9dcc9}
+.wkalert .ic{
+  width:26px;height:26px;flex:none;border-radius:50%;background:#4c2228;color:var(--hot);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
+}
+.wkalert.ok .ic{background:#12463a;color:var(--green)}
+.wkalert .tx{flex:1;min-width:0}
+.wkalert .t1{font-size:10.5px;font-weight:800}
+.wkalert .t2{font-size:8.5px;color:var(--muted);margin-top:3px}
+.wkalert .ar{font-size:17px;color:var(--muted);flex:none}
+
+/* --- кнопка ассистента --- */
+.wkask{
+  position:relative;margin-top:14px;border-radius:16px;overflow:hidden;
+  background:#0a1c2b;border:1px solid #3d416e;padding:14px 13px 13px;
+}
+body.light .wkask{background:#f4f0ff;border-color:#cfc4ee}
+.wkask::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--ai)}
+.wkask .top{display:flex;align-items:center;gap:12px}
+.wkask .orb{
+  width:40px;height:40px;flex:none;border-radius:50%;background:#102d4a;border:1px solid #4aaeff;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+body.light .wkask .orb{background:#dceefb}
+.wkask .orb i{width:6px;height:6px;border-radius:50%;display:block}
+.wkask .orb i:first-child{background:var(--cyan)}
+.wkask .orb i:last-child{background:var(--ai2)}
+.wkask .t1{font-size:14px;font-weight:850}
+.wkask .t2{font-size:8.5px;color:var(--muted);margin-top:2px}
+.wkaskrow{display:flex;align-items:center;gap:9px;margin-top:12px}
+.wkaskfield{
+  flex:1;min-width:0;border-radius:8px;background:#0c2131;border:1px solid #31536a;
+  padding:8px 11px;font-size:9.5px;color:var(--muted);cursor:pointer;text-align:left;
+  font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.light .wkaskfield{background:#fff;border-color:#c7d8e6}
+.wkasksend{
+  width:32px;height:32px;flex:none;border-radius:50%;background:var(--ai);border:none;
+  color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+
+/* ---- Нижняя навигация ----
+   Ровно пять пунктов, ASK AI в середине и заметно крупнее остальных:
+   это главное действие приложения, а не ещё одна вкладка. */
 .tabs{
   position:fixed;bottom:0;left:0;right:0;z-index:1000;display:flex;
-  background:rgba(11,22,34,.93);border-top:1px solid var(--line);
-  backdrop-filter:blur(22px);padding:7px 6px calc(7px + env(safe-area-inset-bottom));
+  justify-content:center;gap:0;
+  background:rgba(7,23,37,.95);border-top:1px solid #1a3b51;
+  backdrop-filter:blur(22px);padding:8px 6px calc(8px + env(safe-area-inset-bottom));
 }
-body.light .tabs{background:rgba(255,255,255,.94)}
+body.light .tabs{background:rgba(255,255,255,.96);border-top-color:var(--line)}
+.tabsin{display:flex;width:100%;max-width:430px;align-items:flex-end}
 .tab{
   flex:1;border:none;background:none;cursor:pointer;color:var(--dim);
-  font-size:10px;font-weight:650;font-family:inherit;padding:7px 2px 5px;
+  font-size:9px;font-weight:800;font-family:inherit;padding:4px 2px 2px;
   border-radius:var(--r-sm);position:relative;transition:color .24s;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
 }
-.tab .ic{display:block;font-size:20px;margin-bottom:3px;
-  transition:transform .32s cubic-bezier(.34,1.7,.5,1)}
-.tab.on{color:var(--amber)}
-.tab.on .ic{transform:translateY(-3px) scale(1.16)}
-.tab.on::after{
-  content:'';position:absolute;bottom:1px;left:38%;right:38%;height:3px;border-radius:3px;
-  background:linear-gradient(90deg,var(--amber),var(--amber2));
+.tab .ic{
+  width:38px;height:38px;border-radius:50%;background:#0b1d2b;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .3s cubic-bezier(.34,1.7,.5,1),background .24s;
 }
+body.light .tab .ic{background:#e6edf5}
+.tab .ic svg{width:20px;height:20px}
+.tab .lb{font-size:9px;font-weight:800;letter-spacing:.2px;white-space:nowrap}
+.tab.on{color:var(--blue)}
+.tab.on .ic{background:#0b2b42;transform:translateY(-2px)}
+body.light .tab.on .ic{background:#d6eaf9}
+/* центральная кнопка ассистента */
+.tab-ask{flex:1.15}
+.tab-ask .ic{
+  width:52px;height:52px;background:var(--ai);
+  border:2px solid #9a66ff;box-shadow:0 0 18px rgba(154,102,255,.45);
+  font-size:13px;font-weight:850;color:#fff;letter-spacing:.5px;margin-top:-14px;
+}
+body.light .tab-ask .ic{background:var(--ai)}
+.tab-ask.on .ic{background:var(--ai);transform:translateY(-2px) scale(1.04)}
+.tab-ask{color:var(--purple)}
+.tab-ask.on{color:var(--purple)}
 
 /* ---- Переходы, скелетоны, пустые ---- */
 section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
@@ -1239,7 +1424,9 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
    перерисовывается, закрывал окно на середине выбора. Здесь дата
    уходит наружу один раз -- по кнопке «Готово». */
 .dpick{
-  position:fixed;inset:0;z-index:140;display:none;align-items:flex-end;justify-content:center;
+  /* Выше и нижней навигации (1000), и раскрытой карточки .detail (1200):
+     иначе панель вкладок закрывала снизу как раз строку с «Готово». */
+  position:fixed;inset:0;z-index:2500;display:none;align-items:flex-end;justify-content:center;
   background:rgba(4,10,17,.66);backdrop-filter:blur(5px);
 }
 .dpick.on{display:flex}
@@ -1247,7 +1434,7 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   width:100%;max-width:430px;background:var(--bg2);border:1px solid var(--line);
   border-bottom:0;border-radius:var(--r-xl) var(--r-xl) 0 0;box-shadow:var(--sh);
   padding:15px 15px calc(15px + env(safe-area-inset-bottom,0px));
-  animation:dpup .2s ease-out;
+  animation:dpup .2s ease-out;max-height:94vh;overflow-y:auto;
 }
 @keyframes dpup{from{transform:translateY(26px);opacity:0}}
 .dplabel{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
@@ -1315,6 +1502,30 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .pkopt .pk1{font-size:14.5px;font-weight:650;line-height:1.25}
 .pkopt .pk2{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
 .pklist{max-height:56vh;overflow-y:auto;margin:0 -2px;padding:0 2px}
+
+/* ---- Ask AI: сценарии и режим ответа ---- */
+.askbar2{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}
+.askchip{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:750;
+  padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surf2);
+  color:var(--muted);cursor:pointer;font-family:inherit;
+}
+.askchip .ico{width:12px;height:12px;margin:0}
+.askchip.lib.on{border-color:var(--ai2);color:var(--purple);background:rgba(141,92,255,.12)}
+.askchip.mode{color:var(--blue);border-color:rgba(70,184,255,.3)}
+.askcats{margin-bottom:9px}
+.askscen{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.scen{
+  display:flex;flex-direction:column;gap:4px;text-align:left;padding:11px 12px;
+  border-radius:var(--r-md);border:1px solid var(--line);background:var(--surf);
+  cursor:pointer;font-family:inherit;color:inherit;
+}
+.scen:active{border-color:var(--ai2)}
+.scen .st{font-size:13px;font-weight:750}
+.scen .sq{font-size:11px;color:var(--muted);line-height:1.35}
+.scen .sm{font-size:10px;color:var(--amber);display:flex;align-items:center;gap:4px}
+.scen .sm.ok{color:var(--ok)}
+.scen .sm .ico{width:11px;height:11px;margin:0}
 
 
 
@@ -1572,15 +1783,33 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 
 <div class="wrap">
 
-  <div class="hdr">
-    <div style="min-width:0">
-      <div class="hello" id="hello">Спокойной вахты</div>
-      <div class="hello" id="buildId" style="font-size:9.5px;opacity:.55;margin-top:1px"></div>
-      <div class="h1">Watch<span>keeper</span></div>
+  <div class="wkhdr" id="header">
+    <div class="wkmark" data-notr>
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+        <path d="M24 9v24M17 20c4 4 10 4 14 0M17 33c4 5 10 5 14 0M13 39h22"/>
+      </svg>
     </div>
+    <div class="wkname" data-notr>
+      <div class="n1">WATCHKEEPER</div>
+      <div class="n2" id="hdrSub">Your Digital Assistance</div>
+    </div>
+    <div class="wkclock">
+      <div class="t" id="hdrClock">--:--<span>UTC</span></div>
+      <div class="d" id="hdrDate">—</div>
+    </div>
+    <button class="wkbell" id="notifBtn" aria-label="Уведомления">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M6 17h12M8 16v-6a4 4 0 0 1 8 0v6M11 20h2"/>
+      </svg>
+      <b id="notifCnt"></b>
+    </button>
+  </div>
+  <div class="hdrtools">
     <button class="geobtn" id="geoBtn" title="Позиция с устройства"></button>
-      <button class="langbtn" id="langBtn">RU</button>
-      <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
+    <button class="langbtn" id="langBtn">RU</button>
+    <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
+    <span class="hello" id="hello"></span>
+    <span class="hello" id="buildId" style="font-size:9px;opacity:.5"></span>
   </div>
 
   <div class="srow" id="topSearch">
@@ -1598,106 +1827,68 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <div class="errbar" id="errbar"></div>
   <div class="offline" id="offline"><span id="offIco"></span>Нет связи. Показаны последние сохранённые данные.</div>
 
-  <!-- ПАНЕЛЬ -->
+  <!-- ГЛАВНАЯ -->
   <section id="v-dash">
-    <div class="hero" id="heroBox">
-      <svg class="heroSvg" viewBox="0 0 400 186" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#0e2f4d"/><stop offset="100%" stop-color="#15486f"/>
-          </linearGradient>
-          <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#186091"/><stop offset="100%" stop-color="#0a2540"/>
-          </linearGradient>
-          <radialGradient id="beam" cx="0" cy="0.5" r="1">
-            <stop offset="0%" stop-color="#ffd08a" stop-opacity=".72"/>
-            <stop offset="100%" stop-color="#f0a03c" stop-opacity="0"/>
-          </radialGradient>
-          <radialGradient id="moon" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stop-color="#fff4dc" stop-opacity=".9"/>
-            <stop offset="100%" stop-color="#fff4dc" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <rect width="400" height="186" fill="url(#sky)"/>
-        <circle cx="322" cy="40" r="30" fill="url(#moon)"/>
-        <circle cx="322" cy="40" r="13" fill="#f6ead1" opacity=".5"/>
-        <g class="gulls" opacity=".45">
-          <path d="M64 44 q5 -5 10 0 q5 -5 10 0" stroke="#dbe9f6" stroke-width="1.6" fill="none"/>
-          <path d="M100 33 q3.5 -3.5 7 0 q3.5 -3.5 7 0" stroke="#dbe9f6" stroke-width="1.3" fill="none"/>
-          <path d="M138 50 q3 -3 6 0 q3 -3 6 0" stroke="#dbe9f6" stroke-width="1.1" fill="none"/>
-        </g>
-        <g class="lh">
-          <!-- скалы у основания -->
-          <path d="M336 136 l7-11 5 6 6-9 7 10 6-7 8 11z" fill="#0a1e33"/>
-          <path d="M341 136 l5-7 4 4 5-6 5 7 4-4 5 6z" fill="#102b46"/>
-          <!-- фундамент -->
-          <path d="M345 128 h22 l-2 8 h-18z" fill="#16344f"/>
-          <!-- башня: конус с сужением кверху -->
-          <path d="M350.5 126 L353 84 h6 l2.5 42 z" fill="#e6ecf2"/>
-          <path d="M356 126 L356 84 h3 l2.5 42 z" fill="#c2ced9"/>
-          <!-- красные полосы -->
-          <path d="M351.6 117 h13.2 l.5 8 h-14.2z" fill="#c9463a"/>
-          <path d="M352.9 101 h10.5 l.4 8 h-11.3z" fill="#c9463a"/>
-          <path d="M354.2 86 h7.8 l.4 7 h-8.6z" fill="#c9463a"/>
-          <!-- галерея -->
-          <path d="M350 84 h13 v3 h-13z" fill="#22415e"/>
-          <path d="M351 79 h11 v5 h-11z" fill="#16344f" opacity=".9"/>
-          <!-- фонарный отсек: стекло + свет -->
-          <rect x="352.5" y="70" width="8" height="10" rx="1.5" fill="#3d5f80"/>
-          <rect x="353.5" y="71" width="6" height="8" rx="1" fill="#ffd894" class="lamp"/>
-          <circle cx="356.5" cy="75" r="5.5" fill="#ffca7a" opacity=".3" class="lamp"/>
-          <!-- купол -->
-          <path d="M351.5 70 l5-5 5 5z" fill="#22415e"/>
-          <rect x="355.8" y="62" width="1.4" height="4" fill="#22415e"/>
-          <!-- луч -->
-          <polygon points="357,75 400,42 400,108" fill="url(#beam)" class="beamRay"/>
-        </g>
-        <g class="ship">
-          <path d="M0 124 h96 l-9 17 h-78 z" fill="#0c2540"/>
-          <path d="M4 124 h88 l-2 4 h-84 z" fill="#123a5c"/>
-          <rect x="10" y="108" width="11" height="16" fill="#f0a03c" opacity=".9"/>
-          <rect x="24" y="113" width="10" height="11" fill="#4d93d6"/>
-          <rect x="37" y="110" width="10" height="14" fill="#f0a03c" opacity=".72"/>
-          <rect x="50" y="114" width="10" height="10" fill="#4d93d6"/>
-          <rect x="66" y="99" width="20" height="25" rx="2.5" fill="#1d4668"/>
-          <rect x="70" y="104" width="4" height="4" fill="#d6e9fb" opacity=".95"/>
-          <rect x="77" y="104" width="4" height="4" fill="#d6e9fb" opacity=".95"/>
-          <rect x="70" y="112" width="4" height="4" fill="#d6e9fb" opacity=".7"/>
-          <rect x="82" y="84" width="2.5" height="15" fill="#8fa8c0"/>
-          <circle cx="83" cy="83" r="2.5" fill="#f0a03c" class="lamp"/>
-        </g>
-        <path class="w1" d="M-400 140 q50 -9 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v60 h-800 z" fill="url(#sea)" opacity=".92"/>
-        <path class="w2" d="M-400 152 q50 -8 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v50 h-800 z" fill="#0d3557" opacity=".9"/>
-        <path class="w3" d="M-400 165 q50 -7 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v40 h-800 z" fill="#0a1f36"/>
-      </svg>
-      <div class="heroGrad"></div>
-      <div class="heroIn">
-        <span class="hchip" id="hchip">В эфире</span>
-        <div class="hnum mono" id="heroNum">—</div>
-        <div class="hsub">действующих предупреждений по твоим районам</div>
-      </div>
-      <button class="hbtn" id="heroBtn">Открыть карту →</button>
-    </div>
-
-    <div class="hull" id="hullBox">
-      <div class="hullTop">
-        <div class="hgrid" id="hgrid"></div>
-      </div>
-      <div class="hullBody"></div>
-      <div class="hullPort"><i></i><i></i><i></i></div>
-      <div class="hullWave">
-        <svg viewBox="0 0 800 20" preserveAspectRatio="none">
-          <path d="M0 10 q50 -8 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 v14 h-800 z" fill="rgba(77,147,214,.3)"/>
+    <!-- Судно и приветствие -->
+    <div class="wkhero" id="hero">
+      <div class="art" data-notr>
+        <svg viewBox="0 0 190 176" fill="none" aria-hidden="true">
+          <g opacity=".38" stroke="#1c5570">
+            <circle cx="128" cy="86" r="67"/><circle cx="128" cy="86" r="48"/><circle cx="128" cy="86" r="29"/>
+          </g>
+          <path d="M128 86 L176 52" stroke="#25d6a0" stroke-width="2" opacity=".75"/>
+          <circle cx="176" cy="52" r="4" fill="#ffcf45"/>
+          <circle cx="105" cy="108" r="4" fill="#ff5c65"/>
+          <g id="vessel-illustration">
+            <path d="M41 107 L89 107 L103 121 L23 121 Z" fill="#b9c9d5" stroke="#e7f3fb"/>
+            <path d="M31 107 L42 84 L79 84 L90 107Z" fill="#15374c" stroke="#70c9f7"/>
+            <rect x="48" y="74" width="29" height="10" rx="2" fill="#1b4c68" stroke="#6ecbff"/>
+            <path d="M61 70V54M55 57h12" stroke="#a9d8ef" stroke-width="2"/>
+            <rect x="52" y="89" width="5" height="6" fill="#5ed7ff"/>
+            <rect x="61" y="89" width="5" height="6" fill="#5ed7ff"/>
+            <rect x="70" y="89" width="5" height="6" fill="#5ed7ff"/>
+            <path d="M23 121 C40 130 84 130 103 121 C90 139 40 142 23 121Z" fill="#12608a"/>
+            <path d="M22 135 Q61 143 105 135" stroke="#48c9ff" stroke-width="1.5"/>
+          </g>
         </svg>
       </div>
+      <div class="eyebrow">BRIDGE INTELLIGENCE</div>
+      <div class="greet" id="heroGreet">Спокойной вахты</div>
+      <div class="sub" id="heroSub">Помощник вахтенного на связи</div>
+      <div class="wkvessel" id="vessel-status"></div>
     </div>
+
+    <!-- Подсказки ассистента вместо таблицы инструментов -->
+    <div class="wksech"><h3>Чем помочь?</h3><a id="askAll">Все запросы →</a></div>
+    <div class="wkprompts" id="ai-prompts"></div>
+
+    <!-- Сводка с мостика -->
+    <div class="wksech"><h3>Сводка с мостика</h3><a id="snapLive">LIVE ›</a></div>
+    <div class="wksnap" id="bridge-snapshot"></div>
+
+    <!-- Тревога -->
+    <button class="wkalert" id="alert-strip"></button>
+
+    <!-- Ассистент -->
+    <div class="wkask" id="ask-ai">
+      <div class="top">
+        <div class="orb"><i></i><i></i></div>
+        <div style="min-width:0">
+          <div class="t1" data-notr>Ask AI</div>
+          <div class="t2">Помощник на мостике</div>
+        </div>
+      </div>
+      <div class="wkaskrow">
+        <button class="wkaskfield" id="askOpen">Спроси про навигацию, ГМССБ, погоду…</button>
+        <button class="wkasksend" id="askGo" aria-label="Открыть ассистента">➤</button>
+      </div>
+    </div>
+
 
     <div id="histBox"></div>
     <div class="sech" style="margin-top:17px"><h3>Избранные районы</h3><a id="toAreas">Все →</a></div>
     <div id="favlist"></div>
 
-    <div class="sech" style="margin-top:18px"><h3>Быстрые действия</h3></div>
-    <div class="quick" id="quick"></div>
 
     <div id="lastVoyBox"></div>
     <div id="lastCalcBox"></div>
@@ -1899,12 +2090,14 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <div class="dbar"><button class="btn wide" id="tBack">Назад к инструментам</button></div>
 </div>
 
-<nav class="tabs">
-  <button class="tab on" data-g="home" data-i="gauge">Главная</button>
-  <button class="tab" data-g="tools" data-i="sliders">Инструменты</button>
-  <button class="tab tab-ask" data-g="ask" data-i="compass">Ask</button>
-  <button class="tab" data-g="map" data-i="map">Карта</button>
-  <button class="tab" data-g="profile" data-i="compass">Профиль</button>
+<nav class="tabs" id="bottom-navigation">
+  <div class="tabsin">
+    <button class="tab on" data-g="home" data-i="gauge"><span class="ic"></span><span class="lb">Главная</span></button>
+    <button class="tab" data-g="tools" data-i="sliders"><span class="ic"></span><span class="lb">Инструменты</span></button>
+    <button class="tab tab-ask" data-g="ask" id="bottom-ask-ai"><span class="ic" data-notr>AI</span><span class="lb" data-notr>ASK AI</span></button>
+    <button class="tab" data-g="map" data-i="map"><span class="ic"></span><span class="lb">Карта</span></button>
+    <button class="tab" data-g="profile" data-i="ship"><span class="ic"></span><span class="lb">Моё судно</span></button>
+  </div>
 </nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2814,7 +3007,7 @@ const GMDSS=[
    динамически, без правки сотни мест. Значения полей ввода не трогаем --
    там данные пользователя. */
 const DICT={
- 'Панель':'Dashboard','Районы':'Areas','Карта':'Chart','Мостик':'Bridge','Расчёты':'Tools',
+ 'Панель':'Dashboard','Районы':'Areas','Карта':'Map','Мостик':'Bridge',
  'Радио':'Radio','Судно':'Ship','Рейс':'Voyage',
  'Спокойной вахты':'Have a good watch','Инструменты вахтенного помощника':'Bridge officer toolkit',
  'Данные из кэша':'Cached data','В эфире':'Live','на связи':'online','офлайн':'offline',
@@ -3284,6 +3477,34 @@ Object.assign(DICT,{
  'Прочти обстановку и подай тот вызов, который положен: DISTRESS MSG — бедствие, OTHER DSC MSG — всё остальное. Срочность и безопасность задаются полем PRIORITY, а не отдельным типом сообщения.':
    'Read the situation and send the right call: DISTRESS MSG for distress, OTHER DSC MSG for everything else. Urgency and safety are set by the PRIORITY field, not by a separate message type.',
  'Не удалось получить счёт. Попробуй ещё раз.':'Could not get an invoice. Try again.',
+ 'Моё судно':'My Vessel','Судно':'Vessel','Документы':'Documents','Расчёты':'Calculations',
+ 'МОЁ СУДНО':'MY VESSEL','НА СВЯЗИ':'ONLINE','БЕЗ СВЯЗИ':'OFFLINE',
+ 'Сценарии':'Scenarios','Как отвечать':'Answer style','спросит':'will ask',
+ 'все данные подставлены':'all data filled in',
+ 'Библиотека сценариев не загрузилась — нужна связь с сервером.':
+   'The scenario library did not load — a server connection is needed.',
+ 'Тренажёры':'Simulators','Погода':'Weather','Чем помочь?':'What can I help you with?',
+ 'Все запросы →':'All prompts →','Сводка с мостика':'Bridge Snapshot',
+ 'вахтенный':'Officer','Доброе утро':'Good morning','Добрый день':'Good afternoon',
+ 'Добрый вечер':'Good evening','Спокойной вахты':'Steady as she goes',
+ 'Помощник вахтенного на связи.':'Your digital assistance is ready.',
+ 'Данные из памяти устройства.':'Showing data stored on this device.',
+ 'карточка не заполнена':'vessel card is empty',
+ 'Безопасность маршрута':'Route Safety','Предупреждения и NAVAREA':'Warnings & NAVAREA',
+ 'Навигация':'Navigation','ETA · курс · расстояние':'ETA • Course • Distance',
+ 'Приём вахты':'Watchkeeping','Что проверить перед вахтой':'Watch checklist',
+ 'Ветер · волна · видимость':'Wind • Waves • Visibility',
+ 'Пункт назначения':'Destination','Маршрут':'Route',
+ 'Проложи переход в разделе «Маршрут»':'Plan a passage in the Route section',
+ 'Пройденную долю покажем, когда появится позиция':'Progress appears once a position is available',
+ 'В пути осталось':'Time to go','Нужны позиция и скорость':'Needs position and speed',
+ 'Навигационное предупреждение':'Navigation alert','Обстановка спокойная':'All clear',
+ 'Помощник на мостике':'Your bridge assistant',
+ 'Спроси про навигацию, ГМССБ, погоду…':'Ask about navigation, GMDSS, weather…',
+ 'Какие предупреждения влияют на мой маршрут?':'What warnings affect my route?',
+ 'Посчитай ETA до следующей точки маршрута':'Calculate ETA for my next waypoint',
+ 'Что проверить перед заступлением на вахту?':'What should I check before my next watch?',
+ 'Дай погоду и состояние моря сейчас':'Give me the current weather and sea state',
  'Звук тренажёра':'Simulator sound',
  'Посылка ЦИВ, подтверждение и сигнал тревоги':'DSC burst, acknowledgement and alarm tone'
 });
@@ -3301,6 +3522,10 @@ function applyLang(){
       if(!p) return NodeFilter.FILTER_REJECT;
       const tag=p.tagName;
       if(tag==='SCRIPT'||tag==='STYLE'||tag==='INPUT'||tag==='TEXTAREA') return NodeFilter.FILTER_REJECT;
+      // data-notr -- имена собственные и подписи прибора. Без этого название
+      // приложения в шапке превращалось в «Следитьkeeper»: слово Watch
+      // отдельным текстовым узлом попадало под обратный перевод.
+      if(p.closest&&p.closest('[data-notr]')) return NodeFilter.FILTER_REJECT;
       return n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;
     }
   });
@@ -3666,27 +3891,202 @@ function rememberCalc(id){
 }
 
 /* --- панель --- */
+/* ================= Главный экран =================
+   Порядок блоков задан макетом: шапка, судно, подсказки ассистента,
+   сводка с мостика, тревога, кнопка Ask AI. Цифры берутся из настоящих
+   данных: если их нет -- показываем прочерк и честную подпись, а не
+   правдоподобную выдумку. */
+
+function renderClock(){
+  const c=$('#hdrClock'), d=$('#hdrDate'); if(!c) return;
+  const n=new Date();
+  const hh=String(TIME_UTC?n.getUTCHours():n.getHours()).padStart(2,'0');
+  const mm=String(TIME_UTC?n.getUTCMinutes():n.getMinutes()).padStart(2,'0');
+  c.innerHTML=`${hh}:${mm}<span>${TIME_UTC?'UTC':'LT'}</span>`;
+  if(d){
+    const day=TIME_UTC?n.getUTCDate():n.getDate();
+    const mon=DP_MON_SHORT[TIME_UTC?n.getUTCMonth():n.getMonth()];
+    d.textContent=`${day} ${tr(mon)} ${TIME_UTC?n.getUTCFullYear():n.getFullYear()}`;
+  }
+}
+
+function greetWord(){
+  const h=new Date().getHours();
+  if(h<5)  return 'Спокойной вахты';
+  if(h<12) return 'Доброе утро';
+  if(h<18) return 'Добрый день';
+  return 'Добрый вечер';
+}
+
+function renderHero(){
+  const g=$('#heroGreet'); if(!g) return;
+  g.textContent=tr(greetWord())+', '+tr('вахтенный')+'.';
+  const s=$('#heroSub');
+  if(s) s.textContent=tr(S.offline?'Данные из памяти устройства.':'Помощник вахтенного на связи.');
+
+  const v=(VES&&VES.active)||null;
+  const box=$('#vessel-status'); if(!box) return;
+  const online=!S.offline;
+  box.innerHTML = v&&v.name
+    ? `<span class="dot ${online?'':'off'}"></span>
+       <span class="lb">МОЁ СУДНО</span>
+       <span class="nm">${esc(v.name)}</span><span class="nm">•</span>
+       <span class="st ${online?'':'off'}">${online?'НА СВЯЗИ':'БЕЗ СВЯЗИ'}</span>`
+    : `<span class="dot off"></span>
+       <span class="lb">МОЁ СУДНО</span>
+       <span class="nm">${esc(tr('карточка не заполнена'))}</span>`;
+  box.onclick=()=>{ hap(); switchGroup('profile'); };
+}
+
+/* Четыре подсказки ассистента вместо таблицы инструментов */
+const HOME_PROMPTS=[
+  {id:'prompt-1', ic:'⚠', bg:'#0c3046', cl:'var(--blue)',
+   t:'Безопасность маршрута', s:'Предупреждения и NAVAREA',
+   q:'Какие предупреждения влияют на мой маршрут?'},
+  {id:'prompt-2', ic:'⌁', bg:'#201b42', cl:'var(--purple)',
+   t:'Навигация', s:'ETA · курс · расстояние',
+   q:'Посчитай ETA до следующей точки маршрута'},
+  {id:'prompt-3', ic:'✓', bg:'#10362f', cl:'var(--green)',
+   t:'Приём вахты', s:'Что проверить перед вахтой',
+   q:'Что проверить перед заступлением на вахту?'},
+  {id:'prompt-4', ic:'☼', bg:'#332e17', cl:'var(--amber)',
+   t:'Погода', s:'Ветер · волна · видимость',
+   q:'Дай погоду и состояние моря сейчас'}
+];
+function renderPrompts(){
+  const el=$('#ai-prompts'); if(!el) return;
+  el.innerHTML=HOME_PROMPTS.map(p=>
+    `<button class="wkprompt" id="${p.id}" data-q="${esc(p.q)}">
+       <span class="ic" style="background:${p.bg};color:${p.cl}">${p.ic}</span>
+       <span class="tx"><span class="t1">${esc(tr(p.t))}</span>
+         <span class="t2">${esc(tr(p.s))}</span></span>
+     </button>`).join('');
+  el.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{
+    hap('medium'); askFromHome(b.dataset.q);
+  });
+}
+
+/* Открыть ассистента и сразу задать вопрос */
+function askFromHome(q){
+  switchGroup('ask');
+  setTimeout(()=>{ if(q) askSend(q); }, 80);
+}
+
+/* Сводка с мостика: следующая точка, доля пути, курс и скорость.
+   Всё живое -- из проложенного маршрута и приёмника устройства. */
+function voyState(){
+  let v=null;
+  try{ v=JSON.parse(localStorage.getItem('navarea_lastvoy')||'null'); }catch(e){}
+  if(!v||!v.tlat) return v?{v:v}:null;
+  const out={v:v};
+  if(geoFresh()){
+    const left=haversineNm(GEO.lat,GEO.lon,v.tlat,v.tlon);
+    out.left=left;
+    out.total=v.distance||left;
+    out.pct=Math.max(0,Math.min(100,Math.round((1-left/Math.max(1,out.total))*100)));
+    if(GEO.sog&&GEO.sog>0.5) out.hours=left/GEO.sog;
+  }
+  return out;
+}
+function haversineNm(a1,o1,a2,o2){
+  const R=3440.065, r=Math.PI/180;
+  const dp=(a2-a1)*r, dl=(o2-o1)*r;
+  const h=Math.sin(dp/2)**2+Math.cos(a1*r)*Math.cos(a2*r)*Math.sin(dl/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function hhmm(hours){
+  if(hours==null||!isFinite(hours)) return null;
+  const h=Math.floor(hours), m=Math.round((hours-h)*60);
+  return String(h).padStart(2,'0')+'ч '+String(m).padStart(2,'0')+'м';
+}
+function renderSnapshot(){
+  const el=$('#bridge-snapshot'); if(!el) return;
+  const st=voyState();
+  const cog = GEO.cog!=null ? Math.round(GEO.cog)+'°' : '—';
+  const sog = GEO.sog!=null ? GEO.sog+' уз' : '—';
+  const tgo = st&&st.hours!=null ? hhmm(st.hours) : null;
+
+  const left = st&&st.v
+    ? `<div class="wklb">Пункт назначения</div>
+       <div class="wkbig">${esc(String(st.v.to).split(',')[0])}</div>
+       <div class="wksm">${st.left!=null
+          ? Math.round(st.left)+' миль осталось'
+          : (st.v.distance+' миль всего')}</div>
+       ${st.pct!=null
+          ? `<div class="wkbar"><i style="width:${st.pct}%"></i></div>
+             <div class="wkpct">${st.pct}% пути пройдено</div>`
+          : `<div class="wksm" style="margin-top:11px">${esc(tr('Пройденную долю покажем, когда появится позиция'))}</div>`}`
+    : `<div class="wklb">Маршрут</div>
+       <div class="wkbig">—</div>
+       <div class="wksm">${esc(tr('Проложи переход в разделе «Маршрут»'))}</div>`;
+
+  el.innerHTML=`
+    <div>${left}</div>
+    <div class="divider"></div>
+    <div>
+      <div class="wkok ${S.offline?'warn':''}" data-notr>${S.offline?'OFF':'OK'}</div>
+      <div class="wklb">Навигация</div>
+      <div class="wkduo">
+        <div><div class="wkmid">${cog}</div><div class="wksm">COG</div></div>
+        <div><div class="wkmid">${sog}</div><div class="wksm">SOG</div></div>
+      </div>
+      <div class="wkmid" style="margin-top:13px">${tgo||'—'}</div>
+      <div class="wksm">${esc(tr(tgo?'В пути осталось':'Нужны позиция и скорость'))}</div>
+    </div>`;
+  const live=$('#snapLive');
+  if(live) live.onclick=()=>{ hap(); switchView(st&&st.v?'voy':'map'); };
+}
+
+/* Полоса тревоги: сколько предупреждений задевает маршрут, а если
+   маршрута нет -- сколько их в избранных районах. */
+function renderAlert(){
+  const el=$('#alert-strip'); if(!el) return;
+  let v=null;
+  try{ v=JSON.parse(localStorage.getItem('navarea_lastvoy')||'null'); }catch(e){}
+
+  let n=0, sub='', go='map';
+  if(v&&typeof v.count==='number'){
+    n=v.count; go='voy';
+    sub=n?`${n} ${plural(n,'предупреждение','предупреждения','предупреждений')} на маршруте ${v.from.split(',')[0]} — ${v.to.split(',')[0]}`
+         :`На маршруте ${v.from.split(',')[0]} — ${v.to.split(',')[0]} предупреждений нет`;
+  } else {
+    const fav=(S.stats&&S.stats.areas||[]).filter(a=>S.favs.includes(a.code));
+    n=fav.reduce((s,a)=>s+(a.added_today||0),0);
+    go='areas';
+    sub=n?`${n} ${plural(n,'новое предупреждение','новых предупреждения','новых предупреждений')} сегодня в твоих районах`
+         :(fav.length?'В твоих районах сегодня новых предупреждений нет'
+                     :'Отметь районы звёздочкой, чтобы следить за ними');
+  }
+
+  el.className='wkalert'+(n?'':' ok');
+  el.innerHTML=`<span class="ic">${n?'!':'✓'}</span>
+    <span class="tx"><span class="t1">${esc(tr(n?'Навигационное предупреждение':'Обстановка спокойная'))}</span>
+      <span class="t2">${esc(tr(sub))}</span></span>
+    <span class="ar">›</span>`;
+  el.onclick=()=>{ hap('medium'); switchView(go); };
+}
+function plural(n,one,few,many){
+  const a=Math.abs(n)%100, b=a%10;
+  if(a>10&&a<20) return many;
+  if(b>1&&b<5) return few;
+  if(b===1) return one;
+  return many;
+}
+
 function renderDash(){
-  if(!S.stats||!S.stats.totals) return;
-  const t=S.stats.totals;
-  const num=$('#heroNum'); if(num) countUp(num,t.in_force);
-  const hl=$('#hello'); if(hl) hl.textContent=S.offline?'Данные из кэша':'Инструменты вахтенного помощника';
+  renderClock(); renderHero(); renderPrompts(); renderSnapshot(); renderAlert();
+  const hl=$('#hello'); if(hl) hl.textContent=S.offline?tr('Данные из кэша'):'';
+  // на колокольчике -- сколько предупреждений пришло сегодня
+  const nb=$('#notifCnt');
+  if(nb){ const t=(S.stats&&S.stats.totals)||{}; nb.textContent=t.added_today?String(t.added_today):''; }
 
-  const cells=[
-    {v:t.in_force,k:'Действует',c:'a'},
-    {v:t.added_today,k:'Сегодня',c:t.added_today?'h':''},
-    {v:t.added_week,k:'За 7 дней',c:''},
-    {v:t.archived,k:'В архиве',c:''}];
-  $('#hgrid').innerHTML=cells.map((c,i)=>
-    `<div class="hcell ${c.c} up" style="animation-delay:${i*70}ms">
-       <div class="v mono" data-n="${c.v}">0</div><div class="k">${c.k}</div></div>`).join('');
-  document.querySelectorAll('.hcell .v').forEach(el=>countUp(el,+el.dataset.n));
-
-  const fav=(S.stats.areas||[]).filter(a=>S.favs.includes(a.code));
-  $('#favlist').innerHTML=fav.length?collapsible('fav',fav,areaCard)
-    :`<div class="empty">${ico('star')}Отметь районы звёздочкой — они появятся здесь для быстрого доступа.</div>`;
-  bindAreas();
-  renderQuick(); renderLastVoyage(); renderLastCalcs();
+  if(S.stats&&S.stats.totals){
+    const fav=(S.stats.areas||[]).filter(a=>S.favs.includes(a.code));
+    $('#favlist').innerHTML=fav.length?collapsible('fav',fav,areaCard)
+      :`<div class="empty">${ico('star')}Отметь районы звёздочкой — они появятся здесь для быстрого доступа.</div>`;
+    bindAreas();
+  }
+  renderLastVoyage(); renderLastCalcs();
 }
 
 function areaCard(a,i){
@@ -3996,8 +4396,11 @@ async function runVoyage(){
       <div id="vmap"></div>
       ${r.results.length?r.results.map(warnCard).join('')
         :`<div class="empty">${ico('anchor')}По этому маршруту действующих предупреждений с координатами нет.</div>`}`;
+    // Координаты концов маршрута нужны сводке с мостика: по ним и позиции
+    // с устройства считается остаток пути и пройденная доля.
     try{ localStorage.setItem('navarea_lastvoy',JSON.stringify({
-      from:r.from.label,to:r.to.label,distance:r.distance_nm,count:r.count,legs:legs})); }catch(e){}
+      from:r.from.label,to:r.to.label,distance:r.distance_nm,count:r.count,legs:legs,
+      flat:r.from.lat,flon:r.from.lon,tlat:r.to.lat,tlon:r.to.lon,at:Date.now()})); }catch(e){}
     bindWarns();setTimeout(()=>drawVoy(r),80);
   }catch(e){
     $('#voyout').innerHTML=`<div class="empty">${ico('radar')}Нет связи с сервером. Попробуй позже.</div>`;
@@ -4022,22 +4425,30 @@ function drawVoy(r){
 }
 
 /* --- навигация --- */
-/* ---- Четыре группы внизу, подразделы лентой сверху ---- */
+/* ---- Четыре смысловые группы, подразделы лентой сверху ----
+   Home    -- состояние рейса, предупреждения, вахта
+   Tools   -- все расчёты и тренажёры
+   Map     -- NAVAREA, маршрут, погода и поиск-спасание
+   My Vessel -- судно, документы, настройки, история
+   ASK AI своей группы содержимого не имеет: это главное действие
+   приложения, поэтому в нижнем меню оно стоит в центре и выделено. */
 const GROUPS={
   home:{t:'Главная',i:'gauge',subs:[
     {v:'dash',t:'Обзор',i:'gauge'},
     {v:'areas',t:'Районы',i:'globe'}]},
   tools:{t:'Инструменты',i:'sliders',subs:[
-    {v:'tools',t:'Инструменты',i:'sliders'},
-    {v:'bridge',t:'Чек-листы',i:'flag'},
+    {v:'tools',t:'Расчёты',i:'sliders'},
+    {v:'dsc',t:'Тренажёры',i:'radar'},
     {v:'refs',t:'Справка',i:'archive'}]},
   ask:{t:'Ask WatchKeeper',i:'compass',subs:[{v:'ask',t:'Ask WatchKeeper',i:'compass'}]},
   map:{t:'Карта',i:'map',subs:[
     {v:'map',t:'Обстановка',i:'map'},
     {v:'voy',t:'Маршрут',i:'route'},
-    {v:'zones',t:'Зоны',i:'wave'}]},
-  profile:{t:'Профиль',i:'compass',subs:[
-    {v:'ship',t:'Моё судно',i:'ship'},
+    {v:'cyc',t:'Погода',i:'wave'},
+    {v:'zones',t:'Зоны',i:'globe'}]},
+  profile:{t:'Моё судно',i:'ship',subs:[
+    {v:'ship',t:'Судно',i:'ship'},
+    {v:'bridge',t:'Документы',i:'flag'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
 const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc'];
@@ -4199,7 +4610,6 @@ const GROUP_LAST={};
 // и внешне это выглядело как "кнопки не нажимаются".
 // (нижнее меню обрабатывается делегированием в начале скрипта)
 $('#toAreas').onclick=()=>{hap();S.cat='all';renderCats();switchView('areas');renderAreas()};
-$('#heroBtn').onclick=()=>{hap('medium');switchView('map')};
 $('#fbtn').onclick=()=>{
   hap();
   const order=['count','new','code'],next=order[(order.indexOf(S.sort)+1)%3];
@@ -5485,6 +5895,9 @@ function askContext(){
   });
   if(typeof geoFresh==='function'&&geoFresh()){
     ctx.position.lat=geoFmtLat(GEO.lat); ctx.position.lon=geoFmtLon(GEO.lon);
+    // отдельно в градусах: сервер по ним берёт погоду и считает расстояния,
+    // а разбирать обратно «12-41.2N» ради этого незачем
+    ctx.position.lat_dec=+GEO.lat.toFixed(4); ctx.position.lon_dec=+GEO.lon.toFixed(4);
   }
   if(typeof LAST_VOY!=='undefined'&&LAST_VOY&&LAST_VOY.distance_nm){
     ctx.route.distance=LAST_VOY.distance_nm;
@@ -5494,14 +5907,73 @@ function askContext(){
   return ctx;
 }
 
-async function askSend(text){
+/* ================= Библиотека готовых запросов =================
+   Человек выбирает сценарий, а приложение подставляет в шаблон то, что
+   уже знает: судно, место, маршрут, вахту. Незакрытые параметры остаются
+   в тексте как {ИМЯ} -- ассистент по ним спрашивает ровно недостающее,
+   а не весь список заново. */
+let ASK_LIB=null, ASK_LIB_CAT=null, ASK_LIB_OPEN=false;
+let ASK_MODE=localStorage.getItem('navarea_askmode')||'auto';
+
+async function loadPrompts(){
+  if(ASK_LIB) return ASK_LIB;
+  try{ ASK_LIB=await api('/api/prompts'); }catch(e){ ASK_LIB={groups:[],modes:[]}; }
+  return ASK_LIB;
+}
+
+/* Значения параметров из того, что известно приложению */
+function askParams(){
+  const v=(VES&&VES.active)||{};
+  const p={};
+  const put=(k,val)=>{ if(val!==undefined&&val!==null&&String(val).trim()!=='') p[k]=String(val); };
+  put('VESSEL_NAME',v.name); put('IMO',v.imo); put('MMSI',v.mmsi);
+  put('CALLSIGN',v.callsign); put('TYPE',v.type); put('LOA',v.loa);
+  put('BEAM',v.beam); put('DWT',v.dwt); put('GT',v.gt); put('CB',v.cb);
+  put('AIR_DRAFT',v.air_draft);
+  put('DRAFT', v.draft_now||v.draft_summer);
+  put('SERVICE_SPEED', v.speed?v.speed+' узлов':'');
+
+  if(typeof geoFresh==='function'&&geoFresh()){
+    put('LAT',geoFmtLat(GEO.lat)); put('LON',geoFmtLon(GEO.lon));
+    if(GEO.cog!=null) put('COG',Math.round(GEO.cog)+'°');
+    if(GEO.sog!=null) put('SOG',GEO.sog+' узлов');
+  }
+  if(!p.SOG&&v.speed) put('SOG',v.speed+' узлов');
+  const n=new Date();
+  put('UTC',String(n.getUTCHours()).padStart(2,'0')+':'+String(n.getUTCMinutes()).padStart(2,'0')+' UTC');
+
+  let voy=null;
+  try{ voy=JSON.parse(localStorage.getItem('navarea_lastvoy')||'null'); }catch(e){}
+  if(voy){
+    put('DEPARTURE',voy.from); put('DESTINATION',voy.to);
+    put('DISTANCE_NM',voy.distance); put('LEGS',voy.legs);
+  }
+  const w=(typeof watchInfo==='function')?watchInfo(WATCH_ROLE):null;
+  if(w) put('WATCH', tr(w.t)+' '+w.s.split(',')[0]);
+  return p;
+}
+
+/* Подстановка. Возвращает готовый текст и список того, чего не хватило. */
+function fillParams(tpl){
+  const p=askParams(), missing=[];
+  const text=String(tpl).replace(/\{([A-Z_]+)\}/g,(m,k)=>{
+    if(p[k]!==undefined) return p[k];
+    missing.push(k);
+    return m;
+  });
+  return {text, missing};
+}
+
+async function askSend(text, mode){
   text=(text||'').trim();
   if(!text||ASK_BUSY) return;
   askPush('me',{text});
   ASK_BUSY=true; renderAsk();
   try{
+    const m=mode||ASK_MODE;
     const r=await api('/api/ask?q='+encodeURIComponent(text)
       +'&watch='+encodeURIComponent(WATCH_ROLE)
+      +(m&&m!=='auto'?'&mode='+encodeURIComponent(m):'')
       +'&ctx='+encodeURIComponent(JSON.stringify(askContext())));
     askPush('bot', r);
   }catch(e){
@@ -5554,10 +6026,72 @@ function askWatchText(m){
          ' ('+String(m.next_at).slice(11,16)+' UTC).';
 }
 
+/* Панель сценариев и режимов над перепиской */
+function askLibHtml(){
+  const lib=ASK_LIB&&ASK_LIB.groups||[];
+  const modes=(ASK_LIB&&ASK_LIB.modes)||[{id:'auto',t:'Как удобнее'}];
+  const cur=modes.find(m=>m.id===ASK_MODE)||modes[0];
+
+  let h=`<div class="askbar2">
+    <button class="askchip mode" id="askModeBtn">${ico('sliders','xs')}${esc(tr(cur.t))}</button>
+    <button class="askchip lib ${ASK_LIB_OPEN?'on':''}" id="askLibBtn">${ico('archive','xs')}${esc(tr('Сценарии'))}</button>
+  </div>`;
+  if(!ASK_LIB_OPEN) return h;
+
+  if(!lib.length) return h+`<div class="hint">${ico('alert','xs')} ${esc(tr('Библиотека сценариев не загрузилась — нужна связь с сервером.'))}</div>`;
+
+  h+=`<div class="chips askcats">${lib.map(g=>
+    `<button class="chip ${ASK_LIB_CAT===g.id?'on':''}" data-lc="${esc(g.id)}">${esc(tr(g.t))}</button>`).join('')}</div>`;
+
+  const g=lib.find(x=>x.id===ASK_LIB_CAT)||lib[0];
+  h+=`<div class="askscen">${(g.items||[]).map((it,i)=>{
+    const f=fillParams(it.q);
+    return `<button class="scen" data-scen="${esc(g.id)}:${i}">
+      <span class="st">${esc(tr(it.t))}</span>
+      <span class="sq">${esc(f.text.length>110?f.text.slice(0,110)+'…':f.text)}</span>
+      ${f.missing.length
+        ? `<span class="sm">${ico('alert','xs')} ${esc(tr('спросит'))}: ${esc(f.missing.join(', '))}</span>`
+        : `<span class="sm ok">${ico('back','xs')} ${esc(tr('все данные подставлены'))}</span>`}
+    </button>`;
+  }).join('')}</div>`;
+  return h;
+}
+
+function bindAskLib(){
+  const mb=$('#askModeBtn');
+  if(mb) mb.onclick=()=>{
+    const modes=(ASK_LIB&&ASK_LIB.modes)||[];
+    if(!modes.length){ loadPrompts().then(renderAsk); return; }
+    pickOpen('Как отвечать', modes.map(m=>({v:m.id,t:m.t,s:m.d})), ASK_MODE, v=>{
+      ASK_MODE=v; localStorage.setItem('navarea_askmode',v); renderAsk();
+    });
+  };
+  const lb=$('#askLibBtn');
+  if(lb) lb.onclick=async()=>{
+    hap();
+    ASK_LIB_OPEN=!ASK_LIB_OPEN;
+    if(ASK_LIB_OPEN&&!ASK_LIB){ renderAsk(); await loadPrompts(); }
+    if(ASK_LIB&&!ASK_LIB_CAT&&ASK_LIB.groups&&ASK_LIB.groups[0]) ASK_LIB_CAT=ASK_LIB.groups[0].id;
+    renderAsk();
+  };
+  document.querySelectorAll('[data-lc]').forEach(b=>b.onclick=()=>{
+    ASK_LIB_CAT=b.dataset.lc; hap(); renderAsk();
+  });
+  document.querySelectorAll('[data-scen]').forEach(b=>b.onclick=()=>{
+    const [gid,idx]=b.dataset.scen.split(':');
+    const g=(ASK_LIB&&ASK_LIB.groups||[]).find(x=>x.id===gid);
+    const it=g&&g.items[+idx]; if(!it) return;
+    hap('medium');
+    ASK_LIB_OPEN=false;
+    askSend(fillParams(it.q).text);
+  });
+}
+
 function renderAsk(){
   const box=$('#askBox'); if(!box) return;
 
   let h='';
+  h+=askLibHtml();
   if(!ASKLOG.length){
     const ex=(ASK_HINTS&&ASK_HINTS.examples)||[];
     h+=`<div class="askintro">
@@ -5672,6 +6206,7 @@ function renderAsk(){
   box.innerHTML=h;
   applyLang();
 
+  bindAskLib();
   document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{ hap(); askSend(b.dataset.ex); });
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{
     let v={}; try{ v=JSON.parse(b.dataset.vals||'{}'); }catch(e){}
@@ -6365,7 +6900,7 @@ function holdDistress(down){
         renderDSC();
         showLesson('distress');
       }
-    },3000);
+    },2000);
   } else {
     clearTimeout(DS.hold); btn.classList.remove('arming');
   }
@@ -6476,7 +7011,7 @@ function renderDSC(){
               ${DS.armed
                 ? `<div class="rdistcover"><div class="rdistbtn arming" id="dbtn">DISTRESS</div></div>
                    <div class="rpwroff">PWR OFF</div>
-                   <div class="rdistcap">${esc(tr('Удерживай 3 секунды'))}</div>`
+                   <div class="rdistcap">${esc(tr('Удерживай 2 секунды'))}</div>`
                 : `<div class="rdistcover" id="dlid"><div class="rdistbtn" style="opacity:.45">DISTRESS</div></div>
                    <div class="rpwroff">PWR OFF</div>
                    <div class="rdistcap">${esc(tr('Крышка кнопки бедствия — открыть'))}</div>`}
@@ -6944,7 +7479,18 @@ let NTF = (()=>{ try{ return Object.assign({warn:true,cert:true,gmdss:true},
   JSON.parse(localStorage.getItem('navarea_ntf')||'{}')); }catch(e){ return {warn:true,cert:true,gmdss:true}; } })();
 function saveNtf(){ try{ localStorage.setItem('navarea_ntf',JSON.stringify(NTF)); }catch(e){} }
 
-let GEO={lat:null, lon:null, at:0, acc:null, busy:false, err:null, watchId:null, guard:null, cancel:null};
+let GEO={lat:null, lon:null, at:0, acc:null, cog:null, sog:null,
+         busy:false, err:null, watchId:null, guard:null, cancel:null};
+
+/* Курс и скорость с приёмника. heading в градусах, speed в м/с; оба поля
+   необязательные и на стоянке приходят пустыми -- тогда ничего не пишем,
+   чтобы в сводке не появился курс 0° у стоящего судна. */
+function setCogSog(c){
+  if(!c) return;
+  GEO.cog = (typeof c.heading==='number'&&!isNaN(c.heading)) ? c.heading : GEO.cog;
+  GEO.sog = (typeof c.speed==='number'&&!isNaN(c.speed)&&c.speed>=0)
+    ? +(c.speed*1.94384).toFixed(1) : GEO.sog;
+}
 
 /* Слежение за позицией можно выключить совсем: на судне интернет платный,
    а GPS телефона сажает батарею. Настройка живёт на устройстве. */
@@ -6971,7 +7517,12 @@ function startGeoWatch(){
       p=>{
         GEO.lat=p.coords.latitude; GEO.lon=p.coords.longitude;
         GEO.acc=p.coords.accuracy||null; GEO.at=Date.now(); GEO.err=null;
+        // Курс и скорость приходят от того же приёмника. Дают их не все
+        // устройства и только на ходу, поэтому в сводке они появляются
+        // сами, а при отсутствии показывается прочерк, а не выдуманное число.
+        setCogSog(p.coords);
         renderGeoBtn();
+        if(S.view==='dash') renderSnapshot();
         if(typeof map!=='undefined'&&map) drawMyPos();
       },
       ()=>{},
@@ -7061,6 +7612,7 @@ function browserGeo(done){
     p=>{
       GEO.lat=p.coords.latitude; GEO.lon=p.coords.longitude;
       GEO.acc=p.coords.accuracy||null; GEO.at=Date.now();
+      setCogSog(p.coords);
       done(true);
     },
     err=>{
@@ -7128,8 +7680,8 @@ const KNOB={vol:5, rf:28, ent:0, entAngle:0, entAt:0};   // ent -- накопл�
 /* Насколько ручка отзывчива. Энкодер сознательно сделан вязким: на
    стеклянном экране палец проходит полсотни пикселей незаметно, и на
    прежних настройках список пролетал целиком от одного движения. */
-const ENC_STEP=55;      // градусов на один щелчок
-const ENC_GAP=120;      // мс -- минимум между щелчками, чтобы не частило
+const ENC_STEP=55;      // градусов на один щелчок -- шаг листания
+const ENC_GAP=55;       // мс -- минимум между щелчками, чтобы не частило
 
 function knobAngle(el, x, y){
   const r=el.getBoundingClientRect();
@@ -7214,8 +7766,10 @@ function knobBubble(el,text){
 function bindStationKnobs(){
   const vol=$('#knobVol'), rf=$('#knobRf'), ent=$('#dkEnter');
 
+  // Громкость и усиление -- наоборот, отзывчивые: их крутят до нужного
+  // значения на слух, и длинное протягивание пальцем только раздражает.
   makeKnob(vol,{onTurn:d=>{
-    KNOB.vol=Math.max(0,Math.min(10,KNOB.vol+d/34));
+    KNOB.vol=Math.max(0,Math.min(10,KNOB.vol+d/20));
     knobRotate(vol, (KNOB.vol/10)*270-135);
     knobBubble(vol, Math.round(KNOB.vol));
     drawDSC();
@@ -7223,7 +7777,7 @@ function bindStationKnobs(){
   knobRotate(vol,(KNOB.vol/10)*270-135);
 
   makeKnob(rf,{onTurn:d=>{
-    KNOB.rf=Math.max(0,Math.min(99,KNOB.rf+d/4.4));
+    KNOB.rf=Math.max(0,Math.min(99,KNOB.rf+d/2.8));
     knobRotate(rf, (KNOB.rf/99)*270-135);
     knobBubble(rf, Math.round(KNOB.rf));
     drawDSC();
@@ -8523,15 +9077,34 @@ loadBridge();
 renderRefs();
 loadHistory();
 
-/* статичные иконки в разметке */
-$('#themeBtn').insertAdjacentHTML('afterbegin', ico('compass','lg'));
-$('#fbtn').innerHTML=ico('sliders');
-$('#offIco').innerHTML=ico('radar','sm');
-$('#hchip').insertAdjacentHTML('afterbegin', ico('radar','xs'));
-$('#pfromBox').insertAdjacentHTML('afterbegin', ico('anchor','sm'));
-$('#ptoBox').insertAdjacentHTML('afterbegin', ico('flag','sm'));
-document.querySelectorAll('.tab[data-i]').forEach(t=>
-  t.insertAdjacentHTML('afterbegin', ico(t.dataset.i)));
+/* Статичные иконки в разметке. Через проверку: разметка со временем
+   меняется, а одна пропавшая строка обрывала весь остаток скрипта --
+   и внешне это выглядело как «половина приложения не работает». */
+function setIco(sel,name,size,mode){
+  const el=$(sel); if(!el) return;
+  if(mode==='prepend') el.insertAdjacentHTML('afterbegin', ico(name,size));
+  else el.innerHTML=ico(name,size);
+}
+setIco('#themeBtn','compass','lg','prepend');
+setIco('#fbtn','sliders');
+setIco('#offIco','radar','sm');
+setIco('#pfromBox','anchor','sm','prepend');
+setIco('#ptoBox','flag','sm','prepend');
+document.querySelectorAll('.tab[data-i]').forEach(t=>{
+  const ic=t.querySelector('.ic'); if(ic) ic.innerHTML=ico(t.dataset.i);
+});
+
+/* ---- Главный экран: часы и кнопки ---- */
+renderClock();
+setInterval(()=>{ if(S.view==='dash') renderClock(); }, 20000);
+{ const o=$('#askOpen'), g=$('#askGo'), a=$('#askAll');
+  const open=()=>{ hap('medium'); switchGroup('ask'); setTimeout(()=>{ const i=$('#askInput'); if(i) i.focus(); },120); };
+  if(o) o.onclick=open;
+  if(g) g.onclick=open;
+  if(a) a.onclick=()=>{ hap(); switchGroup('ask'); };
+  const n=$('#notifBtn');
+  if(n) n.onclick=()=>{ hap(); switchView('areas'); };
+}
 document.querySelectorAll('#corr .cat').forEach((c,i)=>
   c.insertAdjacentHTML('afterbegin', ico(['gauge','gauge','wave','compass'][i]||'gauge')));
 
