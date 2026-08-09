@@ -2172,11 +2172,13 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
             <!-- портовые краны справа -->
             <g stroke="#1b3f5e" stroke-width="2" fill="none">
               <path d="M312 112 L312 84 M326 112 L326 84"/>
-              <g class="craneArm" transform="translate(300,78)">
-                <path d="M12 6 L52 6" stroke="#1b3f5e" stroke-width="2.4"/>
-                <path d="M12 6 L2 14" stroke="#1b3f5e" stroke-width="2"/>
-                <path d="M40 6 L40 16" stroke="#1b3f5e" stroke-width="1.4"/>
-                <rect x="37" y="16" width="6" height="5" fill="#1b3f5e" stroke="none"/>
+              <g transform="translate(300,78)">
+                <g class="craneArm">
+                  <path d="M12 6 L52 6" stroke="#1b3f5e" stroke-width="2.4"/>
+                  <path d="M12 6 L2 14" stroke="#1b3f5e" stroke-width="2"/>
+                  <path d="M40 6 L40 16" stroke="#1b3f5e" stroke-width="1.4"/>
+                  <rect x="37" y="16" width="6" height="5" fill="#1b3f5e" stroke="none"/>
+                </g>
               </g>
               <path d="M352 112 L352 88 M366 112 L366 88 M352 88 L390 88"/>
             </g>
@@ -2203,8 +2205,10 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
             <path d="M223 93 L229 87 L235 93 Z" fill="#1d3f5e"/>
             <rect x="228.2" y="82" width="1.6" height="5" fill="#1d3f5e"/>
             <!-- луч, обходящий горизонт -->
-            <g class="lhSweep" transform="translate(229,97)">
-              <polygon class="lhBeam" points="0,0 190,-46 190,46" fill="url(#hBeam)"/>
+            <g transform="translate(229,97)">
+              <g class="lhSweep">
+                <polygon class="lhBeam" points="0,0 190,-46 190,46" fill="url(#hBeam)"/>
+              </g>
             </g>
           </g>
 
@@ -2218,9 +2222,14 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
                   fill="#15547f"/>
           </g>
 
-          <!-- судно: идёт по воде между дальней и средней волной -->
+          <!-- Судно идёт по воде между дальней и средней волной.
+               Смещение вниз вынесено в отдельную обёртку: CSS-анимация
+               задаёт свой transform и полностью перебивает атрибут
+               transform на том же элементе -- с ним судно улетало наверх,
+               к нулю координат. -->
           <g class="shipGo">
-            <g class="shipRoll" transform="translate(0,131)">
+            <g transform="translate(0,131)">
+            <g class="shipRoll">
               <!-- отражение в воде -->
               <path d="M6 27 L66 27 L60 36 L12 36 Z" fill="#0a2f4e" opacity=".45"/>
               <!-- корпус -->
@@ -2243,6 +2252,7 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
               <!-- бурун у форштевня и кильватерный след -->
               <path d="M60 26 q7 1 11 4 q-6 1 -12 -1 z" fill="#cfe6fb" opacity=".5"/>
               <path d="M12 26 q-9 2 -16 5 q10 1 18 -2 z" fill="#cfe6fb" opacity=".35"/>
+            </g>
             </g>
           </g>
 
@@ -3703,7 +3713,11 @@ Object.assign(DICT,{
    в значениях ("278.2 т", "45.0° правый борт") оставались русскими.
    Теперь строки переводятся явно при формировании. */
 const UNIT_MAP={
- 'миль':'NM','миля':'NM','узлов':'kn','узла':'kn','м':'m','км':'km','фут':'ft',
+ 'миль':'NM','миля':'NM','мили':'NM','узлов':'kn','узла':'kn','уз':'kn','м':'m','км':'km','фут':'ft',
+ 'кГц':'kHz','МГц':'MHz','ГГц':'GHz','Гц':'Hz','гПа':'hPa','мб':'mb','кВт':'kW',
+ 'км/ч':'km/h','миль/ч':'mph','т/сут':'t/day','литр':'litre','галлон US':'US gallon',
+ 'баррель':'barrel','фунт':'lb','длинная т':'long ton','баллов':'force','балла':'force',
+ 'дн':'d','дн.':'d','точ.':'acc.','активных':'active','объектов':'objects','объект':'object',
  'сажень':'fathom','кабельтов':'cables','кабельтовых':'cables','мм':'mm','см':'cm',
  'т':'t','кг':'kg','ч':'h','часов':'hours','часа':'hours','сут':'d','суток':'d','мес':'mo','мин':'min','минут':'min','м²':'m²','м³':'m³',
  'т/см':'t/cm','т/м³':'t/m³','кг/м³':'kg/m³','л':'l','°':'°','%':'%',
@@ -4000,6 +4014,546 @@ Object.assign(DICT,{
  'Звук тренажёра':'Simulator sound',
  'Посылка ЦИВ, подтверждение и сигнал тревоги':'DSC burst, acknowledgement and alarm tone'
 });
+/* ================= Полный перевод: справочники =================
+   Дальше идёт то, что раньше оставалось по-русски при английском
+   интерфейсе: своды сигналов, правила расхождения, справочник ЦИВ,
+   тексты тренажёров EPIRB и SART, справка и настройки.
+   Английский -- профессиональный морской: формулировки взяты в том виде,
+   в каком они приняты в МСС-65, МППСС-72 и документах ИМО. */
+
+/* --- Международный свод сигналов: однофлажные значения --- */
+Object.assign(DICT,{
+ 'Международный свод сигналов, однофлажные значения':
+   'International Code of Signals, single-letter meanings',
+ 'Гружу или выгружаю опасный груз':'I am taking in, or discharging, or carrying dangerous goods',
+ 'Да, утверждение':'Affirmative',
+ 'Держитесь в стороне, управляюсь с трудом':'Keep clear of me; I am manoeuvring with difficulty',
+ 'Изменяю свой курс вправо':'I am altering my course to starboard',
+ 'Я не управляюсь, держите связь':'I am disabled; communicate with me',
+ 'Мне нужен лоцман':'I require a pilot',
+ 'У меня на борту лоцман':'I have a pilot on board',
+ 'Изменяю свой курс влево':'I am altering my course to port',
+ 'У меня пожар, имею опасный груз':'I am on fire and have dangerous cargo on board',
+ 'Желаю установить связь с вами':'I wish to communicate with you',
+ 'Остановите судно немедленно':'You should stop your vessel instantly',
+ 'Моё судно остановлено, хода не имею':'My vessel is stopped and making no way through the water',
+ 'Нет, отрицание':'Negative',
+ 'Человек за бортом':'Man overboard',
+ 'Всем прибыть на борт, судно снимается':'All persons should report on board as the vessel is about to proceed to sea',
+ 'Моё судно незаражённое, прошу свободную практику':'My vessel is healthy and I request free pratique',
+ 'Принято':'Received',
+ 'Мои движители работают на задний ход':'I am operating astern propulsion',
+ 'Держитесь в стороне, произвожу парное траление':'Keep clear of me; I am engaged in pair trawling',
+ 'Вы идёте к опасности':'You are running into danger',
+ 'Мне требуется помощь':'I require assistance',
+ 'Мне требуется медицинская помощь':'I require medical assistance',
+ 'Приостановите ваши намерения':'Stop carrying out your intentions and watch for my signals',
+ 'Меня дрейфует на якоре':'I am dragging my anchor',
+ 'Мне требуется буксир':'I require a tug',
+ 'У меня спущен водолаз, держитесь в стороне':'I have a diver down; keep well clear at slow speed'
+});
+
+/* --- МППСС-72: краткий пересказ правил --- */
+Object.assign(DICT,{
+ 'Ключевые правила расхождения, кратко своими словами':
+   'Key COLREG rules, in brief',
+ 'Это краткий пересказ для быстрого напоминания. Юридическую силу имеет официальный текст конвенции.':
+   'This is a short reminder only. The official text of the Convention is what carries legal force.',
+ 'Правило':'Rule','Наблюдение':'Look-out','Безопасная скорость':'Safe speed',
+ 'Риск столкновения':'Risk of collision','Действия по предупреждению':'Action to avoid collision',
+ 'Плавание в узкостях':'Narrow channels','Системы разделения движения':'Traffic separation schemes',
+ 'Парусные суда':'Sailing vessels','Сближение прямо':'Head-on situation',
+ 'Пересечение курсов':'Crossing situation','Действия уступающего':'Action by give-way vessel',
+ 'Действия судна, которому уступают':'Action by stand-on vessel',
+ 'Взаимные обязанности':'Responsibilities between vessels',
+ 'Звуковые сигналы в тумане':'Sound signals in restricted visibility',
+ 'Постоянно вести надлежащее наблюдение зрением, слухом и всеми доступными средствами, чтобы полностью оценить обстановку и риск столкновения.':
+   'Maintain a proper look-out by sight and hearing as well as by all available means, so as to make a full appraisal of the situation and of the risk of collision.',
+ 'Идти с такой скоростью, чтобы можно было принять эффективные меры и остановиться в пределах расстояния, соответствующего обстоятельствам. Учитывать видимость, плотность движения, маневренность, состояние моря, осадку и ограничения радара.':
+   'Proceed at a speed at which effective action can be taken and the vessel stopped within a distance appropriate to the circumstances. Take account of visibility, traffic density, manoeuvrability, state of sea, draught and the limitations of radar.',
+ 'Использовать все средства для определения риска. Считать, что риск есть, если пеленг на приближающееся судно заметно не меняется. Не делать выводов по неполной информации, особенно по скудным радарным данным.':
+   'Use all available means to determine risk. Deem risk to exist if the compass bearing of an approaching vessel does not appreciably change. Do not draw conclusions from scanty information, especially scanty radar information.',
+ 'Предпринять заблаговременные и решительные действия для расхождения на безопасном расстоянии.':
+   'Take action early and positively so as to pass at a safe distance.',
+ 'Действия должны быть решительными, своевременными и заметными для другого судна. Изменение курса предпочтительнее изменения скорости, если места достаточно. Проверять эффективность до полного расхождения.':
+   'Action shall be positive, made in ample time and readily apparent to the other vessel. An alteration of course alone is preferable if there is sea room. Check the effect until the other vessel is finally past and clear.',
+ 'Держаться внешней стороны фарватера по правому борту насколько это безопасно. Судно менее 20 м, парусное и занятое ловом рыбы не должны затруднять движение судна, которое может следовать только в пределах узкости.':
+   'Keep as near to the outer limit of the channel on the starboard side as is safe and practicable. A vessel under 20 m, a sailing vessel and a vessel engaged in fishing shall not impede a vessel which can safely navigate only within a narrow channel.',
+ 'Следовать в полосе в принятом направлении, держаться в стороне от линии разделения, входить и выходить на конечных участках или под малым углом. Пересекать по возможности под прямым углом к направлению потока.':
+   'Proceed in the appropriate traffic lane in the general direction of flow, keep clear of the separation line, and join or leave at the termination or at a small angle. Cross, if obliged to do so, on a heading as nearly as practicable at right angles to the flow.',
+ 'При разных галсах уступает судно на левом галсе. При одинаковых галсах уступает наветренное. Если галс другого не определён, уступать в любом случае.':
+   'When each has the wind on a different side, the vessel with the wind on the port side keeps out of the way. With the wind on the same side, the windward vessel keeps out of the way. If in doubt as to the other’s tack, keep out of the way.',
+ 'При встрече на противоположных курсах оба изменяют курс вправо, чтобы разойтись левыми бортами. При сомнении считать, что такая ситуация есть, и действовать соответственно.':
+   'When meeting on reciprocal courses, each shall alter course to starboard so as to pass port to port. If in doubt, assume such a situation exists and act accordingly.',
+ 'Уступает то судно, которое имеет другое справа. Избегать пересечения курса впереди него.':
+   'The vessel which has the other on her own starboard side keeps out of the way, and shall avoid crossing ahead of the other vessel.',
+ 'Обгоняющий уступает дорогу обгоняемому. Обгон это подход с направления более 22.5° позади траверза. Последующее изменение пеленга не освобождает от обязанности держаться в стороне до полного расхождения.':
+   'The overtaking vessel keeps out of the way of the vessel being overtaken. Overtaking means coming up from more than 22.5° abaft the beam. Any subsequent alteration of bearing does not relieve her of the duty to keep clear until finally past and clear.',
+ 'Сохранять курс и скорость. Может действовать самостоятельно, когда становится ясно, что уступающий не предпринимает должных мер. При невозможности избежать столкновения одними действиями уступающего обязано действовать.':
+   'Keep course and speed. She may take action when it becomes apparent that the give-way vessel is not taking appropriate action, and must act when collision cannot be avoided by the give-way vessel alone.',
+ 'Порядок уступания: судно с механическим двигателем уступает парусному, занятому ловом рыбы, ограниченному в маневре и лишённому возможности управляться.':
+   'A power-driven vessel keeps out of the way of a sailing vessel, a vessel engaged in fishing, a vessel restricted in her ability to manoeuvre and a vessel not under command.',
+ 'Идти безопасной скоростью с готовой к немедленному манёвру машиной. Избегать поворота влево на судно впереди траверза, кроме случая обгона, и поворота на судно на траверзе или позади.':
+   'Proceed at a safe speed with engines ready for immediate manoeuvre. Avoid an alteration to port for a vessel forward of the beam, other than for a vessel being overtaken, and an alteration towards a vessel abeam or abaft the beam.',
+ 'Судно на ходу с механическим двигателем: один продолжительный не реже чем каждые 2 минуты. На ходу без хода: два продолжительных. Ограниченное в маневре, парусное, на буксире: один продолжительный и два коротких.':
+   'A power-driven vessel making way: one prolonged blast at intervals of not more than 2 minutes. Under way but stopped: two prolonged blasts. Restricted in ability to manoeuvre, sailing or towing: one prolonged followed by two short blasts.'
+});
+/* --- ЦИВ: виды вызовов, характер бедствия, пояснения --- */
+Object.assign(DICT,{
+ 'Вызов бедствия':'Distress Alert','Ретрансляция бедствия':'Distress Relay',
+ 'Срочность (PAN PAN)':'Urgency Call (PAN PAN)','Безопасность (SECURITE)':'Safety Call (SECURITE)',
+ 'Индивидуальный вызов':'Individual Call','Вызов всем судам':'All Ships Call',
+ 'Групповой вызов':'Group Call','Тестовый вызов':'Test Call',
+ 'Запрос позиции':'Position Request','Опрос присутствия':'Polling',
+ 'Пожар, взрыв':'Fire, explosion','Поступление воды':'Flooding','Столкновение':'Collision',
+ 'Посадка на мель':'Grounding','Крен, опасность опрокидывания':'Listing, danger of capsizing',
+ 'Затопление':'Sinking','Потеря хода, дрейф':'Disabled and adrift',
+ 'Бедствие без уточнения':'Undesignated distress','Оставление судна':'Abandoning ship',
+ 'Пиратское нападение':'Piracy / armed robbery',
+ 'Цифровой избирательный вызов':'Digital Selective Calling',
+ 'Бедствие и безопасность':'Distress and safety',
+ 'Бедствие, срочность, безопасность':'Distress, urgency and safety',
+ 'Голосовая связь, слуховая вахта':'Radiotelephony, listening watch',
+ 'Мостик-мостик':'Bridge-to-bridge','Безопасность мореплавания':'Safety of navigation',
+ 'Связь при поисково-спасательных работах':'Search and rescue communications',
+ 'Английский язык, стандартные передачи':'English language, standard broadcasts',
+ 'Местный язык':'Local language','Международный':'International','Национальный':'National',
+ 'Тропический':'Tropical','Дополнительный диапазон':'Additional band',
+ 'Голос MF':'MF radiotelephony','Спутниковый радиобуй':'Satellite EPIRB',
+ 'Приводной':'Homing','Ближний привод':'Local homing','Радар':'Radar',
+ 'Подаётся только при непосредственной опасности для судна или людей. Станция сама подставляет позицию от приёмника и передаёт по всем диапазонам. Ждём подтверждения от берегового центра, не от судов.':
+   'Sent only when the vessel or persons are in grave and imminent danger. The set inserts the position from the receiver and transmits on all bands. Acknowledgement is expected from the coast station, not from other ships.',
+ 'Передаём за другое судно: приняли сигнал бедствия, а берег его не подтвердил. Свой сигнал бедствия при этом не подаём -- иначе спасатели будут искать нас, а не терпящего бедствие.':
+   'Sent on behalf of another vessel: her distress alert was received but the shore has not acknowledged it. Never send your own distress alert instead, or the rescue services will look for you rather than for the casualty.',
+ 'Серьёзная ситуация, но непосредственной опасности гибели нет: потеря хода в стороне от судоходства, тяжёлый больной на борту.':
+   'A serious situation with no grave and imminent danger: disabled clear of traffic, or a seriously ill person on board.',
+ 'Навигационные и метеорологические предупреждения: плавающий объект, неработающий буй, шторм.':
+   'Navigational and meteorological warnings: a floating object, an unlit buoy, a gale.',
+ 'Вызов конкретного судна или береговой станции по её MMSI. Указываем рабочую частоту, на которой будем говорить.':
+   'A call to a particular ship or coast station by MMSI. State the working frequency on which the traffic will follow.',
+ 'Всем, кто в зоне слышимости. В обычной обстановке применяется только с категорией срочности или безопасности.':
+   'To all stations within range. In normal traffic it is used only with the urgency or safety category.',
+ 'Судам одной группы: флот компании, суда в конвое. Групповой MMSI начинается с нуля и заранее прописан в станции.':
+   'To vessels of one group: a company fleet or ships in convoy. A group MMSI begins with a zero and is pre-programmed in the set.',
+ 'Проверка работоспособности ЦИВ на ВЧ и ПВ. Направляется береговой станции, она отвечает подтверждением. На 2187.5 кГц проверка делается именно тестовым вызовом, а не вызовом бедствия.':
+   'A check of DSC operation on MF and HF. Addressed to a coast station, which answers with an acknowledgement. On 2187.5 kHz the daily test is made with a test call, never with a distress alert.',
+ 'Запрос координат другого судна. Оно может ответить автоматически или отклонить запрос -- это его право.':
+   'A request for another vessel’s position. She may answer automatically or refuse the request, which is her right.',
+ 'Проверка, находится ли станция в зоне связи. Ответ приходит автоматически, без участия вахтенного на той стороне.':
+   'A check that a station is within range. The reply is automatic, with no action by the watchkeeper at the other end.',
+ 'Подтверждение (ACK) означает, что вызов принят. При бедствии подтверждать имеет право береговой центр -- судно подтверждает только если берег молчит и судно способно помочь.':
+   'An acknowledgement means the call has been received. A distress alert is acknowledged by the coast station; a ship acknowledges only if the shore stays silent and she is able to assist.',
+ 'Диапазон выбирают по дальности и времени суток. Ночью проходят низкие частоты (2, 4 МГц), днём высокие (12, 16 МГц). 8 МГц работает почти всегда -- с него и начинают.':
+   'The band is chosen by range and time of day. Lower frequencies (2 and 4 MHz) propagate at night, higher ones (12 and 16 MHz) by day. 8 MHz works almost always and is the usual starting point.',
+ 'После вызова ЦИВ переходим на парную радиотелефонную частоту того же диапазона и говорим уже голосом. ЦИВ -- только для того, чтобы привлечь внимание.':
+   'After a DSC call, shift to the paired radiotelephone frequency of the same band and pass the traffic by voice. DSC only serves to attract attention.',
+ 'Кнопка бедствия закрыта крышкой и требует удержания около пяти секунд -- защита от случайного нажатия. Если подал по ошибке, не выключай станцию: сообщи голосом на 2182 кГц, что тревога ложная, и отмени её.':
+   'The distress button is under a cover and must be held for about five seconds, to guard against accidental operation. If sent in error, do not switch the set off: cancel the alert and announce by voice on 2182 kHz that it was false.',
+ 'MMSI из девяти цифр. У судна первые три -- код страны, у береговой станции первые две цифры нули, у группы -- один ноль в начале.':
+   'An MMSI has nine digits. A ship station begins with the three-digit country code, a coast station with two zeros, and a group with a single leading zero.',
+ 'Тестовый вызов не тревожит спасателей и не поднимает никого по тревоге. Именно им проверяют ЦИВ, как требует ежедневная проверка по ГМССБ.':
+   'A test call raises no alarm and alerts nobody. It is the means of checking DSC required by the daily GMDSS test.',
+ 'Средние волны. Дальность порядка 150 миль днём, ночью больше.':
+   'Medium frequency. Range of the order of 150 NM by day, more at night.',
+ 'Ночью и на рассвете, дальность до 300 миль.':'At night and around dawn, range up to 300 NM.',
+ 'Круглосуточно, средние дистанции.':'Round the clock, medium distances.',
+ 'Самый универсальный диапазон, работает днём и ночью.':
+   'The most versatile band, usable by day and by night.',
+ 'День, большие дистанции.':'Daytime, long distances.',
+ 'День, максимальная дальность.':'Daytime, maximum range.',
+ 'Тренажёр. Ничего в эфир не уходит.':'Simulator. Nothing is transmitted.',
+ 'Тренажёр. Ничего в эфир не уходит. Перед экзаменом и работой на судне сверяйся с ALRS Volume 5 и инструкцией своей станции.':
+   'Simulator. Nothing is transmitted. Before an examination and before working on board, check against ALRS Volume 5 and your own set’s manual.'
+});
+/* --- Задания режима экзамена по ЦИВ --- */
+Object.assign(DICT,{
+ 'В машинном отделении пожар, экипаж не справляется, судно теряет ход. Твои действия по ЦИВ.':
+   'Fire in the engine room, the crew cannot contain it and the vessel is losing propulsion. What do you send by DSC?',
+ 'Непосредственная опасность для судна и людей -- это вызов бедствия с указанием характера «пожар, взрыв».':
+   'Grave and imminent danger to the vessel and to persons: a distress alert with the nature “fire, explosion”.',
+ 'Судно село на мель, поступления воды нет, крена нет, опасности для людей нет, но сняться самостоятельно не можешь.':
+   'The vessel is aground, there is no flooding, no list and no danger to persons, but you cannot refloat unaided.',
+ 'Прямой угрозы гибели нет, значит бедствие подавать рано. Это срочность (PAN PAN). Если начнёт поступать вода или появится крен -- переходим на бедствие.':
+   'There is no immediate danger of loss, so a distress alert is premature. This is urgency (PAN PAN). If flooding starts or a list develops, upgrade to distress.',
+ 'Приняли вызов бедствия с соседнего судна на 8414.5 кГц. Прошло пять минут, береговая станция не подтвердила приём.':
+   'A distress alert from a nearby vessel was received on 8414.5 kHz. Five minutes have passed and no coast station has acknowledged it.',
+ 'Передаём ретрансляцию бедствия. Свой вызов бедствия подавать нельзя -- у нас самих ничего не случилось, и спасатели пойдут не туда.':
+   'Send a distress relay. Never send your own distress alert: nothing has happened to you, and the rescue services would be sent to the wrong ship.',
+ 'Обнаружили в море полузатопленный контейнер, представляющий опасность для судоходства.':
+   'A partly submerged container dangerous to navigation has been sighted at sea.',
+ 'Навигационная опасность для других судов -- категория безопасности (SECURITE), обычно вызовом всем судам.':
+   'A navigational hazard to other vessels: the safety category (SECURITE), normally as an all ships call.',
+ 'Нужно проверить работу ЦИВ на ПВ, как того требует ежедневная проверка ГМССБ.':
+   'DSC operation on MF has to be checked, as required by the daily GMDSS test.',
+ 'Для этого есть тестовый вызов береговой станции. Вызов бедствия для проверки не применяют ни при каких обстоятельствах.':
+   'That is what a test call to a coast station is for. A distress alert is never used for testing under any circumstances.',
+ 'Человек упал за борт, судно развернулось на циркуляции, идёт поиск.':
+   'A man has fallen overboard, the vessel has turned and the search is under way.',
+ 'Жизни человека угрожает непосредственная опасность -- вызов бедствия с характером «человек за бортом».':
+   'A person’s life is in grave and imminent danger: a distress alert with the nature “man overboard”.',
+ 'Нужно связаться с агентом через береговую станцию Lyngby Radio для передачи заявки на снабжение.':
+   'You need to reach the agent through Lyngby Radio to pass a stores requisition.',
+ 'Обычная деловая связь -- индивидуальный вызов береговой станции с указанием рабочей частоты.':
+   'Ordinary business traffic: an individual call to the coast station, stating the working frequency.',
+ 'На борту тяжелобольной, нужна консультация врача, но судно на ходу и опасности нет.':
+   'A seriously ill person is on board and medical advice is required, but the vessel is under way and in no danger.',
+ 'Медицинская консультация без угрозы гибели судна -- срочность (PAN PAN), обычно с пометкой MEDICO.':
+   'Medical advice with no danger of loss: urgency (PAN PAN), normally marked MEDICO.',
+ 'Судно атаковано вооружёнными лицами при подходе к якорной стоянке.':
+   'The vessel is under attack by armed persons on approach to the anchorage.',
+ 'Пиратское нападение -- отдельный вид бедствия по ITU-R M.493, подаётся вызов бедствия.':
+   'Piracy is a distinct nature of distress under ITU-R M.493, and a distress alert is sent.',
+ 'Нужно узнать, где сейчас находится судно компании, идущее тем же районом.':
+   'You need the present position of a company vessel transiting the same area.',
+ 'Запрос позиции. Судно вправе отклонить запрос, это нормально.':
+   'A position request. The other vessel may decline it, which is entirely normal.'
+});
+
+/* --- EPIRB и SART: тексты тренажёров --- */
+Object.assign(DICT,{
+ 'АРБ (EPIRB)':'EPIRB','Radar SART · X-диапазон':'Radar SART · X-band',
+ 'Куда уходит сигнал':'Where the signal goes','Порядок самопроверки':'Self-test procedure',
+ 'Вид с проходящего судна':'View from a passing vessel',
+ 'Отклик на 3 см радар (X-band)':'Response on a 3 cm (X-band) radar',
+ 'Маяк в дежурном режиме':'Beacon on standby','Сигнал не излучается':'Nothing is radiated',
+ 'Посылка на 406 МГц':'406 MHz burst','Принято спутником':'Received by satellite',
+ 'Ретрансляция на MEOLUT':'Relayed to a MEOLUT','Передано в MCC':'Passed to the MCC',
+ 'Тревога у спасателей':'Alert at the rescue centre',
+ 'Маяк передаёт короткими посылками примерно раз в 50 секунд':
+   'The beacon transmits short bursts about every 50 seconds',
+ 'MEOSAR: спутники GPS, Galileo, ГЛОНАСС и BeiDou несут поисковые ретрансляторы':
+   'MEOSAR: GPS, Galileo, GLONASS and BeiDou satellites carry SAR repeaters',
+ 'Наземная станция измеряет частоту и время посылок, вычисляет место':
+   'The ground station measures burst frequency and timing and computes the position',
+ 'Координационный центр системы сверяет данные и опознаёт маяк по номеру':
+   'The mission control centre correlates the data and identifies the beacon by its number',
+ 'Норматив системы: тревога доходит до спасательного центра в пределах 15 минут':
+   'System requirement: the alert reaches the rescue centre within 15 minutes',
+ 'При самопроверке сигнал в эту цепочку не уходит: маяк лишь проверяет собственные узлы. Схема показана, чтобы было видно, что происходит при настоящем срабатывании.':
+   'During a self-test nothing enters this chain: the beacon only checks its own circuits. The diagram is shown so that the real activation path is clear.',
+ 'Идёт передача тестового сигнала: 121.5 МГц, AIS и 406 МГц. Спасательные службы его не получают':
+   'A test signal is being transmitted on 121.5 MHz, AIS and 406 MHz. The rescue services do not receive it',
+ 'БОЕВОЙ РЕЖИМ. На настоящем приборе сигнал уже принят спутниками COSPAS-SARSAT':
+   'LIVE MODE. On a real beacon the signal has already been received by the COSPAS-SARSAT satellites',
+ 'БОЕВОЙ РЕЖИМ. Отвечает на все радары в зоне видимости как сигнал бедствия':
+   'LIVE MODE. Responds to every radar within range as a distress signal',
+ 'Поиск спутниковой позиции. Зелёный индикатор загорится, когда позиция определена':
+   'Acquiring a satellite position. The green light comes on once the position is fixed',
+ 'Один проблеск — самопроверка пройдена. Если индикатор продолжает мигать, смотри код ошибки в руководстве':
+   'A single flash means the self-test has passed. If the light keeps flashing, look up the fault code in the manual',
+ 'Проблеск индикатора по итогу проверки':'Indicator flash on completion of the test',
+ 'Переключатель в положении OFF, транспондер на кронштейне':
+   'Switch at OFF, transponder in its bracket',
+ 'Прибор в дежурном режиме, на кронштейне':'Unit on standby, in its bracket',
+ 'Режим TEST включён, транспондер прогревается':'TEST selected, the transponder is warming up',
+ 'Отвечает на облучение радаром. Смотри отклик на экране X-диапазонного радара ниже':
+   'Responding to radar interrogation. See the reply on the X-band radar picture below',
+ 'Тест пройден. Не держи в режиме TEST дольше пяти минут: расходует батарею и мешает чужим радарам':
+   'Test passed. Do not leave it in TEST for more than five minutes: it drains the battery and interferes with other radars',
+ 'Удерживай кнопку TEST…':'Hold the TEST button…',
+ 'Переведи переключатель в TEST или ON, чтобы увидеть, как отметка появляется на чужом радаре.':
+   'Select TEST or ON to see how the mark appears on another vessel’s radar.',
+ 'Переведи переключатель на приборе выше в положение TEST.':
+   'Set the switch on the unit above to TEST.',
+ 'Это боевое включение. На настоящем приборе SART начнёт отвечать на радары как сигнал бедствия. Продолжить в тренажёре?':
+   'This is live activation. On a real unit the SART would begin replying to radars as a distress signal. Continue in the simulator?',
+ 'Это боевое включение. На настоящем приборе оно поднимает спасательные службы. Продолжить в тренажёре?':
+   'This is live activation. On a real beacon it would alert the rescue services. Continue in the simulator?',
+ 'плот · 4 мили':'liferaft · 4 NM','Круг радиусом':'Circle of radius',
+ 'Линия / полоса':'Line / band','Район':'Area','Точность':'Accuracy'
+});
+/* --- Справка: вопросы и ответы --- */
+Object.assign(DICT,{
+ 'С чего начать':'Getting started','Предупреждения и карта':'Warnings and chart',
+ 'Тренажёры и ГМССБ':'Simulators and GMDSS','Подписка':'Subscription',
+ 'Данные и приватность':'Data and privacy','Если что-то не работает':'If something is wrong',
+ 'Что вообще умеет WatchKeeper?':'What does WatchKeeper actually do?',
+ 'Три вещи. Показывает действующие предупреждения NAVAREA и береговые по твоим районам и маршруту. Считает то, что считает вахтенный: запас под килём, проседание, расхождение с целью, ETA, якорную стоянку. И отвечает на вопросы обычными словами через Ask AI, сам подставляя данные судна, позицию и погоду.':
+   'Three things. It shows the NAVAREA and coastal warnings in force for your areas and route. It works out what an officer of the watch works out: under-keel clearance, squat, CPA and TCPA, ETA, anchoring. And it answers questions in plain words through Ask AI, filling in your vessel’s data, position and weather itself.',
+ 'С чего начать после установки?':'What should I do first?',
+ 'Заполни карточку судна в разделе «Моё судно» — осадка, скорость и габариты потом подставляются в расчёты сами. Отметь звёздочкой свои районы NAVAREA. Добавь порты захода в «Мои порты». Всё остальное заработает само.':
+   'Fill in the vessel card under My Vessel — draught, speed and dimensions are then inserted into the calculations automatically. Star your NAVAREA areas. Add your ports of call under My Ports. Everything else follows on its own.',
+ 'Работает ли приложение без связи?':'Does the app work offline?',
+ 'Расчёты, справочники и тренажёры — да, полностью. Предупреждения, станции и зоны сохраняются на устройстве и показываются последними сохранёнными. Погода, ассистент и проверка маршрута требуют связи: они ходят на сервер.':
+   'Calculations, reference data and simulators — yes, entirely. Warnings, stations and zones are cached on the device and shown as last saved. Weather, the assistant and the route check need a connection: they query the server.',
+ 'Заменяет ли бот приём MSI по ГМССБ?':'Does the bot replace receiving MSI by GMDSS?',
+ 'Нет и не может. Официальный источник — NAVTEX, приёмник Inmarsat SafetyNET и штатное оборудование ГМССБ. Бот — вспомогательный инструмент: он помогает не пропустить и разобраться, но решение принимает судоводитель по официальным пособиям.':
+   'No, and it cannot. The official sources are NAVTEX, the Inmarsat SafetyNET receiver and the ship’s GMDSS equipment. The bot is an aid: it helps you not to miss things and to understand them, but the decision rests with the navigator using official publications.',
+ 'Откуда берутся предупреждения?':'Where do the warnings come from?',
+ 'Из открытых источников координаторов районов: NGA (США), UKHO (Великобритания), гидрографические службы Перу и Испании. Если подключён Sealagom, данные идут оттуда сразу по всем 21 району.':
+   'From the open sources of the area co-ordinators: NGA (USA), UKHO (United Kingdom) and the hydrographic services of Peru and Spain. If Sealagom is connected, the data comes from there for all 21 areas at once.',
+ 'Как часто обновляются данные?':'How often is the data refreshed?',
+ 'Бот опрашивает источники каждые 30 минут (настраивается). Время последнего обновления по каждому району видно в списке районов.':
+   'The bot polls the sources every 30 minutes (configurable). The time of the last update for each area is shown in the area list.',
+ 'Почему у предупреждения нет точки на карте?':'Why has a warning no position on the chart?',
+ 'Координаты разбираются из текста сообщения. Если в тексте их нет или они записаны непривычным способом, точка не появится. Текст при этом доступен целиком.':
+   'Positions are parsed from the text of the message. If there are none, or they are written in an unusual way, no mark appears. The full text is still available.',
+ 'Что значит «точная геометрия»?':'What does “exact geometry” mean?',
+ 'Метка на карточке: район пришёл от источника готовой фигурой, а не разобран нами из текста. Такой контур точнее.':
+   'A label on the card: the area arrived from the source as a ready shape rather than being parsed from the text. Such an outline is more accurate.',
+ 'Как следить только за своими районами?':'How do I follow only my own areas?',
+ 'Отметь районы звёздочкой. Они попадут в избранное на главной, и по ним будут приходить уведомления о новых предупреждениях.':
+   'Star the areas. They go to your favourites and you will be notified of new warnings in them.',
+ 'Откуда берутся числа в расчётах?':'Where do the figures in the calculations come from?',
+ 'Часть подставляется из карточки судна: осадка, скорость, коэффициент полноты, длина, надводный габарит. Такие поля помечены словом «само». Остальное вводится руками.':
+   'Some are taken from the vessel card: draught, speed, block coefficient, length, air draught. Such fields are marked “auto”. The rest you enter yourself.',
+ 'Можно ли доверять расчётам?':'Can the calculations be relied on?',
+ 'Это справочные расчёты по общепринятым формулам. Они не заменяют судовую документацию, таблицы манёвренных характеристик и информацию об остойчивости. Решение принимает судоводитель.':
+   'They are advisory calculations using accepted formulae. They do not replace the ship’s documentation, the manoeuvring data or the stability information. The decision rests with the navigator.',
+ 'Почему проседание считается по-разному?':'Why is squat calculated differently?',
+ 'Формулы для открытой воды и для стеснённого фарватера дают разный результат — во втором случае проседание заметно больше. Выбор акватории есть прямо в расчёте.':
+   'The formulae for open water and for a confined channel give different results — in a channel the squat is markedly greater. The choice of water is in the calculation itself.',
+ 'Расчёты платные?':'Are the calculations paid for?',
+ 'Нет. Всё, от чего зависит безопасность — запас под килём, проседание, расхождение, точка перекладки, якорь, габарит под мостом — бесплатно навсегда.':
+   'No. Everything that safety depends on — under-keel clearance, squat, collision avoidance, wheel-over point, anchoring, air draught — is free for good.',
+ 'Чем ассистент отличается от обычного чат-бота?':'How is the assistant different from an ordinary chatbot?',
+ 'Он умеет брать данные сам. Спросишь про погоду на переходе — сам проложит маршрут через проливы, разложит время прихода по точкам и возьмёт прогноз именно на эти часы. Спросишь про предупреждения — сам отберёт те, что задевают твой маршрут.':
+   'It fetches data itself. Ask about the weather on passage and it lays off the route through the straits, works out the time of arrival at each point and takes the forecast for exactly those hours. Ask about warnings and it selects those that affect your route.',
+ 'Что такое «Сценарии»?':'What are “Scenarios”?',
+ 'Готовые запросы по разделам: навигация, ECDIS, МППСС, погода, ГМССБ, вахта, груз, аварийные случаи. В шаблон уже подставлены твои данные — видно, что подставилось, а что ассистент спросит.':
+   'Ready-made prompts by subject: navigation, ECDIS, COLREG, weather, GMDSS, watchkeeping, cargo, emergencies. Your data is already inserted into the template — you can see what was filled in and what the assistant will ask for.',
+ 'Что такое режимы ответа?':'What are the answer modes?',
+ 'Форма, в которой придёт ответ: коротко, для вахты, чек-листом, расчётом с проверкой, аварийным порядком действий, брифингом, записью в журнал, радиофразеологией. Выбирается кнопкой слева над перепиской.':
+   'The form the answer takes: brief, for the watch, as a checklist, as a calculation with a sanity check, as emergency actions, as a briefing, as a log entry, or as radio phraseology. Chosen with the button above the conversation.',
+ 'Ассистент может ошибаться?':'Can the assistant be wrong?',
+ 'Да, как любая языковая модель. Он не выдумывает живые данные — погода и предупреждения приходят из источников, — но формулировки правил и выводы стоит проверять по МППСС, конвенциям и судовым инструкциям.':
+   'Yes, like any language model. It does not invent live data — weather and warnings come from the sources — but wordings of rules and conclusions should be checked against COLREG, the conventions and the ship’s instructions.',
+ 'Есть ли лимит вопросов?':'Is there a limit on questions?',
+ 'На бесплатном тарифе — пять вопросов в сутки. На Premium ограничения нет.':
+   'Five questions a day on the free plan. No limit on Premium.',
+ 'Тренажёр ЦИВ выходит в эфир?':'Does the DSC simulator transmit?',
+ 'Нет. Ничего не передаётся. Все подтверждения, задержки и ответы береговых станций имитируются внутри приложения.':
+   'No. Nothing is transmitted. All acknowledgements, delays and coast station replies are simulated inside the app.',
+ 'Как пользоваться роликом на станции?':'How do I use the dial on the set?',
+ 'Поворот выбирает поле или пункт меню, нажатие открывает его на изменение. На дежурном экране ролик переключается между CH, TX и RX; нажал — крутишь значение.':
+   'Turning selects a field or a menu item, pushing opens it for editing. On the standby screen the dial moves between CH, TX and RX; push it and you turn the value.',
+ 'Что делает кнопка BRILL?':'What does the BRILL key do?',
+ 'Переключает яркость и контраст экрана: день, ночь (приглушённый красный, чтобы не сбивать адаптацию глаз) и зелёный люминофорный режим.':
+   'It switches display brilliance and contrast: day, night (dimmed red so as not to spoil dark adaptation) and the green phosphor mode.',
+ 'Зачем нужен режим экзамена?':'What is the exam mode for?',
+ 'Даёт обстановку, а ты выбираешь, каким вызовом отвечать. После ответа показывает разбор: почему бедствие, а не срочность, и наоборот.':
+   'It gives you a situation and you choose which call to send. After your answer it explains why distress rather than urgency, or the other way round.',
+ 'Проверки EPIRB и SART — что записывается?':'EPIRB and SART tests — what is recorded?',
+ 'Отметки чек-листа, результат самопроверки и дата замены батареи. История хранится в приложении, её можно очистить.':
+   'The checklist ticks, the self-test result and the battery expiry date. The history is kept in the app and can be cleared.',
+ 'Что входит в Premium?':'What does Premium include?',
+ 'Неограниченное число районов, береговые предупреждения, проверка маршрута, карточка судна, чек-листы и сертификаты, история за 30 дней, вопросы к ассистенту без лимита, расширенные расчёты.':
+   'Unlimited areas, coastal warnings, the route check, the vessel card, checklists and certificates, 30 days of history, unlimited questions to the assistant and the advanced calculations.',
+ 'Как оплатить?':'How do I pay?',
+ 'Звёздами Telegram прямо в приложении: «Моё судно» → «Что входит в Premium» → «Оформить». Откроется окно оплаты Telegram. Карт и переводов не нужно.':
+   'With Telegram Stars inside the app: My Vessel → What Premium includes → Subscribe. The Telegram payment window opens. No cards and no transfers are needed.',
+ 'Что такое звёзды Telegram?':'What are Telegram Stars?',
+ 'Внутренняя валюта Telegram. Покупаются в самом приложении Telegram и тратятся на цифровые товары и услуги. Подписка продлевается сама каждые 30 дней.':
+   'Telegram’s internal currency. They are bought within Telegram itself and spent on digital goods and services. The subscription renews itself every 30 days.',
+ 'Как отменить подписку?':'How do I cancel the subscription?',
+ 'Команда /cancel_subscription в чате с ботом или Настройки Telegram → Мои звёзды → Подписки. Оплаченный период доработает до конца.':
+   'The /cancel_subscription command in the chat with the bot, or Telegram Settings → My Stars → Subscriptions. The period already paid for runs to its end.',
+ 'Что остаётся бесплатным?':'What stays free?',
+ 'Два района с уведомлениями, карта всех действующих предупреждений, все расчёты безопасности, справочники, станции ГМССБ, тренажёры и пять вопросов ассистенту в сутки.':
+   'Two areas with notifications, the chart of all warnings in force, every safety calculation, the reference sections, the GMDSS stations, the simulators and five questions a day to the assistant.',
+ 'Что бот знает обо мне?':'What does the bot know about me?',
+ 'Идентификатор Telegram, отмеченные районы, карточку судна, сертификаты и чек-листы, порты рейса — то, что ты сам ввёл. Настройки интерфейса и последние расчёты хранятся только на устройстве.':
+   'Your Telegram identifier, the areas you starred, the vessel card, certificates and checklists, and the ports of the voyage — what you entered yourself. Interface settings and recent calculations are kept on the device only.',
+ 'Передаётся ли моя позиция?':'Is my position sent anywhere?',
+ 'Только когда ты сам её запросил кнопкой или включил слежение, и только на время работы приложения. Она нужна для погоды, расстояний и экрана станции. Геопозицию можно выключить совсем в настройках.':
+   'Only when you request it with the button or switch tracking on, and only while the app is running. It is needed for weather, distances and the radio display. Positioning can be switched off entirely in the settings.',
+ 'Как удалить свои данные?':'How do I delete my data?',
+ 'Напиши в поддержку из настроек — удалю карточку судна, сертификаты и порты. Локальные данные стираются кнопкой «Очистить сохранённые данные».':
+   'Write to support from the settings and I will delete the vessel card, certificates and ports. Local data is cleared with the “Clear stored data” button.',
+ 'Приложение открылось пустым или без данных':'The app opened empty or without data',
+ 'Скорее всего нет связи с сервером — вверху появится полоса «Нет связи». Расчёты и справочники продолжат работать. Проверь интернет и потяни экран вниз.':
+   'Most likely there is no connection to the server — an “Offline” bar appears at the top. Calculations and reference sections keep working. Check the internet and pull the screen down.',
+ 'Не приходят уведомления о предупреждениях':'Warning notifications do not arrive',
+ 'Проверь, отмечены ли районы звёздочкой и включён ли переключатель в настройках. Уведомления приходят сообщением от бота в чат.':
+   'Check that the areas are starred and the switch in the settings is on. Notifications arrive as a message from the bot in the chat.',
+ 'Позиция не определяется':'The position is not being fixed',
+ 'В глубине корпуса GPS телефона часто не ловит. Выйди на крыло мостика или введи координаты вручную. Проверь, что доступ к геопозиции разрешён.':
+   'Deep inside the hull a phone’s GPS often will not receive. Go out to the bridge wing or enter the position by hand. Check that access to location is allowed.',
+ 'Кнопка оплаты ничего не открывает':'The payment button opens nothing',
+ 'Оплата работает только внутри Telegram: приложение должно быть открыто кнопкой в чате с ботом, а не по ссылке в браузере.':
+   'Payment works only inside Telegram: the app must be opened with the button in the chat with the bot, not by a link in a browser.',
+ 'Нашёл ошибку или есть предложение':'I found a bug or have a suggestion',
+ 'Настройки → Написать в поддержку. Переписка идёт прямо здесь, я отвечаю в этом же чате.':
+   'Settings → Contact support. The conversation happens right here and I reply in the same chat.'
+});
+/* --- Интерфейс: настройки, списки, состояния, служебные строки --- */
+Object.assign(DICT,{
+ 'Обстановка':'Situation','Позиция':'Position','Текущая позиция':'Present position',
+ 'Геопозиция':'Positioning','Геопозиция выключена':'Positioning is off',
+ 'Выключена, координаты вводятся вручную':'Off, positions are entered by hand',
+ 'Метка на карте':'Own ship on the chart',
+ 'Следить за своим местом, пока карта открыта':'Track own position while the chart is open',
+ 'Обновить позицию':'Refresh position','Отменить запрос':'Cancel the request',
+ 'Позиция с устройства':'Position from the device',
+ 'позиция недоступна':'position unavailable','геопозиция выключена в настройках':'positioning is off in the settings',
+ 'устройство не ответило, попробуй ещё раз':'the device did not answer, try again',
+ 'запрос отменён':'request cancelled','запрос не выполнен:':'request failed:',
+ 'Единицы и формат':'Units and format','Формат координат':'Position format',
+ 'Градусы с минутами или десятичные':'Degrees and minutes, or decimal',
+ 'Отдача при нажатии':'Haptic feedback',
+ 'Лёгкая вибрация на кнопках и ручках':'A light buzz on keys and knobs',
+ 'Тема оформления':'Colour scheme','Новые предупреждения':'New warnings',
+ 'Присылать, как только появятся в твоих районах':'Send as soon as they appear in your areas',
+ 'Сроки сертификатов':'Certificate expiry',
+ 'За 60, 30, 14, 7, 3 и 1 день до истечения':'60, 30, 14, 7, 3 and 1 day before expiry',
+ 'Батареи EPIRB и SART':'EPIRB and SART batteries',
+ 'За 90, 30 и 7 дней до замены':'90, 30 and 7 days before replacement',
+ 'Всемирное координированное, им ведётся радиожурнал':'Coordinated universal time, used for the radio log',
+ 'Пояс задаёшь сам:':'You set the zone yourself:','Пояс из настроек устройства':'Zone from the device settings',
+ 'СУД':'SHP','ТЛФ':'PHN','Готово':'Done','Закрыть':'Close','Закрыть карту':'Close the map',
+ 'Удалить':'Delete','Выше':'Up','Ниже':'Down','Открыть ассистента':'Open the assistant',
+ 'Тарифы':'Plans','Что открыто сейчас и что даёт Premium':'What is open now and what Premium adds',
+ 'Что входит в Premium ·':'What Premium includes ·','Открыты все разделы. Дальше':'All sections are open. After that',
+ 'Два района, базовые расчёты и справочники. Остальное —':'Two areas, the basic calculations and the reference sections. The rest —',
+ '⭐ в месяц':'⭐ per month','⭐ / мес':'⭐ / mo','⭐ в месяц.':'⭐ per month.',
+ '⭐ в месяц, это примерно 2 доллара.':'⭐ per month, about two dollars.',
+ 'Пробный период · осталось':'Trial period · remaining',
+ 'Расчёты безопасности: запас под килём, проседание, CPA/TCPA, точка перекладки, якорь, габарит под мостом':
+   'Safety calculations: under-keel clearance, squat, CPA/TCPA, wheel-over point, anchoring, air draught',
+ 'Новый сертификат':'New certificate','Бот напомнит заранее, когда подойдёт срок':'The bot reminds you before it expires',
+ 'Мои суда':'My vessels','+ Судно':'+ Vessel','Типовые серии':'Typical classes',
+ 'в профиле':'in the profile','· размерения подставятся':'· dimensions will be filled in',
+ 'Заполняется один раз, подставляется во все расчёты':'Filled in once, used by every calculation',
+ 'Заполни карточку один раз — длина, ширина, осадка, Cb и остальное сами подставятся в расчёты запаса под килём, проседания, якорной стоянки и прохода под мостом.':
+   'Fill the card in once — length, beam, draught, block coefficient and the rest are then inserted into the under-keel clearance, squat, anchoring and air draught calculations.',
+ 'Открой приложение из чата с ботом, чтобы карточка судна привязалась к тебе.':
+   'Open the app from the chat with the bot so that the vessel card is tied to you.',
+ 'Удалить это судно из профиля?':'Remove this vessel from the profile?',
+ 'Удалить всю историю чек-листов? Отменить будет нельзя.':'Delete the whole checklist history? This cannot be undone.',
+ 'Удалить сохранённые данные с устройства? Настройки и избранное останутся.':
+   'Delete the data stored on this device? Settings and favourites will remain.',
+ 'Отмечай по ходу дела. Сохранится в историю.':'Tick as you go. It is saved to the history.',
+ 'Нет предупреждений с координатами для этого выбора.':'No warnings with positions for this selection.',
+ 'Отменённые и снятые с силы, поиск за всё время':'Cancelled and no longer in force, searched over all time',
+ 'Отметь районы звёздочкой, чтобы следить за ними':'Star the areas to follow them',
+ 'График появится, когда накопятся данные за несколько дней. Снимок делается раз в сутки.':
+   'The graph appears once several days of data have built up. A snapshot is taken once a day.',
+ 'На маршруте найдено':'Found on the route','миль по маршруту · коридор ±':'NM along the route · corridor ±',
+ 'миль от курса':'NM off track','миль · предупреждений на маршруте:':'NM · warnings on the route:',
+ 'миль всего':'NM in total','миль осталось':'NM to run','% пути пройдено':'% of the passage run',
+ 'предупреждение':'warning','предупреждений':'warnings','новое предупреждение':'new warning',
+ 'новых предупреждения':'new warnings','новых предупреждений':'new warnings','НОВЫХ':'NEW',
+ 'без номера':'no number','· отменено':'· cancelled','нет данных':'no data',
+ 'только что':'just now','мин назад':'min ago','ч назад':'h ago','дн назад':'d ago',
+ 'вот-вот':'imminent','истекает сегодня':'expires today','скоро истекает':'expires soon',
+ 'просрочен':'expired','в порядке':'in date','под контролем':'monitored','максимум':'maximum',
+ 'ошибка':'error','шаблон':'template','История ·':'History ·','точность':'accuracy',
+ 'точечных объектов из':'point objects out of','районов и полос,':'areas and lanes,',
+ 'Расстояние · миль':'Distance · NM','нос':'bow','НЕТ, не хватает':'NO, short by',
+ 'растущий серп':'waxing crescent','убывающий серп':'waning crescent',
+ 'Сбой в приложении':'Application failure','Часть приложения не загрузилась':'Part of the app failed to load',
+ 'Раздел недоступен.':'Section unavailable.','Раздел недоступен:':'Section unavailable:',
+ 'Не задан адрес вызова.':'No call address has been set.',
+ 'Поле TO -- девять цифр MMSI.':'The TO field takes a nine-digit MMSI.',
+ 'Помощник вахтенного на связи':'Your watchkeeping assistant is ready',
+ 'Прочти обстановку и подай тот вызов, который положен:':'Read the situation and send the correct call:',
+ 'DISTRESS MSG — бедствие, OTHER DSC MSG — всё остальное. Срочность и безопасность':
+   'DISTRESS MSG for distress, OTHER DSC MSG for everything else. Urgency and safety',
+ 'задаются полем PRIORITY, а не отдельным типом сообщения.':
+   'are set by the PRIORITY field, not by a separate message type.',
+ 'Станция обязана непрерывно слушать частоты бедствия. SCAN проходит их по кругу:':
+   'The station must keep a continuous watch on the distress frequencies. SCAN steps through them:',
+ 'верхняя строка — 2187.5 кГц, ниже береговые вызывные ЦИВ. Приём вызова сканирование останавливает.':
+   'the top row is 2187.5 kHz, below are the coast DSC calling channels. An incoming call stops the scan.',
+ 'Дай рекомендации по океанскому переходу':'Give guidance for the ocean passage',
+ 'по Ocean Passages for the World: рекомендованный путь,':
+   'from Ocean Passages for the World: the recommended track,',
+ 'сезонные соображения, течения и ветры, чего избегать.':
+   'seasonal considerations, currents and winds, and what to avoid.'
+});
+/* --- Каналы, частоты, орбиты и подписи меню станции --- */
+Object.assign(DICT,{
+ 'VHF канал 6':'VHF channel 6','VHF канал 13':'VHF channel 13',
+ 'VHF канал 16':'VHF channel 16','VHF канал 70':'VHF channel 70',
+ 'AIS каналы 1 и 2':'AIS channels 1 and 2','ЦИВ (DSC)':'DSC',
+ 'Радиостанции MF/HF':'MF/HF coast stations','Записей нет.':'No entries.',
+ 'Как удобнее':'As it suits','По новизне':'By newest','По номеру':'By number',
+ 'GEO 35 890 км':'GEO 35,890 km','MEO ~20 000 км':'MEO ~20,000 km','LEO ~850 км':'LEO ~850 km',
+ 'Например Cape':'For example Cape','Например Ballast Water Plan':'For example Ballast Water Plan',
+ 'Например Rev. 3, 2025':'For example Rev. 3, 2025','Например где хранится':'For example where it is kept',
+ 'Судовое,':'Ship time,','день':'day','ночь':'night','до':'to','м на':'m at','сут (':'d (','мес)':'mo)',
+ 'Настройка станции.':'A setting of the set.',
+ 'Частота тонального шумоподавителя.':'Tone squelch frequency.',
+ 'Ниже 1000 Гц слышнее слабые сигналы,':'Below 1000 Hz weak signals are more audible,',
+ 'выше -- меньше шума в динамике.':'above it there is less noise in the speaker.',
+ 'Назначение цифровых клавиш на':'Assignment of the numeric keys to',
+ 'быстрые команды дежурного экрана.':'shortcuts on the standby screen.',
+ 'Печать журнала на судовой принтер.':'Printing the log on the ship’s printer.',
+ 'По ГМССБ распечатка вызовов бедствия':'Under GMDSS the printout of distress calls',
+ 'хранится вместе с радиожурналом.':'is kept together with the radio log.',
+ 'Если приёмник отказал, позицию вводят':'If the receiver has failed, the position is entered',
+ 'вручную и обновляют не реже чем раз':'by hand and updated at least once',
+ 'в четыре часа -- иначе в тревоге уйдут':'every four hours, otherwise the alert will carry',
+ 'старые координаты.':'a stale position.',
+ 'Время, через которое станция сама':'The time after which the set returns',
+ 'возвращается на дежурный экран.':'to the standby screen by itself.',
+ 'Настройки приёмника: АРУ, аттенюатор,':'Receiver settings: AGC, attenuator,',
+ 'режим полосы.':'bandwidth mode.',
+ 'Вынос тревоги на мостик и в каюту':'Repeating the alarm to the bridge and to the',
+ 'капитана -- обязателен по ГМССБ.':'master’s cabin is required under GMDSS.',
+ 'Обмен с судовой сетью: приёмник GPS,':'Exchange with the ship’s network: GPS receiver,',
+ 'ЭКНИС, судовой журнал.':'ECDIS, deck log.',
+ 'Динамик дежурного приёма. Выключать':'The watch-receiver loudspeaker. Switching it off',
+ 'его на вахте нельзя.':'while on watch is not permitted.',
+ 'Трубка. Разговор после вызова ЦИВ':'The handset. Traffic after a DSC call',
+ 'идёт именно по ней.':'is passed on it.',
+ 'Самопрослушивание своей передачи.':'Side tone of your own transmission.',
+ 'Уровень низкой частоты. Ручкой VOLUME':'Audio level. The VOLUME knob',
+ 'на панели он же и крутится.':'on the panel adjusts the same thing.',
+ 'Тревога при приёме бедствия.':'Alarm on receipt of a distress alert.',
+ 'Отключить её штатно нельзя.':'It cannot be disabled by normal means.',
+ 'Звук при обычном вызове в свой адрес.':'Tone on an ordinary call addressed to you.',
+ 'Зуммер нажатия клавиш.':'Key-press buzzer.',
+ 'Сброс к заводским настройкам.':'Reset to factory settings.',
+ 'MMSI при этом не стирается.':'The MMSI is not erased by it.',
+ 'Свои каналы заводят под связь с':'User channels are set up for working with a',
+ 'конкретной береговой станцией или':'particular coast station or with the',
+ 'флотом компании. На тренажёре список':'company fleet. In the simulator the list is',
+ 'фиксированный.':'fixed.',
+ 'Здесь останется всё, что станция':'Everything the set has transmitted',
+ 'передала за рейс.':'during the voyage is kept here.',
+ 'Обычные принятые вызовы хранятся':'Ordinary received calls are kept',
+ 'до заполнения памяти, потом':'until the memory is full, then the',
+ 'затираются самыми старыми.':'oldest are overwritten first.',
+ 'Принятые вызовы бедствия хранятся':'Received distress alerts are kept',
+ 'отдельно и не стираются вахтенным.':'separately and cannot be erased by the watchkeeper.',
+ 'Подтверждение бедствия всегда ручное:':'A distress acknowledgement is always manual:',
+ 'первым его даёт береговой центр, а не':'the coast station gives it first, not the',
+ 'судно. Автоматический ответ на чужое':'ship. An automatic reply to another vessel’s',
+ 'бедствие правилами запрещён.':'distress alert is prohibited by the rules.',
+ 'В журнал ЦИВ время пишется всемирное.':'Times in the DSC log are written in UTC.',
+ 'Судовое время в радиожурнале не':'Ship time is not used in the',
+ 'используется.':'radio log.',
+ 'Контрольный тон подаётся в тракт':'The test tone is fed into the audio',
+ 'низкой частоты. Если его не слышно':'chain. If it cannot be heard',
+ 'в динамике и в трубке -- неисправен':'in the speaker and the handset, the fault is in the',
+ 'усилитель, а не приёмник.':'amplifier, not in the receiver.',
+ 'У судна первые три цифры -- код страны,':'For a ship the first three digits are the country code,',
+ 'у береговой станции первые две нули,':'for a coast station the first two are zeros,',
+ 'у группы -- ноль в начале.':'and for a group there is a single leading zero.',
+ 'Срочность (PAN PAN) и безопасность (SECURITE) на станции задаются полем PRIORITY,':
+   'Urgency (PAN PAN) and safety (SECURITE) are set on the radio by the PRIORITY field,',
+ 'а не отдельным типом сообщения. Тип отвечает только за то, кому уходит вызов.':
+   'not by a separate message type. The type only decides who the call goes to.',
+ '. Панель работает в упрощённом режиме. Пришли этот текст разработчику.':
+   '. The panel is running in reduced mode. Send this text to the developer.',
+ '. По ней считается время до заступления':'. Time until you go on watch is counted from it'
+});
+/* --- Составные строки, которые собираются в коде --- */
+Object.assign(DICT,{
+ 'Доброе утро, вахтенный.':'Good morning, Officer.',
+ 'Добрый день, вахтенный.':'Good afternoon, Officer.',
+ 'Добрый вечер, вахтенный.':'Good evening, Officer.',
+ 'Спокойной вахты, вахтенный.':'Steady as she goes, Officer.',
+ 'Раздел входит в Premium — ':'This section is part of Premium — ',
+ ' ⭐ в месяц, около 2 долларов.':' ⭐ per month, about two dollars.',
+ ' Первые ':' The first ',' дн. после установки всё открыто.':' days after installation everything is open.',
+ 'Координаты берутся с устройства':'Positions are taken from the device',
+ 'Предупреждения, станции и справочники сохраняются на устройстве — в рейсе приложение открывается и работает без сети. Расчёты работают всегда.':
+   'Warnings, stations and reference data are stored on the device — at sea the app opens and works without a connection. The calculations always work.',
+ '50 миль':'50 NM','150 миль':'150 NM','300 миль':'300 NM','500 миль':'500 NM',
+ 'Ширина коридора':'Corridor width'
+});
 const DICT_REV=Object.fromEntries(Object.entries(DICT).map(([k,v])=>[v,k]));
 let LANG=localStorage.getItem('navarea_lang')||'ru';
 
@@ -4212,13 +4766,16 @@ async function api(p){
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
+/* «Столько-то назад». Число и слово собираются раздельно и слово гоняется
+   через словарь: иначе строка вида «1 мин назад» целиком не находится в
+   словаре и остаётся по-русски при английском интерфейсе. */
 function ago(iso){
-  if(!iso) return 'нет данных';
+  if(!iso) return tr('нет данных');
   const d=(Date.now()-new Date(iso).getTime())/1000;
-  if(d<60) return 'только что';
-  if(d<3600) return Math.floor(d/60)+' мин назад';
-  if(d<86400) return Math.floor(d/3600)+' ч назад';
-  return Math.floor(d/86400)+' дн назад';
+  if(d<60) return tr('только что');
+  if(d<3600) return Math.floor(d/60)+' '+tr('мин назад');
+  if(d<86400) return Math.floor(d/3600)+' '+tr('ч назад');
+  return Math.floor(d/86400)+' '+tr('дн назад');
 }
 function countUp(el,to){
   const dur=680,t0=performance.now();
@@ -5706,6 +6263,12 @@ async function loadAccess(){
   return ACC;
 }
 const isPaid=()=>!!(ACC&&ACC.premium);
+/* Название тарифа сервер отдаёт на двух языках: в пробном периоде в нём
+   стоит число дней, и словарём приложения такую строку не перевести. */
+const accTitle=()=>{
+  if(!ACC) return '—';
+  return (LANG==='en'&&ACC.title_en) ? ACC.title_en : (ACC.title||'—');
+};
 const featureName=k=>((ACC&&ACC.paid_features)||{})[k]||'';
 
 function renderTrialBar(){
@@ -5752,8 +6315,8 @@ function gate(sectionId, feature){
   ov.className='lockover';
   ov.innerHTML=`<div class="li">${ico('star','lg')}</div>
     <div class="lt">${esc(featureName(feature))}</div>
-    <div class="ls">Раздел входит в Premium — ${ACC?ACC.price_stars:100} ⭐ в месяц, около 2 долларов.
-      Первые 14 дней после установки всё открыто.</div>
+    <div class="ls">Раздел входит в Premium — ${ACC?ACC.price_stars:100} ⭐ в месяц, около 2 долларов.${
+      (ACC&&ACC.trial_days>0)?' Первые '+ACC.trial_days+' дн. после установки всё открыто.':''}</div>
     <button class="btn" id="lockBtn">Что входит в Premium</button>`;
   el.appendChild(ov);
   const b=ov.querySelector('#lockBtn'); if(b) b.onclick=openPlans;
@@ -5788,7 +6351,7 @@ function openPlans(){
     </div>
     <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда — брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
   $('#tResults').innerHTML = isPaid()
-    ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(ACC?ACC.title:'')}</span></div>`
+    ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(accTitle())}</span></div>`
     : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>
        <div class="buystate" id="buyState"></div>`;
   $('#tool').classList.add('on');
@@ -6059,7 +6622,7 @@ const watchInfo=v=>WATCH_LIST.find(w=>w.v===v)||WATCH_LIST[0];
 function renderSettings(){
   const box=$('#settingsBox'); if(!box) return;
   const dark=!document.body.classList.contains('light');
-  const tier=ACC?ACC.title:'—';
+  const tier=accTitle();
   const price=ACC?ACC.price_stars:100;
   const cached=(()=>{ try{ const c=JSON.parse(localStorage.getItem(CK)||'null');
     return c&&c.at?ago(new Date(c.at).toISOString()):'нет'; }catch(e){ return 'нет'; } })();
@@ -6874,14 +7437,20 @@ function renderNotif(){
     box.innerHTML=`<div class="empty">${ico('star')}${esc(tr('Уведомлений пока нет.'))}</div>`;
     return;
   }
-  box.innerHTML=items.map((it,i)=>
-    `<button class="ntf ${it.unread?'new':''} ${it.urgent?'urgent':''}" data-ntf="${i}">
+  // Заголовки и тексты собираются на сервере с подставленными числами и
+  // названиями, поэтому он отдаёт их сразу на двух языках -- словарём
+  // приложения такую строку не перевести.
+  const pick=(ru,en)=>(LANG==='en'&&en)?en:ru;
+  box.innerHTML=items.map((it,i)=>{
+    const title=pick(it.title,it.title_en), body=pick(it.body,it.body_en);
+    return `<button class="ntf ${it.unread?'new':''} ${it.urgent?'urgent':''}" data-ntf="${i}">
        <span class="ic">${ico(NTF_ICON[it.kind]||'globe','sm')}</span>
-       <span class="tx"><span class="t1">${esc(it.title)}</span>
-         ${it.body?`<span class="t2">${esc(it.body)}</span>`:''}
+       <span class="tx"><span class="t1">${esc(title)}</span>
+         ${body?`<span class="t2">${esc(body)}</span>`:''}
          <span class="t3">${esc(ago(it.at))}</span></span>
        ${it.unread?'<span class="dot"></span>':''}
-     </button>`).join('');
+     </button>`;
+  }).join('');
   box.querySelectorAll('[data-ntf]').forEach(b=>b.onclick=()=>{
     const it=items[+b.dataset.ntf]; hap('medium');
     if(!it||!it.go) return;
@@ -10300,6 +10869,10 @@ $('#langBtn').onclick=()=>{
   tr._keys=null;
   localStorage.setItem('navarea_lang',LANG);
   hap('medium');
+  // Перерисовываем текущий раздел и шапку, а не только подменяем текст:
+  // строки, собранные в коде из кусков (дата, приветствие), иначе
+  // остались бы на прежнем языке.
+  try{ renderClock(); switchView(S.view); }catch(e){}
   applyLang();
 };
 $('#toolsHint').innerHTML=ico('alert','xs')+' Все расчёты выполняются прямо в приложении и работают без связи.';

@@ -294,11 +294,13 @@ def _api_access(query: dict) -> dict:
     user_id = _user_id_from_query(query)
     if not config.paywall_enabled:
         return {"tier": "open", "premium": True, "paywall": False,
-                "title": "Открытый доступ", "paid_features": PAID_FEATURES,
+                "title": "Открытый доступ", "title_en": "Open access",
+                "paid_features": PAID_FEATURES,
                 "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
 
     if user_id is None:
         return {"tier": "free", "premium": False, "paywall": True,
+                "title": "Бесплатный тариф", "title_en": "Free plan",
                 "paid_features": PAID_FEATURES,
                 "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
 

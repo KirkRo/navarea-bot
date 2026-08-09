@@ -68,30 +68,38 @@ def trial_state(db, user_id: int) -> dict:
 
 
 def access_state(db, user_id: int) -> dict:
-    """Полная картина доступа для интерфейса и проверок."""
+    """Полная картина доступа для интерфейса и проверок.
+
+    Название тарифа отдаём сразу на двух языках: в пробном периоде в него
+    входит число дней, и словарём приложения такую строку не перевести --
+    ключа с подставленным числом там быть не может."""
     if not config.paywall_enabled:
         # Режим отладки: тарифов нет, открыто всё и всем.
         return {"tier": "open", "premium": True, "trial": None,
-                "title": "Открытый доступ", "features": list(PAID_FEATURES)}
+                "title": "Открытый доступ", "title_en": "Open access",
+                "features": list(PAID_FEATURES)}
 
     if is_owner(user_id):
         return {"tier": "owner", "premium": True, "trial": None,
-                "title": "Доступ владельца", "features": list(PAID_FEATURES)}
+                "title": "Доступ владельца", "title_en": "Owner access",
+                "features": list(PAID_FEATURES)}
 
     if db.is_premium_active(user_id):
         user = db.get_user(user_id)
         return {"tier": "premium", "premium": True, "trial": None,
                 "until": getattr(user, "premium_until", None),
-                "title": "Premium", "features": list(PAID_FEATURES)}
+                "title": "Premium", "title_en": "Premium",
+                "features": list(PAID_FEATURES)}
 
     t = trial_state(db, user_id)
     if t["active"]:
         return {"tier": "trial", "premium": True, "trial": t,
                 "title": f"Пробный период, осталось {t['days_left']} дн.",
+                "title_en": f"Trial period, {t['days_left']} days left",
                 "features": list(PAID_FEATURES)}
 
     return {"tier": "free", "premium": False, "trial": t,
-            "title": "Бесплатный тариф", "features": []}
+            "title": "Бесплатный тариф", "title_en": "Free plan", "features": []}
 
 
 def is_effectively_premium(db, user_id: int) -> bool:

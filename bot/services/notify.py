@@ -28,16 +28,37 @@ logger = logging.getLogger(__name__)
 # Что нового в самом боте. Ведётся руками: строка сверху -- самая свежая.
 # Дата в ISO, по ней же считается «прочитано или нет».
 CHANGELOG = [
-    {"at": "2026-08-08T12:00:00+00:00", "title": "Ассистент научился брать данные сам",
+    {"at": "2026-08-09T02:00:00+00:00",
+     "title": "Полный английский интерфейс",
+     "title_en": "Full English interface",
+     "body": "Кнопка языка теперь переводит всё: своды сигналов, правила расхождения, "
+             "справочник ЦИВ, тренажёры EPIRB и SART, справку и единицы измерения.",
+     "body_en": "The language button now translates everything: the code of signals, the "
+                "COLREG summaries, the DSC reference, the EPIRB and SART simulators, the "
+                "help section and the units."},
+    {"at": "2026-08-08T12:00:00+00:00",
+     "title": "Ассистент научился брать данные сам",
+     "title_en": "The assistant now fetches data itself",
      "body": "Ask AI теперь сам достаёт погоду на переходе, предупреждения по маршруту, "
              "сводку циклонов и карточку судна. Появилась библиотека готовых сценариев "
-             "и режимы ответа: коротко, чек-лист, расчёт, аварийно."},
-    {"at": "2026-08-08T11:00:00+00:00", "title": "Тренажёр ПВ/КВ переделан",
+             "и режимы ответа: коротко, чек-лист, расчёт, аварийно.",
+     "body_en": "Ask AI now pulls the weather on passage, the warnings along the route, the "
+                "cyclone summary and the vessel card by itself. A library of ready prompts "
+                "and answer modes has been added: brief, checklist, calculation, emergency."},
+    {"at": "2026-08-08T11:00:00+00:00",
+     "title": "Тренажёр ПВ/КВ переделан",
+     "title_en": "The MF/HF simulator has been rebuilt",
      "body": "Меню станции как на настоящей FS-2575C, экраны COMPOSE и WATCH KEEPING, "
              "сканирование частот, режимы яркости BRILL и звук посылки ЦИВ. "
-             "Экран стал вдвое крупнее."},
-    {"at": "2026-08-08T10:00:00+00:00", "title": "Оплата подписки прямо в приложении",
-     "body": "Кнопка «Оформить» открывает окно оплаты Telegram, а не закрывает приложение."},
+             "Экран стал вдвое крупнее.",
+     "body_en": "The set’s menu as on a real FS-2575C, the COMPOSE and WATCH KEEPING screens, "
+                "frequency scanning, the BRILL brilliance modes and the sound of a DSC burst. "
+                "The display is twice the size."},
+    {"at": "2026-08-08T10:00:00+00:00",
+     "title": "Оплата подписки прямо в приложении",
+     "title_en": "Subscription payment inside the app",
+     "body": "Кнопка «Оформить» открывает окно оплаты Telegram, а не закрывает приложение.",
+     "body_en": "The Subscribe button opens the Telegram payment window instead of closing the app."},
 ]
 
 
@@ -99,7 +120,9 @@ def build_feed(db, user_id: int) -> dict:
             items.append({
                 "kind": "support",
                 "title": "Ответ поддержки",
+                "title_en": "Reply from support",
                 "body": (last["text"][:160] if last else "Есть новое сообщение"),
+                "body_en": (last["text"][:160] if last else "There is a new message"),
                 "at": (last["created_at"] if last else _iso(now)),
                 "go": "support",
                 "urgent": False,
@@ -116,8 +139,11 @@ def build_feed(db, user_id: int) -> dict:
             items.append({
                 "kind": "cert",
                 "title": ("Истёк срок: " if left < 0 else "Подходит срок: ") + str(c["name"]),
+                "title_en": ("Expired: " if left < 0 else "Expiring: ") + str(c["name"]),
                 "body": ("Просрочен на %d дн." % abs(left)) if left < 0
                         else ("Осталось %d дн., до %s" % (left, str(c["expires"])[:10])),
+                "body_en": ("Overdue by %d days" % abs(left)) if left < 0
+                           else ("%d days left, until %s" % (left, str(c["expires"])[:10])),
                 # Новым считается позднее из двух: когда срок пересёк рубеж
                 # и когда сертификат вообще завели. Иначе только что
                 # добавленный сертификат с близким сроком не подсветился бы:
@@ -142,8 +168,12 @@ def build_feed(db, user_id: int) -> dict:
                 "kind": "gmdss",
                 "title": ("Батарея %s просрочена" % name) if left < 0
                          else ("Батарея %s: замена" % name),
+                "title_en": ("%s battery overdue" % name) if left < 0
+                            else ("%s battery: replacement" % name),
                 "body": ("Просрочена на %d дн." % abs(left)) if left < 0
                         else ("Осталось %d дн., до %s" % (left, str(exp)[:10])),
+                "body_en": ("Overdue by %d days" % abs(left)) if left < 0
+                           else ("%d days left, until %s" % (left, str(exp)[:10])),
                 "at": _threshold_at(exp, (90, 30, 7, 1)),
                 "go": kind,
                 "urgent": left <= 30,
@@ -163,7 +193,9 @@ def build_feed(db, user_id: int) -> dict:
                 items.append({
                     "kind": "warning",
                     "title": "Новые предупреждения: %d" % total,
+                    "title_en": "New warnings: %d" % total,
                     "body": "За сегодня в твоих районах: " + where,
+                    "body_en": "Today in your areas: " + where,
                     # Сводка за сутки, поэтому и время у неё -- начало суток.
                     # Раньше здесь стояло «час назад», и запись снова
                     # становилась непрочитанной каждый час: человек читал
@@ -179,8 +211,11 @@ def build_feed(db, user_id: int) -> dict:
     try:
         for n in CHANGELOG:
             items.append({"kind": "release", "title": n["title"], "body": n["body"],
+                          "title_en": n.get("title_en"), "body_en": n.get("body_en"),
                           "at": n["at"], "go": None, "urgent": False})
         for n in db.get_notices(user_id, limit=20):
+            # Объявления владелец пишет на одном языке -- переводить их
+            # некому, поэтому отдаём как есть.
             items.append({"kind": n.get("kind") or "news", "title": n["title"],
                           "body": n.get("body") or "", "at": n["created_at"],
                           "go": None, "urgent": False})
@@ -190,7 +225,12 @@ def build_feed(db, user_id: int) -> dict:
     items.sort(key=lambda x: str(x.get("at") or ""), reverse=True)
     for it in items:
         at = _parse(it.get("at"))
-        it["unread"] = bool(at and at > seen)
+        # Непрочитанное -- то, что появилось после последнего просмотра и
+        # уже наступило. Верхняя граница обязательна: запись с датой в
+        # будущем (опечатка в объявлении) иначе всегда «новее» отметки о
+        # прочтении, и колокольчик горел бы вечно. Когда её время придёт,
+        # она станет непрочитанной сама.
+        it["unread"] = bool(at and seen < at <= now)
 
     return {
         "items": items[:40],
