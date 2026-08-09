@@ -164,7 +164,11 @@ def build_feed(db, user_id: int) -> dict:
                     "kind": "warning",
                     "title": "Новые предупреждения: %d" % total,
                     "body": "За сегодня в твоих районах: " + where,
-                    "at": _iso(now - timedelta(hours=1)),
+                    # Сводка за сутки, поэтому и время у неё -- начало суток.
+                    # Раньше здесь стояло «час назад», и запись снова
+                    # становилась непрочитанной каждый час: человек читал
+                    # ленту, выходил, возвращался -- и она опять горела.
+                    "at": _iso(now.replace(hour=0, minute=0, second=0, microsecond=0)),
                     "go": "areas",
                     "urgent": False,
                 })

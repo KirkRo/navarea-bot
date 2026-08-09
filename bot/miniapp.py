@@ -78,12 +78,36 @@ body::before{
   transition:transform .22s cubic-bezier(.34,1.6,.5,1);
 }
 .avatar:active{transform:scale(.9)}
-.avatar b{
+
+/* ---- Лампа переключения темы ----
+   Не абстрактная иконка, а палубный светильник: в тёмной теме он погашен,
+   в светлой -- горит. При нажатии видно, как нить накала разгорается. */
+.lamp{width:24px;height:24px;display:block}
+.lamp .glass{fill:rgba(207,224,242,.16);stroke:#9db6d4;stroke-width:1.4}
+.lamp .base{fill:#7f96ac}
+.lamp .fil{stroke:#8296aa;stroke-width:1.4;fill:none;transition:stroke .4s}
+.lamp .halo{fill:#ffd894;opacity:0;transition:opacity .4s}
+body.light .lamp .glass{fill:rgba(255,214,132,.5);stroke:#e0a13c}
+body.light .lamp .fil{stroke:#ff9d2e}
+body.light .lamp .halo{opacity:.55;animation:lampGlow 3.2s ease-in-out infinite}
+body.light .lamp .base{fill:#b98a3c}
+@keyframes lampGlow{0%,100%{opacity:.35}50%{opacity:.75}}
+
+/* ---- Огонёк состояния GPS ----
+   Переехал с кнопки темы на кнопку позиции: зелёный пульс -- место
+   получено, красный -- геопозиция выключена или недоступна. */
+.geobtn b{
   position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;
-  background:var(--ok);border:2.5px solid var(--bg);animation:beat 2.4s infinite;
+  background:var(--ok);border:2.5px solid var(--bg);animation:beatOk 2.2s infinite;
 }
-.avatar b.off{background:var(--hot);animation:none}
-@keyframes beat{0%,100%{box-shadow:0 0 0 0 rgba(63,201,127,.55)}70%{box-shadow:0 0 0 8px rgba(63,201,127,0)}}
+.geobtn b.off{background:var(--hot);animation:beatNo 1.4s infinite}
+.geobtn b.wait{background:var(--amber);animation:beatWait 1.1s infinite}
+@keyframes beatOk{0%,100%{box-shadow:0 0 0 0 rgba(63,201,127,.55)}70%{box-shadow:0 0 0 8px rgba(63,201,127,0)}}
+@keyframes beatNo{0%,100%{box-shadow:0 0 0 0 rgba(255,107,74,.6)}70%{box-shadow:0 0 0 7px rgba(255,107,74,0)}}
+@keyframes beatWait{0%,100%{box-shadow:0 0 0 0 rgba(240,160,60,.6)}70%{box-shadow:0 0 0 7px rgba(240,160,60,0)}}
+@media (prefers-reduced-motion: reduce){
+  .geobtn b,body.light .lamp .halo{animation:none}
+}
 
 /* ---- Поиск ---- */
 .srow{display:flex;gap:9px;margin-bottom:16px}
@@ -474,9 +498,10 @@ body.light .wkprompt{background:linear-gradient(180deg,#fff,#eef4fa);border-colo
   width:30px;height:30px;flex:none;border-radius:50%;display:flex;
   align-items:center;justify-content:center;font-size:15px;font-weight:800;
 }
-.wkprompt .tx{min-width:0}
+.wkprompt .tx{min-width:0;display:flex;flex-direction:column;gap:3px}
+.wkprompt .t1,.wkprompt .t2{display:block}
 .wkprompt .t1{font-size:10.5px;font-weight:800;line-height:1.2}
-.wkprompt .t2{font-size:8.5px;color:var(--muted);margin-top:3px;line-height:1.25}
+.wkprompt .t2{font-size:8.5px;color:var(--muted);line-height:1.25}
 
 /* --- сводка с мостика --- */
 .wksnap{
@@ -517,9 +542,10 @@ body.light .wkalert.ok{background:#e8f7f1;border-color:#a9dcc9}
   display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
 }
 .wkalert.ok .ic{background:#12463a;color:var(--green)}
-.wkalert .tx{flex:1;min-width:0}
+.wkalert .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.wkalert .t1,.wkalert .t2{display:block}
 .wkalert .t1{font-size:10.5px;font-weight:800}
-.wkalert .t2{font-size:8.5px;color:var(--muted);margin-top:3px}
+.wkalert .t2{font-size:8.5px;color:var(--muted);line-height:1.35}
 .wkalert .ar{font-size:17px;color:var(--muted);flex:none}
 
 /* --- кнопка ассистента --- */
@@ -1244,6 +1270,16 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   position:sticky;bottom:calc(66px + env(safe-area-inset-bottom));
   display:flex;gap:8px;padding:9px 0 4px;background:linear-gradient(180deg,transparent,var(--bg) 22%);
 }
+/* Пока открыта клавиатура, нижняя панель уезжает вниз вместе со страницей,
+   а не всплывает над клавиатурой: иначе она наезжает на поле ввода и на
+   последние сообщения. Строка ввода при этом остаётся на виду. */
+body.kbd .tabs{transform:translateY(140%);pointer-events:none}
+body.kbd{padding-bottom:14px}
+body.kbd .askbar{bottom:0}
+.tabs{transition:transform .18s ease}
+/* При выключенном движении панель просто убирается без проезда: плавность
+   тут украшение, а поведение должно остаться тем же. */
+@media (prefers-reduced-motion: reduce){ .tabs{transition:none} }
 .askinput{
   flex:1;min-width:0;background:var(--surf);border:1px solid var(--line);color:var(--text);
   border-radius:var(--r-md);padding:13px 15px;font-size:15px;font-family:inherit;outline:none;
@@ -1600,16 +1636,35 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 }
 .ntf.new{border-color:rgba(70,184,255,.4);background:linear-gradient(150deg,rgba(70,184,255,.09),var(--surf))}
 .ntf .ic{
-  width:30px;height:30px;flex:none;border-radius:50%;display:flex;
+  width:32px;height:32px;flex:none;border-radius:50%;display:flex;position:relative;
   align-items:center;justify-content:center;background:var(--surf2);color:var(--blue);
 }
-.ntf .ic .ico{width:15px;height:15px;margin:0}
+.ntf .ic .ico{width:15px;height:15px;margin:0;position:relative;z-index:2}
 .ntf.urgent .ic{background:rgba(255,107,74,.16);color:var(--hot)}
-.ntf .tx{flex:1;min-width:0}
+/* Непрочитанное пульсирует: расходящееся кольцо и лёгкое дыхание самой
+   иконки. Прочитанное стоит спокойно -- иначе в ленте рябит всё сразу. */
+.ntf .ic::after{
+  content:'';position:absolute;inset:0;border-radius:50%;z-index:1;
+  border:2px solid currentColor;opacity:0;
+}
+.ntf.new .ic::after{animation:ntfRing 2.4s ease-out infinite}
+.ntf.new .ic{animation:ntfBreath 2.4s ease-in-out infinite}
+.ntf.new.urgent .ic::after,.ntf.new.urgent .ic{animation-duration:1.3s}
+@keyframes ntfRing{0%{transform:scale(1);opacity:.55}70%{transform:scale(1.65);opacity:0}100%{opacity:0}}
+@keyframes ntfBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+/* Заголовок и текст -- разными строками: до этого оба были строчными
+   элементами и слипались в одну строку. */
+.ntf .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ntf .t1,.ntf .t2,.ntf .t3{display:block}
 .ntf .t1{font-size:13.5px;font-weight:750;line-height:1.3}
-.ntf .t2{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
-.ntf .t3{font-size:10px;color:var(--dim);margin-top:5px}
-.ntf .dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none;margin-top:6px}
+.ntf .t2{font-size:11.5px;color:var(--muted);line-height:1.45}
+.ntf .t3{font-size:10px;color:var(--dim);margin-top:2px}
+.ntf .dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none;margin-top:6px;
+  animation:ntfBreath 1.8s ease-in-out infinite}
+.ntf.urgent .dot{background:var(--hot)}
+@media (prefers-reduced-motion: reduce){
+  .ntf.new .ic,.ntf.new .ic::after,.ntf .dot{animation:none}
+}
 
 /* ---- Мои порты ---- */
 .pcard{
@@ -1621,10 +1676,11 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   color:var(--amber);font-size:12px;font-weight:800;
   display:flex;align-items:center;justify-content:center;
 }
-.pcard .tx{flex:1;min-width:0}
+.pcard .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pcard .t1,.pcard .t2{display:block}
 .pcard .t1{font-size:14.5px;font-weight:750}
-.pcard .t2{font-size:11.5px;color:var(--muted);margin-top:3px}
-.pcard .t3{font-size:11px;color:var(--sea);margin-top:4px;display:flex;align-items:center;gap:5px}
+.pcard .t2{font-size:11.5px;color:var(--muted);line-height:1.35}
+.pcard .t3{font-size:11px;color:var(--sea);margin-top:2px;display:flex;align-items:center;gap:5px}
 .pcard .acts{display:flex;flex-direction:column;gap:5px;flex:none}
 .pact{
   width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--surf2);
@@ -1664,10 +1720,20 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
   color:var(--sea);cursor:pointer;font-family:inherit;
 }
 .wxmap:active{border-color:var(--sea)}
+/* Карта соразмерна окну Mini App, а не «сколько влезет»: на телефоне это
+   примерно треть высоты. И её всегда можно закрыть -- внутри самой Windy
+   кнопки закрытия нет. */
+.wxwrap{position:relative;margin-top:11px}
 .wxembed{
-  width:100%;height:290px;border:1px solid var(--line);border-radius:var(--r-md);
-  margin-top:11px;background:var(--surf2);
+  display:block;width:100%;height:clamp(180px,38vh,320px);
+  border:1px solid var(--line);border-radius:var(--r-md);background:var(--surf2);
 }
+.wxclose{
+  position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;border-radius:50%;
+  background:rgba(9,20,32,.86);border:1px solid var(--line);color:#fff;font-size:16px;
+  line-height:1;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
+}
+.wxnote{font-size:10px;color:var(--dim);margin-top:6px;text-align:center}
 
 /* ---- Справка ---- */
 .faqcat{margin-bottom:9px;border:1px solid var(--line);border-radius:var(--r-md);
@@ -1704,6 +1770,16 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 .supmsg .who{font-size:9.5px;font-weight:800;letter-spacing:.4px;color:var(--muted);
   text-transform:uppercase;margin-bottom:4px}
 .supmsg.owner .who{color:var(--sea)}
+
+/* ---- Три часа в настройках ---- */
+.clocks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.clk{
+  background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:9px 6px;text-align:center;
+}
+.clk b{display:block;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.clk span{display:block;font-size:9px;color:var(--muted);margin-top:3px;
+  text-transform:uppercase;letter-spacing:.5px}
 
 
 
@@ -1985,7 +2061,15 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   <div class="hdrtools">
     <button class="geobtn" id="geoBtn" title="Позиция с устройства"></button>
     <button class="langbtn" id="langBtn">RU</button>
-    <div class="avatar" id="themeBtn"><b id="liveDot"></b></div>
+    <div class="avatar" id="themeBtn" title="Тема оформления" data-notr>
+      <svg class="lamp" viewBox="0 0 24 24" aria-hidden="true">
+        <circle class="halo" cx="12" cy="10" r="9"/>
+        <path class="glass" d="M12 3a6 6 0 0 0-3.6 10.8V16h7.2v-2.2A6 6 0 0 0 12 3z"/>
+        <path class="fil" d="M10 10.5 11 8.5 12 10.5 13 8.5 14 10.5"/>
+        <rect class="base" x="9.4" y="16.6" width="5.2" height="1.6" rx=".7"/>
+        <rect class="base" x="9.4" y="19" width="5.2" height="1.6" rx=".7"/>
+      </svg>
+    </div>
     <span class="hello" id="hello"></span>
     <span class="hello" id="buildId" style="font-size:9px;opacity:.5"></span>
   </div>
@@ -2010,7 +2094,9 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <!-- Судно и приветствие -->
     <div class="wkhero" id="hero">
       <div class="art" data-notr>
-        <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <!-- xMidYMax: низ кадра всегда прижат к низу карточки, поэтому море
+             доходит до края, а не обрывается посередине -->
+        <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
           <defs>
             <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stop-color="#071a2c"/><stop offset=".55" stop-color="#12406b"/>
@@ -2122,16 +2208,25 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
             </g>
           </g>
 
-          <!-- море -->
-          <rect y="130" width="400" height="70" fill="url(#hSea)"/>
+          <!-- море от линии горизонта и до низа кадра -->
+          <rect y="132" width="400" height="68" fill="url(#hSea)"/>
           <!-- лунная дорожка -->
-          <path class="shimmer" d="M214 132 L244 132 L268 200 L190 200 Z" fill="#ffd894" opacity=".2"/>
+          <path class="shimmer" d="M216 133 L242 133 L272 200 L186 200 Z" fill="#ffd894" opacity=".18"/>
+          <!-- дальняя зыбь у горизонта: почти неподвижная, даёт глубину -->
+          <g class="waveA" opacity=".55">
+            <path d="M-100 141 q25 -3 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 v8 h-600 z"
+                  fill="#15547f"/>
+          </g>
 
-          <!-- судно на ходу -->
+          <!-- судно: идёт по воде между дальней и средней волной -->
           <g class="shipGo">
-            <g class="shipRoll" transform="translate(0,138)">
-              <path d="M8 16 L64 16 L70 24 L2 24 Z" fill="#132f47"/>
-              <path d="M8 16 L64 16 L63 18 L9 18 Z" fill="#1d4668"/>
+            <g class="shipRoll" transform="translate(0,131)">
+              <!-- отражение в воде -->
+              <path d="M6 27 L66 27 L60 36 L12 36 Z" fill="#0a2f4e" opacity=".45"/>
+              <!-- корпус -->
+              <path d="M6 16 L66 16 L60 26 L12 26 Z" fill="#132f47"/>
+              <path d="M6 16 L66 16 L65.4 18 L6.6 18 Z" fill="#25577f"/>
+              <!-- надстройка и груз -->
               <rect x="46" y="6" width="16" height="10" rx="1" fill="#1b3f5e"/>
               <rect x="49" y="8.5" width="3" height="3" fill="#cfe6fb" opacity=".9"/>
               <rect x="55" y="8.5" width="3" height="3" fill="#cfe6fb" opacity=".9"/>
@@ -2140,25 +2235,29 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
               <rect x="34" y="10" width="7" height="6" fill="#26506f"/>
               <rect x="14" y="4" width="7" height="6" fill="#2f5f82"/>
               <rect x="24" y="4" width="7" height="6" fill="#2c5a7d"/>
+              <!-- мачта и огни -->
               <path d="M57 6 L57 -4" stroke="#8fa8c0" stroke-width="1.4"/>
               <circle class="mastFlash" cx="57" cy="-5" r="1.8" fill="#ffffff"/>
-              <circle class="navGreen" cx="68" cy="19" r="1.7" fill="#3fc97f"/>
-              <circle class="navRed" cx="4" cy="19" r="1.7" fill="#ff5c65"/>
-              <path d="M2 24 Q36 30 70 24 Q36 33 2 24 Z" fill="#0d3557" opacity=".85"/>
+              <circle class="navGreen" cx="64" cy="20" r="1.7" fill="#3fc97f"/>
+              <circle class="navRed" cx="8" cy="20" r="1.7" fill="#ff5c65"/>
+              <!-- бурун у форштевня и кильватерный след -->
+              <path d="M60 26 q7 1 11 4 q-6 1 -12 -1 z" fill="#cfe6fb" opacity=".5"/>
+              <path d="M12 26 q-9 2 -16 5 q10 1 18 -2 z" fill="#cfe6fb" opacity=".35"/>
             </g>
           </g>
 
-          <!-- волны: три слоя, каждый со своей скоростью -->
+          <!-- волны: три слоя, ближние идут быстрее и перекрывают корпус,
+               поэтому судно сидит в воде, а не висит над ней -->
           <g class="waveA">
-            <path d="M-100 150 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 v60 h-600 z"
-                  fill="#0f4269" opacity=".85"/>
+            <path d="M-100 152 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 v60 h-600 z"
+                  fill="#0f4269" opacity=".9"/>
           </g>
           <g class="waveB">
-            <path d="M-130 162 q30 -7 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v50 h-660 z"
-                  fill="#0b3151" opacity=".9"/>
+            <path d="M-130 166 q30 -7 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 v50 h-660 z"
+                  fill="#0b3151" opacity=".95"/>
           </g>
           <g class="waveC">
-            <path d="M-80 176 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 v40 h-560 z"
+            <path d="M-80 182 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 v40 h-560 z"
                   fill="#071f36"/>
           </g>
         </svg>
@@ -3856,6 +3955,21 @@ Object.assign(DICT,{
  'Поддержка работает только внутри Telegram — открой приложение кнопкой в чате с ботом.':
    'Support works only inside Telegram — open the app from the chat with the bot.',
  'Найти в справке…':'Search the help…',
+ 'Инструменты рейса':'Voyage tools','Свернуть инструменты рейса':'Hide voyage tools',
+ 'Скорость для ETA':'Speed for ETA','Погода по всем портам':'Weather for all ports',
+ 'Рекомендации по переходу':'Passage guidance','Скорость для расчёта ETA':'Speed used for ETA',
+ 'узлах':'knots','сут':'days','на весь переход':'for the whole passage',
+ 'В пути на':'Underway at','Планируемый приход':'Planned arrival',
+ 'Груз, агент, бункеровка':'Cargo, agent, bunkers',
+ 'Порты захода в этом контракте. Список подставляется в погоду, проверку рейса и в ответы ассистента.':
+   'Ports of call for this contract. The list feeds weather, voyage checks and the assistant.',
+ 'Время в шапке':'Header clock','Всемирное координированное':'Coordinated universal time',
+ 'Как на телефоне':'Same as the phone','Судовое':'Ship time','Судовое, ':'Ship time, ',
+ 'Какое время показывать':'Which time to show','Пояс судового времени':'Ship time zone',
+ 'Переводится приказом по судну, а не телефоном':'Set by the master’s order, not by the phone',
+ 'судовое':'ship','телефон':'phone',
+ 'Полная карта со шкалой времени — по кнопке Windy выше':
+   'Full map with the time bar — use the Windy button above',
  'Ничего не нашлось. Спроси в поддержке — отвечу и добавлю в справку.':
    'Nothing found. Ask support — I will answer and add it here.',
  'все данные подставлены':'all data filled in',
@@ -4136,7 +4250,7 @@ async function load(spin){
     saveCache();
   }catch(e){S.offline=true}
   $('#offline').classList.toggle('on',S.offline);
-  $('#liveDot').className=S.offline?'off':'';
+  renderGeoBtn();
   render();
 }
 
@@ -4277,15 +4391,10 @@ function rememberCalc(id){
 
 function renderClock(){
   const c=$('#hdrClock'), d=$('#hdrDate'); if(!c) return;
-  const n=new Date();
-  const hh=String(TIME_UTC?n.getUTCHours():n.getHours()).padStart(2,'0');
-  const mm=String(TIME_UTC?n.getUTCMinutes():n.getMinutes()).padStart(2,'0');
-  c.innerHTML=`${hh}:${mm}<span>${TIME_UTC?'UTC':'LT'}</span>`;
-  if(d){
-    const day=TIME_UTC?n.getUTCDate():n.getDate();
-    const mon=DP_MON_SHORT[TIME_UTC?n.getUTCMonth():n.getMonth()];
-    d.textContent=`${day} ${tr(mon)} ${TIME_UTC?n.getUTCFullYear():n.getFullYear()}`;
-  }
+  const t=nowIn();
+  c.innerHTML=`${String(t.getUTCHours()).padStart(2,'0')}:${
+    String(t.getUTCMinutes()).padStart(2,'0')}<span>${TIME_LABEL[TIME_MODE]||'UTC'}</span>`;
+  if(d) d.textContent=`${t.getUTCDate()} ${tr(DP_MON_SHORT[t.getUTCMonth()])} ${t.getUTCFullYear()}`;
 }
 
 function greetWord(){
@@ -4313,7 +4422,9 @@ function renderHero(){
     : `<span class="dot off"></span>
        <span class="lb">МОЁ СУДНО</span>
        <span class="nm">${esc(tr('карточка не заполнена'))}</span>`;
-  box.onclick=()=>{ hap(); switchGroup('profile'); };
+  // Прямо в карточку судна, а не в «последний открытый раздел профиля»:
+  // раньше отсюда уводило в настройки, если человек был там в прошлый раз.
+  box.onclick=()=>{ hap('medium'); switchView('ship'); };
 }
 
 /* Четыре подсказки ассистента вместо таблицы инструментов */
@@ -4980,7 +5091,8 @@ function switchView(v){
   if(v==='voy') gate('#v-voy','voyage');
   if(v==='ports'){ if(gate('#v-ports','voyage')) loadPorts(); }
   if(v==='faq') renderFaq();
-  if(v==='support'){ loadSupport(); setTimeout(bindSupportInput,60); }
+  if(v!=='support') supPollStop();
+  if(v==='support'){ loadSupport(); setTimeout(bindSupportInput,60); supPollStart(); }
   if(v==='notif'){ renderNotif(); loadNotifications().then(markNotifSeen); }
   if(v==='zones') renderZones();
   if(v==='map') setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
@@ -6008,9 +6120,21 @@ function renderSettings(){
         <span class="rtag am">${COORD_FMT==='dec'?'12.3456°':'12-20.7N'}</span>
       </div>
       <div class="sw" data-set="tz">
-        <div style="min-width:0"><div class="t">${ico('clock','sm')}Время</div>
-          <div class="d">Судовое или всемирное координированное</div></div>
-        <span class="rtag am">${TIME_UTC?'UTC':'судовое'}</span>
+        <div style="min-width:0"><div class="t">${ico('clock','sm')}Время в шапке</div>
+          <div class="d">${esc(tr(TIME_MODE==='utc'?'Всемирное координированное'
+            :TIME_MODE==='ship'?'Судовое, '+tzText(SHIP_TZ):'Как на телефоне'))}</div></div>
+        <span class="rtag am">${TIME_LABEL[TIME_MODE]}</span>
+      </div>
+      ${TIME_MODE==='ship'?`
+      <div class="sw" data-set="shiptz">
+        <div style="min-width:0"><div class="t">${ico('globe','sm')}Пояс судового времени</div>
+          <div class="d">Переводится приказом по судну, а не телефоном</div></div>
+        <span class="rtag am">${esc(tzText(SHIP_TZ))}</span>
+      </div>`:''}
+      <div class="clocks">
+        <div class="clk"><b>${clockHM('utc')}</b><span>UTC</span></div>
+        <div class="clk"><b>${clockHM('ship')}</b><span>${esc(tr('судовое'))}</span></div>
+        <div class="clk"><b>${clockHM('phone')}</b><span>${esc(tr('телефон'))}</span></div>
       </div>
     </div>
 
@@ -6124,8 +6248,30 @@ function renderSettings(){
   };
   const tz=box.querySelector('[data-set="tz"]');
   if(tz) tz.onclick=()=>{
-    TIME_UTC=!TIME_UTC; localStorage.setItem('navarea_timeutc',TIME_UTC?'1':'0');
-    hap('medium'); renderSettings();
+    pickOpen('Какое время показывать',[
+      {v:'utc',  t:'UTC', s:'Всемирное координированное, им ведётся радиожурнал'},
+      {v:'ship', t:'Судовое', s:'Пояс задаёшь сам: '+tzText(SHIP_TZ)},
+      {v:'phone',t:'Как на телефоне', s:'Пояс из настроек устройства'}
+    ], TIME_MODE, v=>{
+      TIME_MODE=v; TIME_UTC=(v==='utc');
+      localStorage.setItem('navarea_timemode',v);
+      localStorage.setItem('navarea_timeutc',TIME_UTC?'1':'0');
+      // Часы в шапке перерисовываем сразу: раньше время менялось только
+      // после перезахода в приложение.
+      renderClock(); renderSettings();
+      if(S.view==='dash') renderDash();
+    });
+  };
+  const stz=box.querySelector('[data-set="shiptz"]');
+  if(stz) stz.onclick=()=>{
+    const opts=[];
+    for(let h=-12;h<=14;h+=0.5){
+      opts.push({v:String(h), t:tzText(h), s:'Судовое '+clockHM0(h)});
+    }
+    pickOpen('Пояс судового времени', opts, String(SHIP_TZ), v=>{
+      SHIP_TZ=parseFloat(v); localStorage.setItem('navarea_shiptz',v);
+      renderClock(); renderSettings();
+    });
   };
   [['ntf_new','warn'],['ntf_cert','cert'],['ntf_gmdss','gmdss']].forEach(([sel,key])=>{
     const el=box.querySelector('[data-set="'+sel+'"]');
@@ -6767,11 +6913,18 @@ async function portAction(qs){
   try{ PORTS=await api('/api/my-ports?'+qs); }catch(e){}
   renderPorts();
 }
+/* По умолчанию здесь просто список портов контракта -- ради него раздел и
+   заведён. Всё остальное (расстояния, ETA, предупреждения, рекомендации
+   по переходу) убрано под кнопку: нужно это не каждый раз, а список нужен
+   всегда. */
+let PORT_TOOLS=false, PORT_EDIT=null;
+let PORT_SPEED=parseFloat(localStorage.getItem('navarea_portspeed'))||null;
+
 function renderPorts(){
   const box=$('#portsBox'); if(!box) return;
   const hint=$('#portsHint');
   if(hint) hint.innerHTML=ico('alert','xs')+' '+
-    esc(tr('Список портов захода. По нему считается переход, проверяются предупреждения и берётся погода.'));
+    esc(tr('Порты захода в этом контракте. Список подставляется в погоду, проверку рейса и в ответы ассистента.'));
 
   if(PORTS_BUSY&&!PORTS){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
   if(!PORTS){ box.innerHTML=''; return; }
@@ -6785,19 +6938,21 @@ function renderPorts(){
 
   let h='';
   list.forEach((p,i)=>{
-    if(i>0){
+    if(PORT_TOOLS&&i>0){
       h+=`<div class="pleg">${ico('route','xs')}
         <span>${p.leg_nm!=null?p.leg_nm+' '+tr('миль'):tr('расстояние не посчитано')}
-        ${p.legs&&p.legs.length?' · '+esc(p.legs.join(', ')):''}</span></div>`;
+        ${p.legs&&p.legs.length?' · '+esc(p.legs.join(', ')):''}
+        ${(PORT_SPEED&&p.leg_nm!=null)?' · '+hhmm(p.leg_nm/PORT_SPEED):''}</span></div>`;
     }
     h+=`<div class="pcard">
       <span class="num">${i+1}</span>
-      <span class="tx">
+      <span class="tx" data-pedit="${p.id}">
         <span class="t1">${esc(p.name)}</span>
         <span class="t2">${esc(p.country||'')}${p.eta?' · ETA '+esc(p.eta):''}</span>
         ${p.note?`<span class="t2">${esc(p.note)}</span>`:''}
-        ${p.lat!=null?`<span class="t3">${ico('wave','xs')}<a data-pwx="${i}">${esc(tr('Погода в порту'))} →</a></span>`
-                     :`<span class="t3">${esc(tr('порт не найден в справочнике'))}</span>`}
+        ${PORT_TOOLS&&p.lat!=null
+          ? `<span class="t3">${ico('wave','xs')}<a data-pwx="${i}">${esc(tr('Погода в порту'))} →</a></span>`
+          : (p.lat==null?`<span class="t3">${esc(tr('порт не найден в справочнике'))}</span>`:'')}
       </span>
       <span class="acts">
         <button class="pact" data-pup="${p.id}" aria-label="Выше">↑</button>
@@ -6805,14 +6960,32 @@ function renderPorts(){
         <button class="pact del" data-pdel="${p.id}" aria-label="Удалить">×</button>
       </span>
     </div>`;
-    if(PORT_WX[p.id]) h+=portWxHtml(PORT_WX[p.id], p.id);
+    if(PORT_TOOLS&&PORT_WX[p.id]) h+=portWxHtml(PORT_WX[p.id], p.id);
   });
 
-  if(PORTS.total_nm){
-    h+=`<div class="ptotal"><span>${esc(tr('Весь переход'))}</span><b>${PORTS.total_nm} ${esc(tr('миль'))}</b></div>`;
+  h+=`<button class="showall" id="portTools">${
+    PORT_TOOLS?esc(tr('Свернуть инструменты рейса')):esc(tr('Инструменты рейса'))}</button>`;
+
+  if(PORT_TOOLS){
+    if(PORTS.total_nm){
+      h+=`<div class="ptotal"><span>${esc(tr('Весь переход'))}</span>
+        <b>${PORTS.total_nm} ${esc(tr('миль'))}</b></div>`;
+      if(PORT_SPEED){
+        h+=`<div class="ptotal"><span>${esc(tr('В пути на'))} ${PORT_SPEED} ${esc(tr('узлах'))}</span>
+          <b>${Math.round(PORTS.total_nm/PORT_SPEED/24*10)/10} ${esc(tr('сут'))}</b></div>`;
+      }
+    }
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="btn g" style="flex:1;min-width:150px" id="portSpeed">${
+        esc(tr('Скорость для ETA'))}${PORT_SPEED?' · '+PORT_SPEED:''}</button>
+      <button class="btn g" style="flex:1;min-width:150px" id="portsWx">${esc(tr('Погода по всем портам'))}</button>
+    </div>
+    <button class="btn wide" style="margin-top:8px" id="portsCheck">${
+      esc(tr('Проверить предупреждения по рейсу'))}</button>
+    <button class="btn g wide" style="margin-top:8px" id="portsPassage">${
+      esc(tr('Рекомендации по переходу'))}</button>
+    <div id="portsVoy"></div>`;
   }
-  h+=`<button class="btn wide" id="portsCheck">${esc(tr('Проверить предупреждения по рейсу'))}</button>`;
-  h+=`<div id="portsVoy"></div>`;
 
   box.innerHTML=h;
   box.querySelectorAll('[data-pup]').forEach(b=>b.onclick=()=>{ hap(); portAction('action=move&dir=up&id='+b.dataset.pup); });
@@ -6821,17 +6994,96 @@ function renderPorts(){
     if(!confirm(tr('Убрать порт из рейса?'))) return;
     hap('medium'); portAction('action=del&id='+b.dataset.pdel);
   });
+  box.querySelectorAll('[data-pedit]').forEach(el=>el.onclick=()=>{
+    const p=list.find(x=>x.id===+el.dataset.pedit); if(p) openPortEditor(p);
+  });
   box.querySelectorAll('[data-pwx]').forEach(a=>a.onclick=()=>{
     const p=list[+a.dataset.pwx]; hap('medium'); loadPortWeather(p);
   });
   bindWxMaps(box);
+
+  const tg=$('#portTools');
+  if(tg) tg.onclick=()=>{ PORT_TOOLS=!PORT_TOOLS; hap(); renderPorts(); };
+  const sp=$('#portSpeed');
+  if(sp) sp.onclick=()=>{
+    const opts=[];
+    for(let v=6;v<=22;v++) opts.push({v:String(v),t:v+' '+tr('узлов'),
+      s:PORTS.total_nm?Math.round(PORTS.total_nm/v/24*10)/10+' '+tr('сут')+' '+tr('на весь переход'):''});
+    pickOpen('Скорость для расчёта ETA', opts, String(PORT_SPEED||''), v=>{
+      PORT_SPEED=+v; localStorage.setItem('navarea_portspeed',v); renderPorts();
+    });
+  };
+  const wx=$('#portsWx');
+  if(wx) wx.onclick=async()=>{
+    hap('medium');
+    for(const p of list){ if(p.lat!=null&&!PORT_WX[p.id]) await loadPortWeather(p); }
+  };
   const chk=$('#portsCheck');
   if(chk) chk.onclick=()=>{
-    const a=list[0], b=list[list.length-1];
     if(list.length<2){ alert(tr('Нужны хотя бы два порта.')); return; }
-    hap('medium'); askOpenRoute(a.name, b.name);
+    hap('medium'); askOpenRoute(list[0].name, list[list.length-1].name);
+  };
+  const pass=$('#portsPassage');
+  if(pass) pass.onclick=()=>{
+    if(list.length<2){ alert(tr('Нужны хотя бы два порта.')); return; }
+    hap('medium');
+    askFromHome('Дай рекомендации по океанскому переходу '+list[0].name+' — '+
+      list[list.length-1].name+' по Ocean Passages for the World: рекомендованный путь, '+
+      'сезонные соображения, течения и ветры, чего избегать.');
   };
   applyLang();
+}
+
+/* Правка порта: время прихода и заметка. Открывается тапом по названию. */
+function openPortEditor(p){
+  hap('medium');
+  PORT_EDIT=p.id;
+  $('#tName').textContent=p.name;
+  { const b=$('#tBackTitle'); if(b) b.textContent=tr('Мои порты'); }
+  $('#tDesc').textContent=p.country||'';
+  $('#tIcon').innerHTML=ico('anchor','lg');
+  $('#tFields').innerHTML=`
+    <div class="fld"><label>${esc(tr('Планируемый приход'))}</label>
+      <button type="button" class="datefield" id="peEta" data-iso="${esc(portEtaIso(p.eta))}">
+        <span class="dv ${p.eta?'':'none'}">${p.eta?esc(p.eta):esc(tr('Не задана'))}</span>
+        <span class="dico">${ico('clock','sm')}</span>
+      </button></div>
+    <div class="fld"><label>${esc(tr('Заметка'))}</label>
+      <input class="tinput" id="peNote" value="${esc(p.note||'')}"
+        placeholder="${esc(tr('Груз, агент, бункеровка'))}"></div>`;
+  $('#tResults').innerHTML=`<button class="btn wide" id="peSave">${esc(tr('Сохранить'))}</button>`;
+  $('#peEta').onclick=()=>{
+    const b=$('#peEta');
+    dpOpen(b.dataset.iso||'', 'Планируемый приход', iso=>{
+      b.dataset.iso=iso;
+      const v=b.querySelector('.dv');
+      v.className='dv'+(iso?'':' none');
+      v.textContent=iso?dpHuman(iso):tr('Не задана');
+    });
+  };
+  $('#peSave').onclick=()=>{
+    const iso=$('#peEta').dataset.iso||'';
+    const note=$('#peNote').value.trim();
+    hap('medium');
+    portAction('action=edit&id='+p.id+'&eta='+encodeURIComponent(iso?dpHuman(iso):'')
+      +'&note='+encodeURIComponent(note));
+    closeTool();
+  };
+  $('#tBack').textContent=tr('Отмена');
+  $('#tool').classList.add('on');
+  document.body.style.overflow='hidden';
+  curTool=null;
+  applyLang();
+}
+/* Обратный разбор «10 Июл 2028» в ISO -- чтобы календарь открылся на той
+   же дате, что уже записана. */
+function portEtaIso(text){
+  if(!text) return '';
+  const m=/^(\d{1,2})\s+([^\s]+)\s+(\d{4})/.exec(String(text));
+  if(!m) return '';
+  const i=DP_MON_SHORT.findIndex(x=>tr(x)===m[2]||x===m[2]);
+  if(i<0) return '';
+  return dpIso(+m[3], i, +m[1]);
 }
 
 /* ---- Погода в порту: свои цифры плюс карты Windy и Ventusky ---- */
@@ -6883,12 +7135,23 @@ function bindWxMaps(root){
     hap('medium');
     const card=b.closest('.wxcard'); if(!card) return;
     const holder=card.querySelector('[id^="wxe"]'); if(!holder) return;
-    if(holder.firstChild){ holder.innerHTML=''; return; }
+    if(holder.firstChild){ holder.innerHTML=''; b.classList.remove('on'); return; }
+    b.classList.add('on');
+    const wrap=document.createElement('div');
+    wrap.className='wxwrap';
     const f=document.createElement('iframe');
     f.className='wxembed'; f.src=b.dataset.wxembed;
     f.setAttribute('loading','lazy');
     f.setAttribute('referrerpolicy','no-referrer');
-    holder.appendChild(f);
+    const x=document.createElement('button');
+    x.className='wxclose'; x.textContent='×'; x.setAttribute('aria-label','Закрыть карту');
+    x.onclick=()=>{ hap(); holder.innerHTML=''; b.classList.remove('on'); };
+    wrap.appendChild(f); wrap.appendChild(x);
+    holder.appendChild(wrap);
+    const note=document.createElement('div');
+    note.className='wxnote';
+    note.textContent=tr('Полная карта со шкалой времени — по кнопке Windy выше');
+    holder.appendChild(note);
   });
 }
 
@@ -7094,6 +7357,28 @@ function bindSupportInput(){
   if(btn) btn.onclick=go;
   if(inp) inp.onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); go(); } };
 }
+
+/* Ответ приходит не по нажатию кнопки, а когда его напишут, поэтому пока
+   раздел открыт -- тихо перечитываем переписку. Раньше ответ появлялся
+   только после перезахода в приложение.
+   Опрос идёт лишь на своём экране и при видимой вкладке: в рейсе канал
+   спутниковый, гонять запросы в фоне незачем. */
+let SUP_POLL=null;
+function supPollStart(){
+  supPollStop();
+  SUP_POLL=setInterval(async()=>{
+    if(S.view!=='support'||document.hidden){ supPollStop(); return; }
+    if(SUP_BUSY) return;
+    try{
+      const fresh=await api('/api/support?action=seen');
+      const was=(SUP&&SUP.messages||[]).length;
+      SUP=fresh;
+      if((fresh.messages||[]).length>was){ hap('medium'); paintBell(); }
+      renderSupport();
+    }catch(e){}
+  }, 7000);
+}
+function supPollStop(){ if(SUP_POLL){ clearInterval(SUP_POLL); SUP_POLL=null; } }
 
 
 /* ================= Тренажёр ЦИВ (DSC) =================
@@ -8327,7 +8612,46 @@ function dscKey(k){
 let HAPTIC   = localStorage.getItem('navarea_haptic')!=='0';
 let GEO_WATCH= localStorage.getItem('navarea_geowatch')!=='0';
 let COORD_FMT= localStorage.getItem('navarea_coordfmt')||'dm';   // dm | dec
-let TIME_UTC = localStorage.getItem('navarea_timeutc')!=='0';
+/* ---- Время ----
+   Три источника, между которыми переключается вся шапка:
+     utc   -- всемирное координированное, им ведётся радиожурнал;
+     ship  -- судовое, его переводят приказом по судну, поэтому смещение
+              задаёт сам вахтенный, а не операционная система;
+     phone -- то, что показывает телефон (часто это порт приписки или
+              последняя сеть, к которой он цеплялся).
+   Судовое смещение хранится в часах и может быть дробным: есть пояса
+   в полчаса и в три четверти часа. */
+let TIME_MODE = localStorage.getItem('navarea_timemode')
+  || (localStorage.getItem('navarea_timeutc')==='0' ? 'phone' : 'utc');
+let SHIP_TZ = parseFloat(localStorage.getItem('navarea_shiptz'));
+if(isNaN(SHIP_TZ)) SHIP_TZ = -(new Date().getTimezoneOffset())/60;
+const TIME_LABEL={utc:'UTC',ship:'СУД',phone:'ТЛФ'};
+
+/* Момент «сейчас» в выбранном времени, уже сдвинутый: дальше у него
+   читаются UTC-поля, поэтому одна и та же формула годится всем трём. */
+function nowIn(mode){
+  const n=new Date();
+  const m=mode||TIME_MODE;
+  if(m==='utc')  return n;
+  if(m==='ship') return new Date(n.getTime()+SHIP_TZ*3600000);
+  return new Date(n.getTime()-n.getTimezoneOffset()*60000);
+}
+function clockHM(mode){
+  const d=nowIn(mode);
+  return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');
+}
+/* Время в произвольном поясе -- для списка выбора пояса */
+function clockHM0(h){
+  const d=new Date(Date.now()+h*3600000);
+  return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');
+}
+function tzText(h){
+  const s=h<0?'−':'+', a=Math.abs(h);
+  const hh=Math.floor(a), mm=Math.round((a-hh)*60);
+  return 'UTC'+s+hh+(mm?(':'+String(mm).padStart(2,'0')):'');
+}
+/* Совместимость с прежним кодом: где раньше спрашивали «это UTC?» */
+let TIME_UTC = TIME_MODE==='utc';
 let WATCH_ROLE = localStorage.getItem('navarea_watch')||'2nd';
 let NTF = (()=>{ try{ return Object.assign({warn:true,cert:true,gmdss:true},
   JSON.parse(localStorage.getItem('navarea_ntf')||'{}')); }catch(e){ return {warn:true,cert:true,gmdss:true}; } })();
@@ -8533,7 +8857,10 @@ function browserGeo(done){
 function renderGeoBtn(){
   const b=$('#geoBtn'); if(!b) return;
   b.className='geobtn'+(!GEO_ON?' off':'')+(GEO.busy?' busy':'')+(geoFresh()?' on':'')+(GEO.err?' err':'');
-  b.innerHTML=ico('target','sm');
+  // Огонёк состояния: зелёный пульс -- место есть, красный -- нет,
+  // жёлтый -- идёт определение.
+  const state = GEO.busy ? 'wait' : (GEO_ON&&geoFresh()&&!GEO.err ? '' : 'off');
+  b.innerHTML=ico('target','sm')+`<b id="liveDot" class="${state}"></b>`;
   b.title=!GEO_ON?tr('Геопозиция выключена'):(geoFresh()?(geoFmtLat(GEO.lat)+' '+geoFmtLon(GEO.lon)):tr('Моя позиция'));
   const t=$('#geoText');
   if(t){
@@ -9989,7 +10316,6 @@ function setIco(sel,name,size,mode){
   if(mode==='prepend') el.insertAdjacentHTML('afterbegin', ico(name,size));
   else el.innerHTML=ico(name,size);
 }
-setIco('#themeBtn','compass','lg','prepend');
 setIco('#fbtn','sliders');
 setIco('#offIco','radar','sm');
 setIco('#pfromBox','anchor','sm','prepend');
@@ -10031,6 +10357,39 @@ setInterval(()=>{ if(S.view==='dash') renderClock(); }, 20000);
 /* Уведомления подтягиваем при запуске, чтобы колокольчик был честным */
 loadNotifications(true);
 setInterval(()=>{ if(S.view!=='notif') loadNotifications(true); }, 180000);
+
+/* ---- Клавиатура ----
+   В WebView под Android видимая область сжимается, и всё, что закреплено
+   снизу, всплывает над клавиатурой. Нижнее меню при этом наезжает на поле
+   ввода. Поэтому на время набора текста уводим его вниз.
+   Признака «клавиатура открыта» в браузере нет, поэтому смотрим сразу на
+   два: фокус в поле ввода и заметно сжавшуюся видимую область. */
+(function(){
+  const isField=el=>el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.isContentEditable);
+  let focused=false, shrunk=false;
+  const apply=()=>document.body.classList.toggle('kbd', focused&&shrunk);
+
+  document.addEventListener('focusin', e=>{ if(isField(e.target)){ focused=true; apply(); } });
+  document.addEventListener('focusout', ()=>{
+    // короткая пауза: при переходе между двумя полями фокус на миг пропадает
+    setTimeout(()=>{ if(!isField(document.activeElement)){ focused=false; apply(); } }, 120);
+  });
+
+  const vv=window.visualViewport;
+  if(vv){
+    let base=vv.height;
+    const onResize=()=>{
+      base=Math.max(base, vv.height);
+      shrunk=(base-vv.height)>140;
+      apply();
+    };
+    vv.addEventListener('resize', onResize);
+    onResize();
+  } else {
+    // старые WebView без visualViewport: полагаемся только на фокус
+    shrunk=true;
+  }
+})();
 document.querySelectorAll('#corr .cat').forEach((c,i)=>
   c.insertAdjacentHTML('afterbegin', ico(['gauge','gauge','wave','compass'][i]||'gauge')));
 

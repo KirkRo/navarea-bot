@@ -563,21 +563,28 @@ def _api_port_weather(query: dict) -> dict:
 
 def _weather_maps(lat: float, lon: float) -> list[dict]:
     """Внешние погодные карты по точке. Ссылки строятся по координатам,
-    ключей и регистрации не требуют."""
+    ключей и регистрации не требуют.
+
+    В embed сознательно выключены detail, menu и message: с ними Windy
+    разворачивает на всю высоту таблицу прогноза и закрыть её внутри
+    окна Mini App нечем -- карты под ней просто не видно."""
     la, lo = round(lat, 3), round(lon, 3)
+
+    def windy(overlay: str) -> str:
+        return (f"https://embed.windy.com/embed2.html?lat={la}&lon={lo}"
+                f"&detailLat={la}&detailLon={lo}&width=100%25&height=100%25"
+                f"&zoom=6&level=surface&overlay={overlay}&product=ecmwf"
+                f"&menu=false&message=false&marker=true&calendar=now"
+                f"&pressure=false&type=map&location=coordinates&detail=false"
+                f"&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1")
+
     return [
         {"id": "windy_wind", "name": "Windy · ветер", "site": "Windy",
          "url": f"https://www.windy.com/?{la},{lo},8,i:pressure",
-         "embed": f"https://embed.windy.com/embed2.html?lat={la}&lon={lo}&zoom=7"
-                  f"&level=surface&overlay=wind&menu=&message=true&marker=true"
-                  f"&calendar=now&pressure=true&type=map&location=coordinates"
-                  f"&detail=true&detailLat={la}&detailLon={lo}&metricWind=kt&metricTemp=%C2%B0C"},
+         "embed": windy("wind")},
         {"id": "windy_waves", "name": "Windy · волнение", "site": "Windy",
          "url": f"https://www.windy.com/?{la},{lo},8,i:pressure,waves",
-         "embed": f"https://embed.windy.com/embed2.html?lat={la}&lon={lo}&zoom=7"
-                  f"&level=surface&overlay=waves&menu=&message=true&marker=true"
-                  f"&calendar=now&type=map&location=coordinates"
-                  f"&detail=true&detailLat={la}&detailLon={lo}&metricWind=kt&metricTemp=%C2%B0C"},
+         "embed": windy("waves")},
         {"id": "ventusky_wind", "name": "Ventusky · ветер", "site": "Ventusky",
          "url": f"https://www.ventusky.com/?p={la};{lo};7&l=wind-10m&w=kt"},
         {"id": "ventusky_waves", "name": "Ventusky · волны", "site": "Ventusky",

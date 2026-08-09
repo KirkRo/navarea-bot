@@ -891,6 +891,11 @@ class PostgresDatabase:
         return row["notif_seen_at"] if row else None
 
     def set_notif_seen_at(self, user_id: int, when: str | None = None) -> None:
+        # См. пояснение в db.py: строки в users может ещё не быть, если
+        # человек открыл Mini App раньше, чем написал боту.
+        ts = when or _now()
         with self._conn() as conn, conn.cursor() as cur:
-            cur.execute("UPDATE users SET notif_seen_at = %s WHERE user_id = %s",
-                        (when or _now(), user_id))
+            cur.execute("""
+                INSERT INTO users (user_id, created_at, notif_seen_at) VALUES (%s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET notif_seen_at = EXCLUDED.notif_seen_at
+            """, (user_id, ts, ts))

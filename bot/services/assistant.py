@@ -105,6 +105,24 @@ TOOLS = [
             "required": ["from_port", "to_port"],
         },
     },
+    {
+        "name": "ocean_passage",
+        "description": (
+            "Рекомендации по океанскому переходу между двумя портами по Admiralty "
+            "Ocean Passages for the World (NP136): рекомендованный путь, сезонные "
+            "соображения, преобладающие ветры и течения, на что обратить внимание. "
+            "Использовать при вопросах «как лучше идти», «каким путём», «что учитывать "
+            "на переходе», «когда лучше выходить»."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "from_port": {"type": "string"},
+                "to_port": {"type": "string"},
+            },
+            "required": ["from_port", "to_port"],
+        },
+    },
 ]
 
 
@@ -129,6 +147,9 @@ SYSTEM = """Ты -- ассистент вахтенного помощника �
   Не уверен -- скажи, к какому первоисточнику свериться.
 - Расчёты, от которых зависит безопасность, подавай как справочные: решение
   принимает судоводитель по судовым пособиям и официальным данным.
+- Спросили про путь и порядок перехода между портами -- бери ocean_passage.
+  Отвечая по нему, ссылайся на Ocean Passages for the World (NP136) и
+  напоминай, что окончательный план строится по самому изданию и картам.
 - Про предупреждения всегда помни: бот не заменяет приём MSI штатным
   оборудованием GMDSS и NAVTEX. Напоминай об этом, когда речь о них.
 
@@ -317,7 +338,34 @@ async def _tool_distance(args: dict, ctx: dict) -> dict:
     }
 
 
+async def _tool_passage(args: dict, ctx: dict) -> dict:
+    from .np136 import passage_note
+
+    a = await _resolve_async(args.get("from_port", ""), ctx)
+    b = await _resolve_async(args.get("to_port", ""), ctx)
+    if not a or not b:
+        return {"error": "не удалось определить порты"}
+    # Сперва прокладываем маршрут: по проливам на пути находятся замечания
+    # даже там, где отдельной статьи по паре районов нет.
+    via, dist = [], None
+    try:
+        from .voyage import planned_route
+        plan = planned_route(a, b)
+        dist = round(plan["distance_nm"])
+        via = [l.get("title") for l in plan.get("legs", []) if l.get("title")]
+    except Exception:
+        logger.exception("Не удалось проложить маршрут для рекомендации")
+
+    out = passage_note(a.lat, a.lon, b.lat, b.lon, via=via)
+    out["from"] = a.label
+    out["to"] = b.label
+    out["planned_distance_nm"] = dist
+    out["planned_via"] = via
+    return out
+
+
 RUNNERS = {
+    "ocean_passage": _tool_passage,
     "route_weather": _tool_route_weather,
     "point_weather": _tool_point_weather,
     "navarea_warnings": _tool_warnings,

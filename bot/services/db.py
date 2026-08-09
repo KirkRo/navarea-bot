@@ -880,6 +880,13 @@ class Database:
         return row["notif_seen_at"] if row else None
 
     def set_notif_seen_at(self, user_id: int, when: str | None = None) -> None:
+        # Через вставку с конфликтом: если человек открыл Mini App раньше,
+        # чем написал боту, строки в users ещё нет, и обычный UPDATE молча
+        # ничего не делал -- отметка о прочтении не сохранялась, и лента
+        # снова загоралась при каждом входе.
+        ts = when or _now()
         with self._conn() as conn:
-            conn.execute("UPDATE users SET notif_seen_at = ? WHERE user_id = ?",
-                         (when or _now(), user_id))
+            conn.execute("""
+                INSERT INTO users (user_id, created_at, notif_seen_at) VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET notif_seen_at = excluded.notif_seen_at
+            """, (user_id, ts, ts))
