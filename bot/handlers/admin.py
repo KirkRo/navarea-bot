@@ -145,15 +145,110 @@ async def cmd_payments(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     lines = ["<b>Последние платежи</b>", ""]
     for p in rows:
+        who = (p.get("first_name") or "").strip()
+        if p.get("username"):
+            who = f"{who} @{p['username']}".strip()
         lines.append(
-            f"• {p['stars_amount']} ⭐ · id <code>{p['user_id']}</code> · "
+            f"• {p['stars_amount']} ⭐ · {who or 'без имени'} · id <code>{p['user_id']}</code> · "
             f"{str(p['created_at'])[:16].replace('T', ' ')}"
-            f"{' · автопродление' if p.get('is_recurring') else ''}\n"
+            f"{' · автопродление' if p.get('is_recurring') else ''}"
+            f"{' · ВОЗВРАЩЕНО' if p.get('refunded_at') else ''}\n"
             f"  <code>{p['charge_id']}</code>"
         )
     lines.append("")
     lines.append("Возврат: <code>/refund id_пользователя номер_операции</code>")
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
+
+async def cmd_balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Баланс звёзд бота -- тот самый, который не найти в BotFather.
+
+    В BotFather раздел Payments отвечает за карточных провайдеров, звёзды туда
+    не входят вовсе. Заработанное лежит на балансе бота в Telegram, и Bot API
+    отдаёт его методом getMyStarBalance -- эта команда его и спрашивает.
+
+    Вывод из бота вызвать нечем: он живёт на стороне Fragment, метода в Bot API
+    нет. Поэтому дальше -- ссылка и условия, при которых вывод вообще возможен."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    from ..webapp import FRAGMENT_URL, STARS_HOLD_DAYS, STARS_WITHDRAW_MIN, _withdraw_info
+
+    try:
+        balance = await context.bot.get_my_star_balance()
+        stars = int(getattr(balance, "amount", 0) or 0)
+        head = f"⭐️ <b>Баланс бота: {stars}</b>"
+    except Exception as e:
+        stars = None
+        head = f"⭐️ Баланс не получен: {e}"
+
+    info = _withdraw_info(db)
+    s = db.payments_summary()
+
+    lines = [head, ""]
+    lines.append(f"Получено всего: {s['stars_total']} ⭐ за {s['payments']} платеж(ей)")
+    if s["refunds"]:
+        lines.append(f"Возвращено: {s['refunded_stars']} ⭐ ({s['refunds']} шт.)")
+    lines.append(f"За 30 дней: {s['stars_30d']} ⭐")
+    lines.append("")
+    lines.append(f"<b>Вывод</b> — только через Fragment: {FRAGMENT_URL}")
+    lines.append(f"Минимум {STARS_WITHDRAW_MIN} ⭐, каждая звезда становится доступной "
+                 f"через {STARS_HOLD_DAYS} дней после получения — этот срок Telegram держит "
+                 f"на случай возврата.")
+    lines.append(f"По моему учёту срок выдержки прошли примерно {info['ripe_estimate']} ⭐.")
+    if stars is not None and stars < STARS_WITHDRAW_MIN:
+        lines.append(f"До минимума не хватает {STARS_WITHDRAW_MIN - stars} ⭐.")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML",
+                                    disable_web_page_preview=True)
+
+
+async def cmd_grant(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Premium без оплаты: /grant <user_id> [дней].
+
+    Нужно для друзей, тестировщиков и извинений за сбой. Отдельно от оплаты:
+    в базе такой доступ помечается как granted, и его видно в панели --
+    иначе выданное вручную смешалось бы с купленным."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    if not context.args or not context.args[0].lstrip("-").isdigit():
+        await update.message.reply_text(
+            "Использование: /grant id_пользователя [дней]\n"
+            "По умолчанию 30 дней. Снять: /revoke id_пользователя"
+        )
+        return
+
+    uid = int(context.args[0])
+    days = 30
+    if len(context.args) > 1 and context.args[1].isdigit():
+        days = int(context.args[1])
+
+    until = db.grant_premium(uid, days)
+    await update.message.reply_text(f"Выдан Premium до {str(until)[:10]} (без оплаты).")
+    try:
+        await context.bot.send_message(
+            uid, f"🎁 Тебе открыт Premium в WatchKeeper до {str(until)[:10]}. "
+                 f"Платить ничего не нужно.")
+    except Exception:
+        pass
+
+
+async def cmd_revoke(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Снять Premium: /revoke <user_id>. Денег не возвращает -- для этого
+    отдельная команда /refund, у неё своя логика на стороне Telegram."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    if not context.args or not context.args[0].lstrip("-").isdigit():
+        await update.message.reply_text("Использование: /revoke id_пользователя")
+        return
+
+    db.revoke_premium(int(context.args[0]))
+    await update.message.reply_text("Premium снят. Деньги при этом не возвращены — /refund.")
 
 
 async def cmd_refund(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -186,6 +281,7 @@ async def cmd_refund(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     # и Telegram второе за нас не делает.
     try:
         db.revoke_premium(uid)
+        db.mark_payment_refunded(charge_id)
     except Exception:
         logging.getLogger(__name__).exception("Не удалось снять Premium после возврата")
 

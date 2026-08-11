@@ -29,7 +29,10 @@ CREATE TABLE IF NOT EXISTS users (
     premium_until TEXT,
     qa_count_today INTEGER NOT NULL DEFAULT 0,
     qa_count_date TEXT,
-    notif_seen_at TEXT
+    notif_seen_at TEXT,
+    sub_cancelled INTEGER NOT NULL DEFAULT 0,
+    premium_source TEXT,
+    last_seen_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS area_subscriptions (
@@ -67,7 +70,8 @@ CREATE TABLE IF NOT EXISTS payments (
     charge_id TEXT,
     stars_amount INTEGER,
     is_recurring INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    refunded_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS vessels (
@@ -183,6 +187,24 @@ class User:
     qa_count_today: int
     qa_count_date: Optional[str]
     created_at: Optional[str] = None
+    # Поля со значением по умолчанию: у баз, созданных прошлыми версиями,
+    # этих колонок ещё нет до первой миграции -- читаем их через _col().
+    sub_cancelled: bool = False
+    premium_source: Optional[str] = None
+    last_seen_at: Optional[str] = None
+
+
+def _col(row, name: str, default=None):
+    """Значение колонки, которой может не быть в старой базе.
+
+    sqlite3.Row не знает .get(), а обращение к отсутствующему полю бросает
+    IndexError -- поэтому единственный безопасный способ читать колонки,
+    добавленные миграцией, это перехват."""
+    try:
+        value = row[name]
+    except (IndexError, KeyError, TypeError):
+        return default
+    return default if value is None else value
 
 
 def _msgnum_sort_key(row) -> tuple[int, int]:
@@ -282,19 +304,61 @@ class Database:
             qa_count_today=row["qa_count_today"],
             qa_count_date=row["qa_count_date"],
             created_at=row["created_at"],
+            sub_cancelled=bool(_col(row, "sub_cancelled", 0)),
+            premium_source=_col(row, "premium_source"),
+            last_seen_at=_col(row, "last_seen_at"),
         )
 
-    def set_premium(self, user_id: int, until_iso: str) -> None:
+    def touch_user(self, user_id: int) -> None:
+        """Отметка «человек заходил». Нужна владельцу, чтобы отличать живых
+        пользователей от тех, кто нажал /start один раз и пропал."""
+        with self._conn() as conn:
+            conn.execute("UPDATE users SET last_seen_at = ? WHERE user_id = ?", (_now(), user_id))
+
+    def set_premium(self, user_id: int, until_iso: str, source: str = "stars") -> None:
+        """Новая оплата снимает пометку об отмене: если человек отменил
+        автопродление, а потом оплатил заново, подписка снова продлевается."""
         with self._conn() as conn:
             conn.execute(
-                "UPDATE users SET is_premium = 1, premium_until = ? WHERE user_id = ?",
-                (until_iso, user_id),
+                "UPDATE users SET is_premium = 1, premium_until = ?, premium_source = ?, "
+                "sub_cancelled = 0 WHERE user_id = ?",
+                (until_iso, source, user_id),
+            )
+
+    def grant_premium(self, user_id: int, days: int) -> str:
+        """Premium без оплаты -- владелец выдаёт вручную.
+
+        Продлеваем от уже оплаченного срока, а не от «сейчас»: иначе выдача
+        бонусных дней тому, у кого подписка ещё идёт, укоротила бы её."""
+        user = self.get_user(user_id)
+        now = datetime.now(timezone.utc)
+        base = now
+        if user and user.premium_until:
+            try:
+                current = datetime.fromisoformat(user.premium_until)
+                if current.tzinfo is None:
+                    current = current.replace(tzinfo=timezone.utc)
+                base = max(now, current)
+            except ValueError:
+                base = now
+        until = (base + timedelta(days=max(1, int(days)))).isoformat()
+        self.set_premium(user_id, until, source="granted")
+        return until
+
+    def set_sub_cancelled(self, user_id: int, cancelled: bool) -> None:
+        """Отметка «автопродление выключено». Telegram своего метода
+        «узнать состояние подписки» не даёт -- помним сами."""
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE users SET sub_cancelled = ? WHERE user_id = ?",
+                (1 if cancelled else 0, user_id),
             )
 
     def revoke_premium(self, user_id: int) -> None:
         with self._conn() as conn:
             conn.execute(
-                "UPDATE users SET is_premium = 0, premium_until = NULL WHERE user_id = ?",
+                "UPDATE users SET is_premium = 0, premium_until = NULL, premium_source = NULL "
+                "WHERE user_id = ?",
                 (user_id,),
             )
 
@@ -490,11 +554,142 @@ class Database:
 
     def recent_payments(self, limit: int = 20) -> list[dict]:
         """Последние платежи -- владельцу, чтобы взять номер операции
-        для возврата (refundStarPayment без него не вызвать)."""
+        для возврата (refundStarPayment без него не вызвать).
+
+        Имя и username подтягиваем сразу: в админ-панели «id 1456116982»
+        ни о чём не говорит, а «Кирилл @kir» говорит."""
         with self._conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM payments ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+                """
+                SELECT p.*, u.username, u.first_name
+                FROM payments p LEFT JOIN users u ON u.user_id = p.user_id
+                ORDER BY p.id DESC LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
         return [dict(r) for r in rows]
+
+    def active_charge_id(self, user_id: int) -> Optional[str]:
+        """Номер операции, по которому ещё можно управлять подпиской.
+
+        Возвращённый платёж не годится: подписки за ним больше нет, и
+        editUserStarSubscription на него отвечает ошибкой."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT charge_id FROM payments WHERE user_id = ? AND refunded_at IS NULL "
+                "ORDER BY id DESC LIMIT 1",
+                (user_id,),
+            ).fetchone()
+        return row["charge_id"] if row else None
+
+    def payment_by_charge(self, charge_id: str) -> Optional[dict]:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM payments WHERE charge_id = ? ORDER BY id DESC LIMIT 1",
+                (charge_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def mark_payment_refunded(self, charge_id: str) -> None:
+        """Помечаем возвращённый платёж, чтобы он не попал под возврат дважды:
+        Telegram на повторный refund отвечает ошибкой, и без пометки владелец
+        каждый раз ловил бы её вслепую."""
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE payments SET refunded_at = ? WHERE charge_id = ?", (_now(), charge_id))
+
+    def payments_summary(self) -> dict:
+        """Сводка по деньгам: сколько звёзд пришло, сколько вернули.
+
+        Это наш собственный учёт по успешным платежам, а не баланс бота --
+        баланс живёт на стороне Telegram и берётся методом getMyStarBalance."""
+        with self._conn() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) n,
+                       COALESCE(SUM(stars_amount), 0) stars,
+                       COALESCE(SUM(CASE WHEN refunded_at IS NOT NULL THEN 1 ELSE 0 END), 0) refunds,
+                       COALESCE(SUM(CASE WHEN refunded_at IS NOT NULL THEN stars_amount ELSE 0 END), 0) refunded_stars
+                FROM payments
+                """
+            ).fetchone()
+            month = conn.execute(
+                "SELECT COALESCE(SUM(stars_amount), 0) s FROM payments "
+                "WHERE refunded_at IS NULL AND created_at >= ?",
+                ((datetime.now(timezone.utc) - timedelta(days=30)).isoformat(),),
+            ).fetchone()["s"]
+        return {
+            "payments": row["n"],
+            "stars_total": row["stars"],
+            "refunds": row["refunds"],
+            "refunded_stars": row["refunded_stars"],
+            "stars_net": row["stars"] - row["refunded_stars"],
+            "stars_30d": month,
+        }
+
+    def admin_users(self, limit: int = 60, offset: int = 0, q: str = "", only: str = "") -> list[dict]:
+        """Список пользователей для админ-панели.
+
+        only: paid -- у кого сейчас действует Premium, active -- кто заходил
+        за последнюю неделю. Поиск q идёт по id, username и имени."""
+        where, args = [], []
+        if only == "paid":
+            where.append("u.is_premium = 1 AND u.premium_until > ?")
+            args.append(_now())
+        elif only == "active":
+            where.append("u.last_seen_at >= ?")
+            args.append((datetime.now(timezone.utc) - timedelta(days=7)).isoformat())
+
+        q = (q or "").strip().lstrip("@")
+        if q:
+            where.append("(CAST(u.user_id AS TEXT) LIKE ? OR LOWER(u.username) LIKE ? "
+                         "OR LOWER(u.first_name) LIKE ?)")
+            like = f"%{q.lower()}%"
+            args += [like, like, like]
+
+        sql = """
+            SELECT u.user_id, u.username, u.first_name, u.created_at, u.last_seen_at,
+                   u.is_premium, u.premium_until, u.premium_source, u.sub_cancelled,
+                   (SELECT COUNT(*) FROM payments p
+                     WHERE p.user_id = u.user_id AND p.refunded_at IS NULL) paid_times,
+                   (SELECT COALESCE(SUM(stars_amount), 0) FROM payments p
+                     WHERE p.user_id = u.user_id AND p.refunded_at IS NULL) paid_stars,
+                   (SELECT COUNT(*) FROM area_subscriptions a WHERE a.user_id = u.user_id) areas
+            FROM users u
+        """
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        # Сначала те, кто заходил недавно: список открывают, чтобы посмотреть
+        # живых людей, а не тех, кто зарегистрировался первым.
+        sql += " ORDER BY COALESCE(u.last_seen_at, u.created_at) DESC LIMIT ? OFFSET ?"
+        args += [limit, offset]
+
+        with self._conn() as conn:
+            rows = conn.execute(sql, args).fetchall()
+        return [dict(r) for r in rows]
+
+    def admin_summary(self) -> dict:
+        """Цифры для верхней части админ-панели."""
+        now = _now()
+        week = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        day = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        with self._conn() as conn:
+            def one(sql: str, args: tuple = ()) -> int:
+                return conn.execute(sql, args).fetchone()["c"]
+
+            data = {
+                "users": one("SELECT COUNT(*) c FROM users"),
+                "premium": one("SELECT COUNT(*) c FROM users WHERE is_premium = 1 AND premium_until > ?", (now,)),
+                "granted": one("SELECT COUNT(*) c FROM users WHERE is_premium = 1 "
+                               "AND premium_until > ? AND premium_source = 'granted'", (now,)),
+                "cancelled": one("SELECT COUNT(*) c FROM users WHERE sub_cancelled = 1 "
+                                 "AND is_premium = 1 AND premium_until > ?", (now,)),
+                "active_week": one("SELECT COUNT(*) c FROM users WHERE last_seen_at >= ?", (week,)),
+                "active_day": one("SELECT COUNT(*) c FROM users WHERE last_seen_at >= ?", (day,)),
+                "new_week": one("SELECT COUNT(*) c FROM users WHERE created_at >= ?", (week,)),
+            }
+        data.update(self.payments_summary())
+        return data
 
     def get_all_user_ids(self) -> list[int]:
         with self._conn() as conn:

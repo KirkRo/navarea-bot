@@ -33,7 +33,10 @@ CREATE TABLE IF NOT EXISTS users (
     premium_until TEXT,
     qa_count_today INTEGER NOT NULL DEFAULT 0,
     qa_count_date TEXT,
-    notif_seen_at TEXT
+    notif_seen_at TEXT,
+    sub_cancelled INTEGER NOT NULL DEFAULT 0,
+    premium_source TEXT,
+    last_seen_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS area_subscriptions (
@@ -71,7 +74,8 @@ CREATE TABLE IF NOT EXISTS payments (
     charge_id TEXT,
     stars_amount INTEGER,
     is_recurring INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    refunded_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS vessels (
@@ -187,6 +191,9 @@ class User:
     qa_count_today: int
     qa_count_date: Optional[str]
     created_at: Optional[str] = None
+    sub_cancelled: bool = False
+    premium_source: Optional[str] = None
+    last_seen_at: Optional[str] = None
 
 
 def _msgnum_sort_key(row) -> tuple[int, int]:
@@ -297,19 +304,53 @@ class PostgresDatabase:
             qa_count_today=row["qa_count_today"],
             qa_count_date=row["qa_count_date"],
             created_at=row["created_at"],
+            sub_cancelled=bool(row.get("sub_cancelled") or 0),
+            premium_source=row.get("premium_source"),
+            last_seen_at=row.get("last_seen_at"),
         )
 
-    def set_premium(self, user_id: int, until_iso: str) -> None:
+    def touch_user(self, user_id: int) -> None:
+        """Отметка «человек заходил» -- см. пояснение в db.py."""
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("UPDATE users SET last_seen_at = %s WHERE user_id = %s", (_now(), user_id))
+
+    def set_premium(self, user_id: int, until_iso: str, source: str = "stars") -> None:
         with self._conn() as conn, conn.cursor() as cur:
             cur.execute(
-                "UPDATE users SET is_premium = 1, premium_until = %s WHERE user_id = %s",
-                (until_iso, user_id),
+                "UPDATE users SET is_premium = 1, premium_until = %s, premium_source = %s, "
+                "sub_cancelled = 0 WHERE user_id = %s",
+                (until_iso, source, user_id),
+            )
+
+    def grant_premium(self, user_id: int, days: int) -> str:
+        """Premium без оплаты, продление от уже оплаченного срока -- см. db.py."""
+        user = self.get_user(user_id)
+        now = datetime.now(timezone.utc)
+        base = now
+        if user and user.premium_until:
+            try:
+                current = datetime.fromisoformat(user.premium_until)
+                if current.tzinfo is None:
+                    current = current.replace(tzinfo=timezone.utc)
+                base = max(now, current)
+            except ValueError:
+                base = now
+        until = (base + timedelta(days=max(1, int(days)))).isoformat()
+        self.set_premium(user_id, until, source="granted")
+        return until
+
+    def set_sub_cancelled(self, user_id: int, cancelled: bool) -> None:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET sub_cancelled = %s WHERE user_id = %s",
+                (1 if cancelled else 0, user_id),
             )
 
     def revoke_premium(self, user_id: int) -> None:
         with self._conn() as conn, conn.cursor() as cur:
             cur.execute(
-                "UPDATE users SET is_premium = 0, premium_until = NULL WHERE user_id = %s",
+                "UPDATE users SET is_premium = 0, premium_until = NULL, premium_source = NULL "
+                "WHERE user_id = %s",
                 (user_id,),
             )
 
@@ -520,8 +561,127 @@ class PostgresDatabase:
 
     def recent_payments(self, limit: int = 20) -> list[dict]:
         with self._conn() as conn, conn.cursor() as cur:
-            cur.execute("SELECT * FROM payments ORDER BY id DESC LIMIT %s", (limit,))
+            cur.execute(
+                """
+                SELECT p.*, u.username, u.first_name
+                FROM payments p LEFT JOIN users u ON u.user_id = p.user_id
+                ORDER BY p.id DESC LIMIT %s
+                """,
+                (limit,),
+            )
             return [dict(r) for r in cur.fetchall()]
+
+    def active_charge_id(self, user_id: int) -> Optional[str]:
+        """Номер операции для управления подпиской -- см. пояснение в db.py."""
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT charge_id FROM payments WHERE user_id = %s AND refunded_at IS NULL "
+                "ORDER BY id DESC LIMIT 1",
+                (user_id,),
+            )
+            row = cur.fetchone()
+        return row["charge_id"] if row else None
+
+    def payment_by_charge(self, charge_id: str) -> Optional[dict]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM payments WHERE charge_id = %s ORDER BY id DESC LIMIT 1",
+                (charge_id,),
+            )
+            row = cur.fetchone()
+        return dict(row) if row else None
+
+    def mark_payment_refunded(self, charge_id: str) -> None:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE payments SET refunded_at = %s WHERE charge_id = %s", (_now(), charge_id))
+
+    def payments_summary(self) -> dict:
+        """Наш учёт по платежам -- см. пояснение в db.py."""
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) n,
+                       COALESCE(SUM(stars_amount), 0) stars,
+                       COALESCE(SUM(CASE WHEN refunded_at IS NOT NULL THEN 1 ELSE 0 END), 0) refunds,
+                       COALESCE(SUM(CASE WHEN refunded_at IS NOT NULL THEN stars_amount ELSE 0 END), 0) refunded_stars
+                FROM payments
+                """
+            )
+            row = cur.fetchone()
+            cur.execute(
+                "SELECT COALESCE(SUM(stars_amount), 0) s FROM payments "
+                "WHERE refunded_at IS NULL AND created_at >= %s",
+                ((datetime.now(timezone.utc) - timedelta(days=30)).isoformat(),),
+            )
+            month = cur.fetchone()["s"]
+        return {
+            "payments": row["n"],
+            "stars_total": row["stars"],
+            "refunds": row["refunds"],
+            "refunded_stars": row["refunded_stars"],
+            "stars_net": row["stars"] - row["refunded_stars"],
+            "stars_30d": month,
+        }
+
+    def admin_users(self, limit: int = 60, offset: int = 0, q: str = "", only: str = "") -> list[dict]:
+        """Список пользователей для админ-панели -- см. пояснение в db.py."""
+        where, args = [], []
+        if only == "paid":
+            where.append("u.is_premium = 1 AND u.premium_until > %s")
+            args.append(_now())
+        elif only == "active":
+            where.append("u.last_seen_at >= %s")
+            args.append((datetime.now(timezone.utc) - timedelta(days=7)).isoformat())
+
+        q = (q or "").strip().lstrip("@")
+        if q:
+            where.append("(CAST(u.user_id AS TEXT) LIKE %s OR LOWER(u.username) LIKE %s "
+                         "OR LOWER(u.first_name) LIKE %s)")
+            like = f"%{q.lower()}%"
+            args += [like, like, like]
+
+        sql = """
+            SELECT u.user_id, u.username, u.first_name, u.created_at, u.last_seen_at,
+                   u.is_premium, u.premium_until, u.premium_source, u.sub_cancelled,
+                   (SELECT COUNT(*) FROM payments p
+                     WHERE p.user_id = u.user_id AND p.refunded_at IS NULL) paid_times,
+                   (SELECT COALESCE(SUM(stars_amount), 0) FROM payments p
+                     WHERE p.user_id = u.user_id AND p.refunded_at IS NULL) paid_stars,
+                   (SELECT COUNT(*) FROM area_subscriptions a WHERE a.user_id = u.user_id) areas
+            FROM users u
+        """
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY COALESCE(u.last_seen_at, u.created_at) DESC LIMIT %s OFFSET %s"
+        args += [limit, offset]
+
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(sql, args)
+            return [dict(r) for r in cur.fetchall()]
+
+    def admin_summary(self) -> dict:
+        now = _now()
+        week = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        day = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        with self._conn() as conn, conn.cursor() as cur:
+            def one(sql: str, args: tuple = ()) -> int:
+                cur.execute(sql, args)
+                return cur.fetchone()["c"]
+
+            data = {
+                "users": one("SELECT COUNT(*) c FROM users"),
+                "premium": one("SELECT COUNT(*) c FROM users WHERE is_premium = 1 AND premium_until > %s", (now,)),
+                "granted": one("SELECT COUNT(*) c FROM users WHERE is_premium = 1 "
+                               "AND premium_until > %s AND premium_source = 'granted'", (now,)),
+                "cancelled": one("SELECT COUNT(*) c FROM users WHERE sub_cancelled = 1 "
+                                 "AND is_premium = 1 AND premium_until > %s", (now,)),
+                "active_week": one("SELECT COUNT(*) c FROM users WHERE last_seen_at >= %s", (week,)),
+                "active_day": one("SELECT COUNT(*) c FROM users WHERE last_seen_at >= %s", (day,)),
+                "new_week": one("SELECT COUNT(*) c FROM users WHERE created_at >= %s", (week,)),
+            }
+        data.update(self.payments_summary())
+        return data
 
     def get_all_user_ids(self) -> list[int]:
         with self._conn() as conn, conn.cursor() as cur:

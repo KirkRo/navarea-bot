@@ -1519,6 +1519,31 @@ body.kbd .askbar{bottom:0}
 .buystate.ok{color:var(--ok)}
 .buystate.no{color:var(--hot)}
 
+/* ---- Админ-панель ----
+   Кнопки действий узкие и в ряд: панель открывают с телефона, и попасть
+   пальцем в строку списка проще, чем в мелкую иконку. */
+.admbig{font-size:34px;font-weight:800;color:var(--amber);letter-spacing:-1px;line-height:1.1}
+.admbar{height:7px;border-radius:6px;background:var(--surf2);overflow:hidden;margin:9px 0 5px;
+  border:1px solid var(--line)}
+.admbar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2))}
+.admgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:4px}
+.admcell{background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 9px}
+.admcell b{display:block;font-size:19px;font-weight:800;letter-spacing:-.4px}
+.admcell span{font-size:10.5px;color:var(--muted);line-height:1.35;display:block;margin-top:2px}
+.admseg{display:flex;gap:6px;margin-bottom:9px}
+.admseg button{flex:1;border:1px solid var(--line);background:var(--surf2);color:var(--muted);
+  font-family:inherit;font-size:11.5px;font-weight:700;padding:9px 6px;border-radius:10px;cursor:pointer}
+.admseg button.on{background:var(--amber-soft);border-color:rgba(240,160,60,.34);color:var(--amber)}
+.admacts{display:flex;flex-wrap:wrap;gap:6px;margin:-3px 0 10px}
+.admacts .btn{flex:1 1 auto;min-width:70px;padding:9px 8px;font-size:11.5px}
+.admpay{background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:11px 13px;margin-bottom:8px}
+.admpay.gone{opacity:.55}
+.admpay .pw{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:700}
+.admpay .pd{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.45}
+.admpay .pc{font-size:9.5px;color:var(--dim);margin-top:5px;word-break:break-all;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
 /* ---- Выбор даты ----
    Свой календарь вместо системного: системный на телефоне присылает
    change на каждый прокрученный барабан, и раздел, который на это
@@ -2430,6 +2455,13 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     <div class="vhead"><button class="vback" data-back></button><h3>Уведомления</h3>
       <a id="notifClear" class="vsub">Прочитано</a></div>
     <div id="notifBox"></div>
+  </section>
+
+  <!-- АДМИН-ПАНЕЛЬ (только владельцу) -->
+  <section id="v-admin" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Админ-панель</h3>
+      <a id="admReload" class="vsub">Обновить</a></div>
+    <div id="admBox"></div>
   </section>
 
   <!-- НАСТРОЙКИ -->
@@ -3894,6 +3926,66 @@ Object.assign(DICT,{
  'Шесть через шесть':'Six on, six off','Дневная работа':'Day work',
  '08-17, без ходовой вахты':'08-17, no bridge watch'
 });
+/* ---- Автопродление и панель создателя бота ---- */
+Object.assign(DICT,{
+ 'Автопродление':'Auto-renewal',
+ 'Списание раз в 30 дней, пока включено. Выключишь — списаний больше не будет':
+   'Charged once every 30 days while it is on. Turn it off and nothing is charged again',
+ 'Выключено. Оплаченный период доработает до конца и не продлится':
+   'Off. The period already paid for runs to its end and will not renew',
+ 'Отключить автопродление? Оплаченный период доработает до конца, дальше списаний не будет.':
+   'Turn auto-renewal off? The period already paid for runs to its end, nothing is charged after that.',
+ 'Отключаю…':'Turning off…','Включаю…':'Turning on…',
+ 'Автопродление отключено. Premium доработает до конца оплаченного периода.':
+   'Auto-renewal is off. Premium runs to the end of the period already paid for.',
+ 'Автопродление включено.':'Auto-renewal is back on.',
+ 'Подпиской можно управлять только внутри Telegram.':
+   'The subscription can only be managed inside Telegram.',
+ 'Платёж не найден — отменять нечего.':'No payment found — there is nothing to cancel.',
+ 'Telegram не принял отмену. Попробуй через Настройки Telegram → Мои звёзды → Подписки.':
+   'Telegram refused the cancellation. Try Telegram Settings → My Stars → Subscriptions.',
+ 'Premium открыт вручную создателем бота — списаний нет.':
+   'Premium was opened manually by the bot owner — nothing is charged.',
+ 'Создателю бота':'For the bot owner','Админ-панель':'Admin panel',
+ 'Пользователи, платежи, баланс звёзд, выдача и возврат':
+   'Users, payments, star balance, granting and refunds',
+ 'Раздел только для создателя бота.':'This section is for the bot owner only.',
+ 'Нет связи с сервером. Открой раздел ещё раз.':
+   'No connection to the server. Open the section again.',
+ 'Звёзды':'Stars','Вывод':'Withdrawal','Люди':'People','Пользователи':'Users','Платежи':'Payments',
+ 'Обновить':'Refresh','Активные':'Active','Никого не нашлось.':'Nobody found.',
+ 'Платежей пока нет.':'No payments yet.',
+ 'Найти по id, имени или @нику':'Search by id, name or @username',
+ 'Баланс не пришёл':'Balance not received',
+ 'Это баланс бота в Telegram — деньги за подписки приходят сюда.':
+   'This is the bot balance in Telegram — subscription money arrives here.',
+ 'До вывода не хватает':'Short of the withdrawal minimum by',
+ 'Минимума для вывода хватает.':'The withdrawal minimum is covered.',
+ 'Минимум для вывода':'Withdrawal minimum','Выдержка каждой звезды':'Hold on each star',
+ 'Срок прошли, по моему учёту':'Past the hold, by my records',
+ 'Вывод идёт только через Fragment и только в TON — у Bot API такого метода нет, кнопкой из бота его не вызвать. Telegram держит каждую звезду 21 день на случай возврата покупателю.':
+   'Withdrawal goes through Fragment only and in TON only — Bot API has no such method, no button in the bot can call it. Telegram holds every star for 21 days in case of a refund.',
+ 'Открыть Fragment':'Open Fragment',
+ 'получено всего':'received in total','за 30 дней':'last 30 days','возвращено':'refunded',
+ 'всего':'total','заходили за неделю':'active this week','за сутки':'last 24 h',
+ 'с Premium':'on Premium','выдано вручную':'granted manually','новых за неделю':'new this week',
+ 'Отключили автопродление':'Auto-renewal turned off by',
+ 'заходил':'last seen','в приложение не заходил':'never opened the app',
+ 'без автопродления':'no auto-renewal','автопродление':'auto-renewal',
+ 'бесплатный':'free','выдан':'granted','оплачен':'paid','владелец':'owner',
+ 'Снять Premium':'Revoke Premium',
+ 'Снять Premium? Деньги при этом не возвращаются.':'Revoke Premium? No money is refunded.',
+ 'Вернуть звёзды':'Refund stars',
+ 'Вернуть звёзды покупателю? Premium будет снят, отменить возврат нельзя.':
+   'Refund the stars to the buyer? Premium will be revoked, the refund cannot be undone.',
+ 'Возврат отдаёт звёзды покупателю целиком и снимает Premium. Отменить возврат нельзя.':
+   'A refund returns the stars to the buyer in full and revokes Premium. It cannot be undone.',
+ 'Выполняю…':'Working…','Нет доступа.':'No access.','Не получилось.':'It did not work.',
+ 'Не получилось. Попробуй ещё раз.':'It did not work. Try again.',
+ 'Premium выдан, человек получил сообщение.':'Premium granted, the user has been notified.',
+ 'Premium снят.':'Premium revoked.',
+ 'Звёзды возвращены, Premium снят.':'Stars refunded, Premium revoked.'
+});
 /* ---- Тренажёр ЦИВ: подписи новых экранов ---- */
 Object.assign(DICT,{
  'Ролик':'Dial','крутить: выбор, нажать: ввод':'turn to select, push to enter',
@@ -4347,8 +4439,8 @@ Object.assign(DICT,{
  'Внутренняя валюта Telegram. Покупаются в самом приложении Telegram и тратятся на цифровые товары и услуги. Подписка продлевается сама каждые 30 дней.':
    'Telegram’s internal currency. They are bought within Telegram itself and spent on digital goods and services. The subscription renews itself every 30 days.',
  'Как отменить подписку?':'How do I cancel the subscription?',
- 'Команда /cancel_subscription в чате с ботом или Настройки Telegram → Мои звёзды → Подписки. Оплаченный период доработает до конца.':
-   'The /cancel_subscription command in the chat with the bot, or Telegram Settings → My Stars → Subscriptions. The period already paid for runs to its end.',
+ '«Моё судно» → «Настройки» → «Доступ» → выключить «Автопродление». Оплаченный период доработает до конца. То же самое делает команда /cancel_subscription в чате с ботом.':
+   '“My Vessel” → “Settings” → “Access” → turn off “Auto-renewal”. The period already paid for runs to its end. The /cancel_subscription command in the chat with the bot does the same.',
  'Что остаётся бесплатным?':'What stays free?',
  'Два района с уведомлениями, карта всех действующих предупреждений, все расчёты безопасности, справочники, станции ГМССБ, тренажёры и пять вопросов ассистенту в сутки.':
    'Two areas with notifications, the chart of all warnings in force, every safety calculation, the reference sections, the GMDSS stations, the simulators and five questions a day to the assistant.',
@@ -5532,7 +5624,7 @@ const GROUPS={
     {v:'faq',t:'Справка',i:'archive'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
-const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc','ports','faq','support','notif'];
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc','ports','faq','support','notif','admin'];
 const VIEW_GROUP={};
 Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
 // GMDSS-разделы открываются карточками с главного экрана "Инструменты", а не
@@ -5542,7 +5634,9 @@ Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
 // Проверка рейса открывается из «Моих портов» и из ассистента, отдельной
 // вкладки у неё больше нет: маршрут задаётся списком портов захода.
 VIEW_GROUP['voy']='profile';
-['support','faq'].forEach(v=>VIEW_GROUP[v]='profile');
+// Админ-панель живёт в той же группе, что настройки: открывается из них и
+// возврат «назад» должен приводить туда же, а не на главную.
+['support','faq','admin'].forEach(v=>VIEW_GROUP[v]='profile');
 VIEW_GROUP['notif']='home';
 let S_GROUP='home';
 
@@ -5686,6 +5780,7 @@ function switchView(v){
   if(v!=='support') supPollStop();
   if(v==='support'){ loadSupport(); setTimeout(bindSupportInput,60); supPollStart(); }
   if(v==='notif'){ renderNotif(); loadNotifications().then(markNotifSeen); }
+  if(v==='admin'){ renderAdmin(); loadAdmin(); }
   if(v==='zones') renderZones();
   if(v==='map') setTimeout(()=>{initMap();map.invalidateSize();drawZones();drawMap()},70);
   setTimeout(applyLang,30);
@@ -6473,6 +6568,53 @@ async function startPurchase(btn){
   catch(e){ window.open(r.link,'_blank'); }
 }
 
+/* ---- Автопродление подписки ----
+   Кнопка отмены должна быть там же, где кнопка оплаты. Раньше отменить
+   можно было только командой /cancel_subscription в чате или в настройках
+   самого Telegram -- человек, который платил внутри приложения, искал
+   отмену здесь и не находил её. */
+function subDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  if(isNaN(d)) return String(iso).slice(0,10);
+  return String(d.getDate()).padStart(2,'0')+'.'
+        +String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+}
+function subSay(text, cls){
+  const el=$('#subState'); if(!el) return;
+  el.className='buystate'+(cls?' '+cls:'');
+  el.textContent=text||'';
+}
+const SUB_ERR={
+  unauthorized:'Подпиской можно управлять только внутри Telegram.',
+  no_payment:'Платёж не найден — отменять нечего.',
+  network:'Нет связи с Telegram. Попробуй ещё раз, когда появится сеть.',
+  telegram_error:'Telegram не принял отмену. Попробуй через Настройки Telegram → Мои звёзды → Подписки.'
+};
+async function toggleAutorenew(){
+  const on=!!(ACC&&ACC.can_manage_sub&&!ACC.sub_cancelled);
+  if(on&&!confirm(tr('Отключить автопродление? Оплаченный период доработает до конца, дальше списаний не будет.'))) return;
+  hap('medium');
+  subSay(tr(on?'Отключаю…':'Включаю…'));
+
+  let r=null;
+  try{ r=await api('/api/subscription?action='+(on?'cancel':'resume')); }
+  catch(e){ r={error:'network'}; }
+
+  if(!r||r.error){
+    const key=(r&&r.error)||'network';
+    subSay(tr(SUB_ERR[key]||'Не получилось. Попробуй ещё раз.')
+           +((r&&r.detail)?(' ('+r.detail+')'):''),'no');
+    return;
+  }
+  // Перечитываем доступ целиком: состояние подписки приходит в /api/access,
+  // и настройки рисуются из него -- иначе переключатель остался бы старым.
+  await loadAccess();
+  renderSettings();
+  subSay(tr(on?'Автопродление отключено. Premium доработает до конца оплаченного периода.'
+              :'Автопродление включено.'),'ok');
+}
+
 
 /* ================= Выбор даты =================
    Свой календарь. Системный на телефоне отдаёт change на каждый
@@ -6761,10 +6903,32 @@ function renderSettings(){
 
     <div class="dpanel"><h4>Доступ</h4>
       <div class="tres hi"><span class="tl">Текущий тариф</span><span class="tv">${esc(tier)}</span></div>
+      ${(ACC&&ACC.until)?`<div class="tres"><span class="tl">Действует до</span>
+        <span class="tv" style="font-size:13px">${esc(subDate(ACC.until))}</span></div>`:''}
+      ${(ACC&&ACC.can_manage_sub)?`
+      <div class="sw" data-set="autorenew">
+        <div style="min-width:0"><div class="t">${ico('star','sm')}Автопродление</div>
+          <div class="d">${ACC.sub_cancelled
+            ? 'Выключено. Оплаченный период доработает до конца и не продлится'
+            : 'Списание раз в 30 дней, пока включено. Выключишь — списаний больше не будет'}</div></div>
+        <div class="toggle ${ACC.sub_cancelled?'':'on'}"></div>
+      </div>
+      <div class="buystate" id="subState"></div>`:''}
+      ${(ACC&&ACC.premium_source==='granted')
+        ? `<div class="hint" style="margin:9px 0 0">${ico('star','xs')} Premium открыт вручную создателем бота — списаний нет.</div>`:''}
       ${(ACC&&ACC.paywall===false)
         ? `<div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Идёт отладка, все разделы открыты бесплатно.</div>`
         : `<button class="btn wide" id="setPlans" style="margin-top:9px">Что входит в Premium · ${price} ⭐</button>`}
     </div>
+
+    ${(ACC&&ACC.owner)?`
+    <div class="dpanel"><h4>Создателю бота</h4>
+      <div class="sw" data-set="admin">
+        <div style="min-width:0"><div class="t">${ico('sliders','sm')}Админ-панель</div>
+          <div class="d">Пользователи, платежи, баланс звёзд, выдача и возврат</div></div>
+        <span class="rtag am">→</span>
+      </div>
+    </div>`:''}
 
     <div class="dpanel"><h4>Данные без связи</h4>
       <div class="tres"><span class="tl">Последняя синхронизация</span><span class="tv" style="font-size:13px">${esc(cached)}</span></div>
@@ -6810,6 +6974,10 @@ function renderSettings(){
   };
   const sup=box.querySelector('[data-set="support"]');
   if(sup) sup.onclick=()=>{ hap('medium'); switchView('support'); };
+  const adm=box.querySelector('[data-set="admin"]');
+  if(adm) adm.onclick=()=>{ hap('medium'); switchView('admin'); };
+  const ar=box.querySelector('[data-set="autorenew"]');
+  if(ar) ar.onclick=toggleAutorenew;
   const fq=box.querySelector('[data-set="faq"]');
   if(fq) fq.onclick=()=>{ hap('medium'); switchView('faq'); };
   const ds=box.querySelector('[data-set="dscsnd"]');
@@ -7839,7 +8007,7 @@ const FAQ=[
   {q:'Что такое звёзды Telegram?',
    a:'Внутренняя валюта Telegram. Покупаются в самом приложении Telegram и тратятся на цифровые товары и услуги. Подписка продлевается сама каждые 30 дней.'},
   {q:'Как отменить подписку?',
-   a:'Команда /cancel_subscription в чате с ботом или Настройки Telegram → Мои звёзды → Подписки. Оплаченный период доработает до конца.'},
+   a:'«Моё судно» → «Настройки» → «Доступ» → выключить «Автопродление». Оплаченный период доработает до конца. То же самое делает команда /cancel_subscription в чате с ботом.'},
   {q:'Что остаётся бесплатным?',
    a:'Два района с уведомлениями, карта всех действующих предупреждений, все расчёты безопасности, справочники, станции ГМССБ, тренажёры и пять вопросов ассистенту в сутки.'}]},
 
@@ -7988,6 +8156,249 @@ function supPollStart(){
   }, 7000);
 }
 function supPollStop(){ if(SUP_POLL){ clearInterval(SUP_POLL); SUP_POLL=null; } }
+
+
+/* ================= Админ-панель =================
+   Всё, что раньше жило только командами в чате: кто платил, кто пользуется,
+   выдать доступ, вернуть звёзды. Номер операции для возврата приходилось
+   переносить руками из /payments в /refund -- здесь это одна кнопка.
+
+   Сервер отдаёт данные только владельцу и только по подписи Telegram, так
+   что показ раздела -- вопрос удобства, а не защиты: даже если кто-то
+   доберётся до вёрстки, ответом будет forbidden. */
+let ADM=null, ADM_TAB='all', ADM_Q='', ADM_OPEN=null, ADM_BUSY=false, ADM_TYPING=false;
+
+async function loadAdmin(){
+  try{ ADM=await api('/api/admin'); }
+  catch(e){ ADM={error:'network'}; }
+  renderAdmin();
+}
+async function loadAdminUsers(){
+  const q=encodeURIComponent(ADM_Q||'');
+  const only=ADM_TAB==='all'?'':ADM_TAB;
+  try{
+    const r=await api('/api/admin?action=users&q='+q+'&only='+only);
+    if(r&&r.users){ ADM=ADM||{}; ADM.users=r.users; }
+  }catch(e){}
+  renderAdmin();
+}
+function admSay(text, cls){
+  const el=$('#admState'); if(!el) return;
+  el.className='buystate'+(cls?' '+cls:'');
+  el.textContent=text||'';
+}
+
+/* Действие владельца: выдать, снять, вернуть. Список после каждого
+   перечитываем целиком -- цифры в шапке (сколько платных, сколько звёзд)
+   меняются вместе со строкой, и обновлять одну строку было бы враньём. */
+async function admAct(qs, okText){
+  if(ADM_BUSY) return;
+  ADM_BUSY=true;
+  hap('medium');
+  admSay(tr('Выполняю…'));
+  let r=null;
+  try{ r=await api('/api/admin?'+qs); }
+  catch(e){ r={error:'network'}; }
+  ADM_BUSY=false;
+
+  if(!r||r.error){
+    admSay((r&&r.error==='forbidden'?tr('Нет доступа.'):tr('Не получилось.'))
+           +((r&&r.detail)?(' '+r.detail):''),'no');
+    return;
+  }
+  await loadAdmin();
+  admSay(okText,'ok');
+}
+
+function admUserRow(u){
+  const name=[(u.first_name||'').trim(), u.username?('@'+u.username):''].filter(Boolean).join(' ');
+  const paid=u.is_premium&&u.premium_until&&new Date(u.premium_until)>new Date();
+  // Владелец идёт первым случаем: доступ у него из настроек бота, а не из
+  // базы, и без отдельной пометки он выглядел бы как бесплатный тариф.
+  const tag=u.owner
+    ? `<span class="rtag am">${tr('владелец')}</span>`
+    : paid
+      ? `<span class="rtag ${u.premium_source==='granted'?'':'ok'}">${
+          u.premium_source==='granted'?tr('выдан'):tr('оплачен')}</span>`
+      : (u.paid_stars?`<span class="rtag">${u.paid_stars} ⭐</span>`
+                     :`<span class="rtag">${tr('бесплатный')}</span>`);
+  const bits=['id '+u.user_id];
+  if(paid) bits.push(tr('до')+' '+subDate(u.premium_until));
+  if(u.sub_cancelled&&paid) bits.push(tr('без автопродления'));
+  // Сумму в строке показываем, только если её нет в теге справа
+  if(u.paid_stars&&(paid||u.owner)) bits.push(u.paid_stars+' ⭐');
+  bits.push(u.last_seen_at?(tr('заходил')+' '+ago(u.last_seen_at)):tr('в приложение не заходил'));
+
+  const open=(ADM_OPEN===u.user_id);
+  return `<div class="sw" data-adm-user="${u.user_id}">
+      <div style="min-width:0"><div class="t">${esc(name||('id '+u.user_id))}</div>
+        <div class="d">${esc(bits.join(' · '))}</div></div>
+      ${tag}
+    </div>
+    ${open?`<div class="admacts">
+      <button class="btn g" data-grant="${u.user_id}" data-days="7">+7 ${tr('дн')}</button>
+      <button class="btn g" data-grant="${u.user_id}" data-days="30">+30 ${tr('дн')}</button>
+      <button class="btn g" data-grant="${u.user_id}" data-days="365">+365 ${tr('дн')}</button>
+      ${paid?`<button class="btn g" data-revoke="${u.user_id}">${tr('Снять Premium')}</button>`:''}
+    </div>`:''}`;
+}
+
+function admPayRow(p){
+  const name=[(p.first_name||'').trim(), p.username?('@'+p.username):''].filter(Boolean).join(' ');
+  const gone=!!p.refunded_at;
+  return `<div class="admpay ${gone?'gone':''}">
+      <div class="pw"><span>${esc(name||('id '+p.user_id))}</span><span>${p.stars_amount} ⭐</span></div>
+      <div class="pd">id ${p.user_id} · ${esc(String(p.created_at||'').slice(0,16).replace('T',' '))}${
+        p.is_recurring?(' · '+tr('автопродление')):''}${gone?(' · '+tr('возвращено')):''}</div>
+      <div class="pc">${esc(p.charge_id||'')}</div>
+      ${gone?'':`<div class="admacts" style="margin:9px 0 0">
+        <button class="btn g" data-refund="${p.user_id}" data-charge="${esc(p.charge_id||'')}">${
+          tr('Вернуть звёзды')}</button></div>`}
+    </div>`;
+}
+
+function renderAdmin(){
+  const box=$('#admBox'); if(!box) return;
+
+  if(!ADM){ box.innerHTML='<div class="sk card"></div><div class="sk card"></div>'; return; }
+  if(ADM.error==='forbidden'){
+    box.innerHTML=`<div class="empty">${ico('alert')}${
+      esc(tr('Раздел только для создателя бота.'))}</div>`;
+    return;
+  }
+  if(ADM.error){
+    box.innerHTML=`<div class="empty">${ico('alert')}${
+      esc(tr('Нет связи с сервером. Открой раздел ещё раз.'))}</div>`;
+    return;
+  }
+
+  const s=ADM.summary||{}, bal=ADM.balance||{}, w=ADM.withdraw||{};
+  const stars=(bal.stars==null)?null:bal.stars;
+  const need=Math.max(0,(w.min||1000)-(stars||0));
+  const pct=Math.min(100, Math.round(((stars||0)/(w.min||1000))*100));
+
+  const money=`
+    <div class="dpanel"><h4>Звёзды</h4>
+      ${stars===null
+        ? `<div class="tres warn"><span class="tl">${esc(tr('Баланс не пришёл'))}</span>
+             <span class="tv" style="font-size:12px">${esc(bal.error||'')}</span></div>`
+        : `<div class="admbig">${stars} ⭐</div>
+           <div class="hint" style="padding:6px 0 0">${
+             esc(tr('Это баланс бота в Telegram — деньги за подписки приходят сюда.'))}</div>
+           <div class="admbar"><i style="width:${pct}%"></i></div>
+           <div class="hint" style="padding:0">${need>0
+             ? esc(tr('До вывода не хватает')+' '+need+' ⭐ '+tr('из')+' '+(w.min||1000))
+             : esc(tr('Минимума для вывода хватает.'))}</div>`}
+      <div class="admgrid" style="margin-top:11px">
+        <div class="admcell"><b>${s.stars_total||0}</b><span>${esc(tr('получено всего'))}</span></div>
+        <div class="admcell"><b>${s.stars_30d||0}</b><span>${esc(tr('за 30 дней'))}</span></div>
+        <div class="admcell"><b>${s.refunded_stars||0}</b><span>${esc(tr('возвращено'))}</span></div>
+      </div>
+    </div>
+
+    <div class="dpanel"><h4>Вывод</h4>
+      <div class="tres"><span class="tl">${esc(tr('Минимум для вывода'))}</span>
+        <span class="tv">${w.min||1000} ⭐</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Выдержка каждой звезды'))}</span>
+        <span class="tv">${w.hold_days||21} ${esc(tr('дн'))}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Срок прошли, по моему учёту'))}</span>
+        <span class="tv">${w.ripe_estimate||0} ⭐</span></div>
+      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${esc(tr(
+        'Вывод идёт только через Fragment и только в TON — у Bot API такого метода нет, кнопкой из бота его не вызвать. Telegram держит каждую звезду 21 день на случай возврата покупателю.'))}</div>
+      <button class="btn wide" id="admFragment" style="margin-top:9px">${esc(tr('Открыть Fragment'))}</button>
+    </div>`;
+
+  const people=`
+    <div class="dpanel"><h4>Люди</h4>
+      <div class="admgrid">
+        <div class="admcell"><b>${s.users||0}</b><span>${esc(tr('всего'))}</span></div>
+        <div class="admcell"><b>${s.active_week||0}</b><span>${esc(tr('заходили за неделю'))}</span></div>
+        <div class="admcell"><b>${s.active_day||0}</b><span>${esc(tr('за сутки'))}</span></div>
+        <div class="admcell"><b>${s.premium||0}</b><span>${esc(tr('с Premium'))}</span></div>
+        <div class="admcell"><b>${s.granted||0}</b><span>${esc(tr('выдано вручную'))}</span></div>
+        <div class="admcell"><b>${s.new_week||0}</b><span>${esc(tr('новых за неделю'))}</span></div>
+      </div>
+      ${s.cancelled?`<div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${
+        esc(tr('Отключили автопродление')+': '+s.cancelled)}</div>`:''}
+    </div>`;
+
+  const users=(ADM.users||[]);
+  const list=`
+    <div class="dpanel"><h4>Пользователи</h4>
+      <div class="admseg">
+        <button data-adm-tab="all" class="${ADM_TAB==='all'?'on':''}">${esc(tr('Все'))}</button>
+        <button data-adm-tab="paid" class="${ADM_TAB==='paid'?'on':''}">${esc(tr('С Premium'))}</button>
+        <button data-adm-tab="active" class="${ADM_TAB==='active'?'on':''}">${esc(tr('Активные'))}</button>
+      </div>
+      <div class="sbox" style="margin-bottom:9px">
+        <input id="admQ" placeholder="${esc(tr('Найти по id, имени или @нику'))}"
+               autocomplete="off" value="${esc(ADM_Q)}">
+      </div>
+      ${users.length?users.map(admUserRow).join('')
+        :`<div class="hint" style="padding:14px 0">${esc(tr('Никого не нашлось.'))}</div>`}
+      <div class="buystate" id="admState"></div>
+    </div>`;
+
+  const pays=(ADM.payments||[]);
+  const payments=`
+    <div class="dpanel"><h4>Платежи</h4>
+      ${pays.length?pays.map(admPayRow).join('')
+        :`<div class="hint" style="padding:14px 0">${esc(tr('Платежей пока нет.'))}</div>`}
+      <div class="hint" style="margin:4px 0 0">${ico('alert','xs')} ${esc(tr(
+        'Возврат отдаёт звёзды покупателю целиком и снимает Premium. Отменить возврат нельзя.'))}</div>
+    </div>`;
+
+  box.innerHTML=money+people+list+payments;
+
+  const fr=$('#admFragment');
+  if(fr) fr.onclick=()=>{
+    hap('medium');
+    // Fragment -- внешний сайт, а не страница Telegram: openLink открывает
+    // его в браузере, openTelegramLink на нём просто ничего не сделает.
+    try{ TG.openLink(w.fragment||'https://fragment.com/stars'); }
+    catch(e){ window.open(w.fragment||'https://fragment.com/stars','_blank'); }
+  };
+
+  box.querySelectorAll('[data-adm-tab]').forEach(b=>b.onclick=()=>{
+    ADM_TAB=b.dataset.admTab; ADM_OPEN=null; hap(); loadAdminUsers();
+  });
+  const q=$('#admQ');
+  if(q){
+    let t=null;
+    q.oninput=()=>{ ADM_TYPING=true; clearTimeout(t);
+      t=setTimeout(()=>{ ADM_Q=q.value; ADM_OPEN=null; loadAdminUsers(); },350); };
+    q.onblur=()=>{ ADM_TYPING=false; };
+    // Список перерисовывается на каждую букву, а вместе с ним и само поле.
+    // Без возврата фокуса на телефоне после первой же буквы закрывалась
+    // клавиатура -- набрать что-то длиннее «55» становилось невозможно.
+    if(ADM_TYPING){
+      q.focus();
+      try{ q.setSelectionRange(q.value.length, q.value.length); }catch(e){}
+    }
+  }
+  box.querySelectorAll('[data-adm-user]').forEach(el=>el.onclick=()=>{
+    const id=parseInt(el.dataset.admUser,10);
+    ADM_OPEN=(ADM_OPEN===id)?null:id;
+    hap(); renderAdmin();
+  });
+  box.querySelectorAll('[data-grant]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    admAct('action=grant&user_id='+b.dataset.grant+'&days='+b.dataset.days,
+           tr('Premium выдан, человек получил сообщение.'));
+  });
+  box.querySelectorAll('[data-revoke]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    if(!confirm(tr('Снять Premium? Деньги при этом не возвращаются.'))) return;
+    admAct('action=revoke&user_id='+b.dataset.revoke, tr('Premium снят.'));
+  });
+  box.querySelectorAll('[data-refund]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    if(!confirm(tr('Вернуть звёзды покупателю? Premium будет снят, отменить возврат нельзя.'))) return;
+    admAct('action=refund&user_id='+b.dataset.refund+'&charge_id='+encodeURIComponent(b.dataset.charge),
+           tr('Звёзды возвращены, Premium снят.'));
+  });
+  applyLang();
+}
 
 
 /* ================= Тренажёр ЦИВ (DSC) =================
@@ -10948,6 +11359,8 @@ setInterval(()=>{ if(S.view==='dash') renderClock(); }, 20000);
   const n=$('#notifBtn');
   if(n) n.onclick=()=>{ hap('medium'); switchView('notif'); };
   const nc=$('#notifClear'); if(nc) nc.onclick=()=>{ hap(); markNotifSeen(); };
+  const ar=$('#admReload');
+  if(ar) ar.onclick=()=>{ hap(); ADM=null; renderAdmin(); loadAdmin(); };
 }
 
 /* Поиск по справке */

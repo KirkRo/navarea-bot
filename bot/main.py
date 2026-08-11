@@ -123,6 +123,7 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("explain", warnings.cmd_explain))
     application.add_handler(CommandHandler("subscribe", billing.cmd_subscribe))
     application.add_handler(CommandHandler("cancel_subscription", billing.cmd_cancel_subscription))
+    application.add_handler(CommandHandler("resume_subscription", billing.cmd_resume_subscription))
     application.add_handler(CommandHandler("stats", admin.cmd_stats))
     application.add_handler(CommandHandler("diag", admin.cmd_diag))
     application.add_handler(CommandHandler("broadcast", admin.cmd_broadcast))
@@ -132,6 +133,9 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("multi", admin.cmd_multi))
     application.add_handler(CommandHandler("payments", admin.cmd_payments))
     application.add_handler(CommandHandler("refund", admin.cmd_refund))
+    application.add_handler(CommandHandler("balance", admin.cmd_balance))
+    application.add_handler(CommandHandler("grant", admin.cmd_grant))
+    application.add_handler(CommandHandler("revoke", admin.cmd_revoke))
 
     # --- callback-кнопки выбора районов ---
     application.add_handler(CallbackQueryHandler(areas.on_area_toggle, pattern=f"^{areas.CALLBACK_PREFIX}"))

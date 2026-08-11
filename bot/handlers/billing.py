@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice, Update
@@ -94,7 +95,7 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
         from datetime import timedelta
         until = datetime.now(timezone.utc) + timedelta(seconds=SUBSCRIPTION_PERIOD_SECONDS)
 
-    db.set_premium(user_id, until.isoformat())
+    db.set_premium(user_id, until.isoformat(), source="stars")
     db.log_payment(
         user_id=user_id,
         charge_id=payment.telegram_payment_charge_id,
@@ -105,9 +106,35 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
     text = (
         "Спасибо, Premium активирован ⭐️\n"
         f"Действует до {until.strftime('%d.%m.%Y')}, дальше продлится автоматически.\n"
-        "Отменить автопродление в любой момент -- /cancel_subscription."
+        "Отменить автопродление в любой момент -- в приложении: «Моё судно» → "
+        "«Настройки» → «Автопродление», или командой /cancel_subscription."
     )
     await update.message.reply_text(text)
+    await _tell_owner_about_payment(context, update.effective_user, payment)
+
+
+async def _tell_owner_about_payment(context: ContextTypes.DEFAULT_TYPE, user, payment) -> None:
+    """Владельцу -- сообщение о каждой оплате.
+
+    Без него о покупке узнать было неоткуда: деньги приходят на баланс бота
+    в Telegram, а бот об этом молчал -- со стороны владельца выглядело так,
+    будто платёж прошёл мимо него."""
+    name = (user.first_name or "").strip()
+    if user.username:
+        name = f"{name} @{user.username}".strip()
+
+    body = (
+        f"⭐️ Оплата {payment.total_amount} звёзд\n"
+        f"{name or 'без имени'} · id {user.id}\n"
+        f"{'Автопродление' if payment.is_recurring else 'Первая оплата'}\n\n"
+        f"Баланс бота: /balance\n"
+        f"Возврат: /refund {user.id} {payment.telegram_payment_charge_id}"
+    )
+    for owner_id in config.owner_ids:
+        try:
+            await context.bot.send_message(owner_id, body)
+        except Exception:
+            logging.getLogger(__name__).exception("Не удалось сообщить владельцу об оплате")
 
 
 async def cmd_cancel_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -119,7 +146,8 @@ async def cmd_cancel_subscription(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text("Активной подписки не найдено.")
         return
 
-    charge_id = db.get_last_charge_id(user_id)
+    # Именно невозвращённый платёж: за возвращённым подписки уже нет.
+    charge_id = db.active_charge_id(user_id)
 
     if not charge_id:
         await update.message.reply_text(
@@ -133,6 +161,39 @@ async def cmd_cancel_subscription(update: Update, context: ContextTypes.DEFAULT_
         telegram_payment_charge_id=charge_id,
         is_canceled=True,
     )
+    # Состояние подписки Telegram обратно не отдаёт -- помним сами, иначе
+    # переключатель в приложении не знал бы, что показывать.
+    db.set_sub_cancelled(user_id, True)
     await update.message.reply_text(
-        "Автопродление отключено. Premium останется активным до конца уже оплаченного периода."
+        "Автопродление отключено. Premium останется активным до конца уже оплаченного периода.\n"
+        "Включить обратно -- /resume_subscription."
     )
+
+
+async def cmd_resume_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Вернуть автопродление, пока оплаченный период ещё не кончился.
+
+    Тот же метод Bot API, что и отмена, только is_canceled=False. После
+    окончания периода подписки уже нет -- тогда нужен новый счёт."""
+    db: Database = context.bot_data["db"]
+    user_id = update.effective_user.id
+    charge_id = db.active_charge_id(user_id)
+
+    if not charge_id or not db.is_premium_active(user_id):
+        await update.message.reply_text(
+            "Действующей подписки нет — оформить заново можно через /subscribe."
+        )
+        return
+
+    try:
+        await context.bot.edit_user_star_subscription(
+            user_id=user_id,
+            telegram_payment_charge_id=charge_id,
+            is_canceled=False,
+        )
+    except Exception as e:
+        await update.message.reply_text(f"Telegram отказал: {e}")
+        return
+
+    db.set_sub_cancelled(user_id, False)
+    await update.message.reply_text("Автопродление включено обратно.")

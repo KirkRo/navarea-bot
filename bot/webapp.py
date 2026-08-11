@@ -298,16 +298,28 @@ def _api_access(query: dict) -> dict:
     from .config import config
     from .services.access import PAID_FEATURES, TRIAL_DAYS, access_state
 
+    from .services.access import is_owner
+
     db = _state["db"]
     user_id = _user_id_from_query(query)
+    # Владельца отмечаем отдельным полем, а не по названию тарифа: при
+    # выключенных тарифах у всех тариф «Открытый доступ», и панель владельца
+    # иначе была бы не видна никому.
+    owner = user_id is not None and is_owner(user_id)
+
     if not config.paywall_enabled:
-        return {"tier": "open", "premium": True, "paywall": False,
+        if user_id is not None and db is not None:
+            try:
+                db.touch_user(user_id)
+            except Exception:
+                logger.exception("Не удалось отметить заход пользователя")
+        return {"tier": "open", "premium": True, "paywall": False, "owner": owner,
                 "title": "Открытый доступ", "title_en": "Open access",
                 "paid_features": PAID_FEATURES,
                 "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
 
     if user_id is None:
-        return {"tier": "free", "premium": False, "paywall": True,
+        return {"tier": "free", "premium": False, "paywall": True, "owner": False,
                 "title": "Бесплатный тариф", "title_en": "Free plan",
                 "paid_features": PAID_FEATURES,
                 "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
@@ -318,6 +330,13 @@ def _api_access(query: dict) -> dict:
     device = (query.get("device") or [""])[0]
     fp_raw = (query.get("fp") or [""])[0]
     antiabuse.register(db, user_id, device, fp_raw)
+
+    # Заход в приложение -- единственный надёжный признак, что человек ещё
+    # пользуется ботом: команды в чате многие не набирают вовсе.
+    try:
+        db.touch_user(user_id)
+    except Exception:
+        logger.exception("Не удалось отметить заход пользователя")
 
     st = access_state(db, user_id)
 
@@ -333,9 +352,20 @@ def _api_access(query: dict) -> dict:
                   "trial_blocked_text_en": antiabuse.DENY_TEXT_EN.get(why, "")}
 
     st["paywall"] = True
+    st["owner"] = owner
     st["paid_features"] = PAID_FEATURES
     st["trial_days"] = TRIAL_DAYS
     st["price_stars"] = config.stars_price_monthly
+
+    # Состояние автопродления кладём сюда же: настройки рисуются из /api/access,
+    # и лишний запрос ради одной строки был бы виден задержкой.
+    user = db.get_user(user_id)
+    if user is not None:
+        st["premium_source"] = user.premium_source
+        st["sub_cancelled"] = bool(user.sub_cancelled)
+        st["can_manage_sub"] = bool(
+            user.is_premium and (user.premium_source or "stars") == "stars"
+            and db.active_charge_id(user_id))
     return st
 
 
@@ -650,6 +680,40 @@ def _api_support(query: dict) -> dict:
     }
 
 
+def _call_bot_api(method: str, payload: dict | None = None) -> dict:
+    """Вызов метода Bot API напрямую по HTTP.
+
+    Веб-сервер живёт в своём потоке, и до объекта бота с его циклом событий
+    отсюда не дотянуться -- поэтому обращаемся к Telegram обычным POST.
+    Причину отказа Telegram кладёт в тело ответа даже при коде 400, она
+    полезнее самого кода, поэтому читаем тело и у ошибки тоже."""
+    import urllib.error
+    import urllib.request
+
+    token = _state["bot_token"]
+    if not token:
+        return {"ok": False, "description": "no_token"}
+
+    req = urllib.request.Request(
+        _bot_api(token, method),
+        data=json.dumps(payload or {}).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read().decode("utf-8"))
+        except Exception:
+            logger.exception("%s ответил ошибкой", method)
+            return {"ok": False, "description": "telegram_error"}
+    except Exception:
+        logger.exception("%s не ответил", method)
+        return {"ok": False, "description": "network"}
+
+
 def _notify_owner(user_id: int, text: str) -> None:
     """Сообщение владельцу о новом обращении. Идёт напрямую по Bot API:
     веб-сервер живёт в своём потоке, до объекта бота отсюда не дотянуться."""
@@ -693,9 +757,6 @@ def _api_invoice(query: dict) -> dict:
     и до объекта бота с его циклом событий отсюда не дотянуться, а метод
     createInvoiceLink -- обычный POST.
     """
-    import urllib.error
-    import urllib.request
-
     from .config import config
     from .handlers.billing import INVOICE_PAYLOAD, SUBSCRIPTION_PERIOD_SECONDS
     from .services.access import is_owner
@@ -726,31 +787,231 @@ def _api_invoice(query: dict) -> dict:
         "prices": [{"label": "Premium, 1 месяц", "amount": config.stars_price_monthly}],
         "subscription_period": SUBSCRIPTION_PERIOD_SECONDS,
     }
-    req = urllib.request.Request(
-        _bot_api(token, "createInvoiceLink"),
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            answer = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        # Telegram кладёт причину отказа в тело ответа -- она полезнее кода
-        try:
-            answer = json.loads(e.read().decode("utf-8"))
-        except Exception:
-            logger.exception("createInvoiceLink не ответил")
-            return {"error": "telegram_error"}
-    except Exception:
-        logger.exception("createInvoiceLink не ответил")
-        return {"error": "network"}
-
+    answer = _call_bot_api("createInvoiceLink", payload)
     if not answer.get("ok"):
         logger.warning("createInvoiceLink отказал: %s", answer.get("description"))
-        return {"error": "telegram_error", "detail": answer.get("description", "")}
+        detail = answer.get("description", "")
+        if detail in ("network", "telegram_error", "no_token"):
+            return {"error": detail}
+        return {"error": "telegram_error", "detail": detail}
 
     return {"link": answer["result"], "price_stars": config.stars_price_monthly}
+
+
+def _api_subscription(query: dict) -> dict:
+    """Автопродление подписки: состояние и переключение прямо в приложении.
+
+    Раньше отменить можно было только командой /cancel_subscription в чате
+    или в настройках Telegram -- человек, который платил внутри приложения,
+    искал отмену там же и не находил.
+
+    Telegram не даёт метода «узнать состояние подписки», поэтому факт отмены
+    помним у себя (users.sub_cancelled) и там же держим номер операции --
+    editUserStarSubscription без него не вызвать."""
+    from .services.access import access_state
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None:
+        return {"error": "unauthorized"}
+    if db is None:
+        return {"error": "no_db"}
+
+    action = (query.get("action") or [""])[0]
+    charge_id = db.active_charge_id(user_id)
+
+    def manageable(u) -> bool:
+        """Управлять можно только тем, что человек оплатил сам: выданный
+        вручную Premium и пробный период платежа под собой не имеют."""
+        return bool(u and u.is_premium and (u.premium_source or "stars") == "stars" and charge_id)
+
+    def state(extra: dict | None = None) -> dict:
+        u = db.get_user(user_id)
+        st = access_state(db, user_id)
+        can = manageable(u)
+        data = {
+            "tier": st.get("tier"),
+            "premium": bool(st.get("premium")),
+            "until": getattr(u, "premium_until", None),
+            "source": getattr(u, "premium_source", None),
+            "autorenew": bool(can and not getattr(u, "sub_cancelled", False)),
+            "can_manage": can,
+            "has_charge": bool(charge_id),
+        }
+        if extra:
+            data.update(extra)
+        return data
+
+    if action not in ("cancel", "resume"):
+        return state()
+
+    if not manageable(db.get_user(user_id)):
+        return state({"error": "no_payment"})
+
+    cancel = (action == "cancel")
+    answer = _call_bot_api("editUserStarSubscription", {
+        "user_id": user_id,
+        "telegram_payment_charge_id": charge_id,
+        "is_canceled": cancel,
+    })
+    if not answer.get("ok"):
+        detail = answer.get("description", "")
+        logger.warning("editUserStarSubscription отказал: %s", detail)
+        return state({"error": "telegram_error", "detail": detail})
+
+    db.set_sub_cancelled(user_id, cancel)
+    return state({"done": action})
+
+
+# Правила вывода звёзд на стороне Telegram. Держим их здесь, а не в тексте
+# интерфейса: цифры одни и те же и для панели, и для команды /balance.
+STARS_WITHDRAW_MIN = 1000      # меньше тысячи Fragment вывести не даст
+STARS_HOLD_DAYS = 21           # столько звезда «зреет»: до этого возможен возврат
+FRAGMENT_URL = "https://fragment.com/stars"
+
+
+def _withdraw_info(db) -> dict:
+    """Что мешает вывести звёзды прямо сейчас.
+
+    Точную сумму, доступную к выводу, знает только Telegram -- Bot API её не
+    отдаёт (вывод живёт в MTProto, у ботов такого метода нет). Поэтому по
+    своим платежам считаем оценку: не возвращённые и старше срока удержания."""
+    from datetime import datetime, timedelta, timezone
+
+    ripe = 0
+    if db is not None:
+        edge = (datetime.now(timezone.utc) - timedelta(days=STARS_HOLD_DAYS)).isoformat()
+        try:
+            for p in db.recent_payments(limit=500):
+                if p.get("refunded_at"):
+                    continue
+                if str(p.get("created_at") or "") <= edge:
+                    ripe += int(p.get("stars_amount") or 0)
+        except Exception:
+            logger.exception("Не удалось оценить созревшие звёзды")
+    return {"min": STARS_WITHDRAW_MIN, "hold_days": STARS_HOLD_DAYS,
+            "fragment": FRAGMENT_URL, "ripe_estimate": ripe}
+
+
+def _api_admin(query: dict) -> dict:
+    """Панель владельца: кто пользуется, кто платил, выдача и возврат.
+
+    Раньше всё это жило только в командах чата (/stats, /payments, /refund) --
+    номер операции для возврата приходилось переносить руками. Здесь то же
+    самое, но кнопками.
+
+    Доступ только по совпадению с OWNER_IDS и только после проверки подписи
+    Telegram: user_id из initData подделать нельзя, а без подписи его можно
+    было бы просто подставить в адрес."""
+    from .config import config
+    from .services.access import is_owner
+
+    db = _state["db"]
+    user_id = _user_id_from_query(query)
+    if user_id is None or not is_owner(user_id):
+        return {"error": "forbidden"}
+    if db is None:
+        return {"error": "no_db"}
+
+    action = (query.get("action") or ["overview"])[0]
+    arg = lambda k, d="": (query.get(k) or [d])[0]  # noqa: E731 -- локальное сокращение
+
+    if action == "users":
+        return {"users": _mark_owners(db.admin_users(
+            limit=min(200, int(arg("limit", "60") or 60)),
+            offset=int(arg("offset", "0") or 0),
+            q=arg("q"), only=arg("only")))}
+
+    if action == "payments":
+        return {"payments": db.recent_payments(limit=min(200, int(arg("limit", "50") or 50)))}
+
+    if action == "grant":
+        uid, days = arg("user_id"), arg("days", "30")
+        if not uid.lstrip("-").isdigit():
+            return {"error": "bad_user"}
+        until = db.grant_premium(int(uid), int(days or 30))
+        _tell_user(int(uid), f"🎁 Тебе открыт Premium в WatchKeeper до {str(until)[:10]}. "
+                             f"Платить ничего не нужно.")
+        return {"done": "grant", "until": until, "user": _admin_user(db, int(uid))}
+
+    if action == "revoke":
+        uid = arg("user_id")
+        if not uid.lstrip("-").isdigit():
+            return {"error": "bad_user"}
+        db.revoke_premium(int(uid))
+        return {"done": "revoke", "user": _admin_user(db, int(uid))}
+
+    if action == "refund":
+        uid, charge_id = arg("user_id"), arg("charge_id")
+        if not uid.lstrip("-").isdigit() or not charge_id:
+            return {"error": "bad_args"}
+        answer = _call_bot_api("refundStarPayment", {
+            "user_id": int(uid), "telegram_payment_charge_id": charge_id})
+        if not answer.get("ok"):
+            return {"error": "telegram_error", "detail": answer.get("description", "")}
+        db.mark_payment_refunded(charge_id)
+        # Возврат денег и снятие доступа -- разные вещи, второе Telegram
+        # за нас не делает.
+        try:
+            db.revoke_premium(int(uid))
+        except Exception:
+            logger.exception("Не удалось снять Premium после возврата")
+        _tell_user(int(uid), "Оплата возвращена, звёзды снова у тебя на балансе. Premium отключён.")
+        return {"done": "refund", "user": _admin_user(db, int(uid))}
+
+    if action == "balance":
+        return _admin_balance(db)
+
+    # overview -- то, что видно сразу при открытии панели
+    data = {
+        "summary": db.admin_summary(),
+        "users": _mark_owners(db.admin_users(limit=20)),
+        "payments": db.recent_payments(limit=10),
+        "price_stars": config.stars_price_monthly,
+        "paywall": config.paywall_enabled,
+        "test_env": config.telegram_test_env,
+        "build": _build_id(),
+    }
+    data.update(_admin_balance(db))
+    return data
+
+
+def _admin_balance(db) -> dict:
+    """Баланс звёзд бота. Именно его владелец не мог найти в BotFather:
+    в разделе Payments лежат карточные провайдеры, а звёзды туда не входят."""
+    answer = _call_bot_api("getMyStarBalance")
+    out = {"withdraw": _withdraw_info(db)}
+    if answer.get("ok"):
+        result = answer.get("result") or {}
+        out["balance"] = {"stars": result.get("amount", 0),
+                          "nano": result.get("nanostar_amount", 0)}
+    else:
+        out["balance"] = {"error": answer.get("description", "telegram_error")}
+    return out
+
+
+def _mark_owners(rows: list[dict]) -> list[dict]:
+    """Помечаем владельцев: доступ у них из OWNER_IDS, а не из базы, и без
+    пометки сам создатель бота выглядел в списке как «бесплатный тариф»."""
+    from .config import config
+
+    for r in rows:
+        r["owner"] = r.get("user_id") in config.owner_ids
+    return rows
+
+
+def _admin_user(db, user_id: int) -> dict:
+    rows = _mark_owners(db.admin_users(limit=1, q=str(user_id)))
+    return rows[0] if rows else {"user_id": user_id}
+
+
+def _tell_user(user_id: int, text: str) -> None:
+    """Сообщение человеку от бота. Молча глотаем отказ: не начинал диалог --
+    значит просто не получит, но действие владельца всё равно выполнено."""
+    try:
+        _call_bot_api("sendMessage", {"chat_id": user_id, "text": text})
+    except Exception:
+        logger.exception("Не удалось написать пользователю %s", user_id)
 
 
 def _now_iso() -> str:
@@ -1067,6 +1328,8 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/subscription": _api_subscription,
+    "/api/admin": _api_admin,
     "/api/cyclones": _api_cyclones,
     "/api/ask": _api_ask,
     "/api/gmdss": _api_gmdss,
