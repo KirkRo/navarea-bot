@@ -130,6 +130,8 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("support", admin.cmd_support_list))
     application.add_handler(CommandHandler("reply", admin.cmd_reply))
     application.add_handler(CommandHandler("multi", admin.cmd_multi))
+    application.add_handler(CommandHandler("payments", admin.cmd_payments))
+    application.add_handler(CommandHandler("refund", admin.cmd_refund))
 
     # --- callback-кнопки выбора районов ---
     application.add_handler(CallbackQueryHandler(areas.on_area_toggle, pattern=f"^{areas.CALLBACK_PREFIX}"))

@@ -518,6 +518,11 @@ class PostgresDatabase:
             row = cur.fetchone()
         return row["charge_id"] if row else None
 
+    def recent_payments(self, limit: int = 20) -> list[dict]:
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM payments ORDER BY id DESC LIMIT %s", (limit,))
+            return [dict(r) for r in cur.fetchall()]
+
     def get_all_user_ids(self) -> list[int]:
         with self._conn() as conn, conn.cursor() as cur:
             cur.execute("SELECT user_id FROM users")

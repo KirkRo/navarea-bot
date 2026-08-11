@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -126,6 +127,76 @@ async def cmd_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "Записано в переписку, но сообщением не доставлено — "
             "возможно, человек не начинал диалог с ботом."
         )
+
+
+async def cmd_payments(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Последние платежи со звёздами: кто, сколько и номер операции.
+
+    Номер операции нужен для возврата -- без него refundStarPayment
+    вызвать нечем."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    rows = db.recent_payments(limit=20)
+    if not rows:
+        await update.message.reply_text("Платежей пока нет.")
+        return
+
+    lines = ["<b>Последние платежи</b>", ""]
+    for p in rows:
+        lines.append(
+            f"• {p['stars_amount']} ⭐ · id <code>{p['user_id']}</code> · "
+            f"{str(p['created_at'])[:16].replace('T', ' ')}"
+            f"{' · автопродление' if p.get('is_recurring') else ''}\n"
+            f"  <code>{p['charge_id']}</code>"
+        )
+    lines.append("")
+    lines.append("Возврат: <code>/refund id_пользователя номер_операции</code>")
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
+
+async def cmd_refund(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Возврат звёзд за платёж: /refund <user_id> <charge_id>.
+
+    Штатный способ, которым проверяют оплату на боевом сервере: покупка
+    настоящая, а звёзды возвращаются покупателю полностью. Premium при
+    этом снимаем сами -- Telegram об отмене доступа не заботится."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    if len(context.args) < 2 or not context.args[0].lstrip("-").isdigit():
+        await update.message.reply_text(
+            "Использование: /refund id_пользователя номер_операции\n"
+            "Список платежей с номерами -- /payments"
+        )
+        return
+
+    uid = int(context.args[0])
+    charge_id = context.args[1].strip()
+
+    try:
+        await context.bot.refund_star_payment(user_id=uid, telegram_payment_charge_id=charge_id)
+    except Exception as e:
+        await update.message.reply_text(f"Telegram отказал в возврате: {e}")
+        return
+
+    # Доступ снимаем сами: возврат денег и отзыв подписки -- разные вещи,
+    # и Telegram второе за нас не делает.
+    try:
+        db.revoke_premium(uid)
+    except Exception:
+        logging.getLogger(__name__).exception("Не удалось снять Premium после возврата")
+
+    await update.message.reply_text("Звёзды возвращены, Premium снят.")
+    try:
+        await context.bot.send_message(
+            uid, "Оплата возвращена, звёзды снова у тебя на балансе. "
+                 "Premium отключён."
+        )
+    except Exception:
+        pass
 
 
 async def cmd_multi(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

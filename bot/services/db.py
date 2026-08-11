@@ -488,6 +488,14 @@ class Database:
             ).fetchone()
         return row["charge_id"] if row else None
 
+    def recent_payments(self, limit: int = 20) -> list[dict]:
+        """Последние платежи -- владельцу, чтобы взять номер операции
+        для возврата (refundStarPayment без него не вызвать)."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM payments ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
     def get_all_user_ids(self) -> list[int]:
         with self._conn() as conn:
             rows = conn.execute("SELECT user_id FROM users").fetchall()
