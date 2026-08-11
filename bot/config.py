@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 # Номер сборки: видно в приложении и в логе, чтобы не гадать,
 # какая версия сейчас развёрнута.
-BUILD = "260809.4706"
+BUILD = "260809.4707"
 
 load_dotenv()
 
@@ -77,10 +77,13 @@ class Config:
     stars_price_monthly: int = field(default_factory=lambda: _get_int("STARS_PRICE_MONTHLY", 100))
 
     # Пробный период в днях. Ноль -- пробного нет вовсе: все платные разделы
-    # закрыты сразу, пока подписка не оплачена. Так проверяется настоящая
-    # покупка -- при включённом пробном новый аккаунт и так всё видит,
-    # и кнопка оплаты ему не показывается.
-    trial_days: int = field(default_factory=lambda: _get_int("TRIAL_DAYS", 0))
+    # закрыты сразу, пока подписка не оплачена (так удобно проверять покупку).
+    trial_days: int = field(default_factory=lambda: _get_int("TRIAL_DAYS", 7))
+
+    # Тестовая среда Telegram: отдельный дата-центр, где звёзды бесплатные
+    # и покупку можно прогнать целиком. Бот там живёт под другим токеном
+    # и другим аккаунтом -- см. PAYMENTS.md.
+    telegram_test_env: bool = field(default_factory=lambda: _get_bool("TELEGRAM_TEST_ENV", False))
 
     # Пока идёт отладка, платные разделы выключены и всё открыто всем.
     # Когда проект будет готов -- поставить PAYWALL_ENABLED=true в .env,

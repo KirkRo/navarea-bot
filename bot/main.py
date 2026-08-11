@@ -90,7 +90,15 @@ def build_application() -> Application:
         "Postgres" if config.database_url else "SQLite",
     )
 
-    application = Application.builder().token(config.bot_token).post_init(on_startup).build()
+    builder = Application.builder().token(config.bot_token).post_init(on_startup)
+    if config.telegram_test_env:
+        # Тестовый дата-центр Telegram: там звёзды бесплатные и покупку можно
+        # прогнать целиком. Аккаунт и токен там отдельные -- см. PAYMENTS.md.
+        # Форма адреса с {token} -- документированная, именно для этого случая.
+        builder = builder.base_url("https://api.telegram.org/bot{token}/test")
+        builder = builder.base_file_url("https://api.telegram.org/file/bot{token}/test")
+        logger.warning("ТЕСТОВАЯ СРЕДА Telegram: бот работает не с боевыми аккаунтами")
+    application = builder.build()
 
     db = build_database(config.database_url, config.db_path)
     qa_client = ClaudeQA(config.anthropic_api_key, config.claude_model, config.claude_max_tokens)
@@ -121,6 +129,7 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("notice", admin.cmd_notice))
     application.add_handler(CommandHandler("support", admin.cmd_support_list))
     application.add_handler(CommandHandler("reply", admin.cmd_reply))
+    application.add_handler(CommandHandler("multi", admin.cmd_multi))
 
     # --- callback-кнопки выбора районов ---
     application.add_handler(CallbackQueryHandler(areas.on_area_toggle, pattern=f"^{areas.CALLBACK_PREFIX}"))

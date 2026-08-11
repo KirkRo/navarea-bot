@@ -128,6 +128,35 @@ async def cmd_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
 
 
+async def cmd_multi(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Устройства, на которых побывало несколько аккаунтов.
+
+    Не приговор: одно устройство законно делят курсанты, сменщики и экипаж
+    на общем судовом компьютере. Команда показывает, где стоит присмотреться,
+    а не кого наказать."""
+    if not _is_owner(update.effective_user.id):
+        return
+    db: Database = context.bot_data["db"]
+
+    rows = db.device_accounts(min_accounts=2, limit=30)
+    if not rows:
+        await update.message.reply_text("Устройств с несколькими аккаунтами нет.")
+        return
+
+    lines = ["<b>Одно устройство — несколько аккаунтов</b>", ""]
+    for r in rows:
+        users = str(r.get("users") or "").replace(",", ", ")
+        lines.append(f"• {r['n']} акк. · <code>{str(r['device_id'])[:12]}…</code>\n"
+                     f"  {users}\n"
+                     f"  с {str(r['first_seen'])[:10]} по {str(r['last_seen'])[:10]}")
+    lines.append("")
+    lines.append("Пробный период выдаётся только первому аккаунту устройства. "
+                 "Остальные сразу на бесплатном тарифе, ничего не блокируется.")
+    text = "\n".join(lines)
+    for i in range(0, len(text), 3500):
+        await update.message.reply_text(text[i:i + 3500], parse_mode="HTML")
+
+
 async def cmd_diag(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Проверка всех источников по запросу: что отвечает, что нет и почему.
 

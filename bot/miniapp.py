@@ -1728,8 +1728,9 @@ body.kbd .askbar{bottom:0}
   display:block;width:100%;height:clamp(180px,38vh,320px);
   border:1px solid var(--line);border-radius:var(--r-md);background:var(--surf2);
 }
+/* Крестик слева: справа у Windy свои кнопки масштаба, и наш перекрывал их */
 .wxclose{
-  position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;border-radius:50%;
+  position:absolute;top:8px;left:8px;z-index:2;width:30px;height:30px;border-radius:50%;
   background:rgba(9,20,32,.86);border:1px solid var(--line);color:#fff;font-size:16px;
   line-height:1;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
 }
@@ -4760,9 +4761,43 @@ function loadCache(){
   }catch(e){}
   return null;
 }
+/* ---- Признак устройства ----
+   Нужен ровно для одного: пробный период выдаётся один раз на устройство,
+   а не заново на каждый новый аккаунт Telegram. Идентификатор случайный и
+   живёт только здесь; отпечаток -- часовой пояс, язык, экран и платформа,
+   на сервере он хранится хешем. Личность по ним не устанавливается. */
+const DEV_KEY='navarea_device';
+function deviceId(){
+  let d=null;
+  try{ d=localStorage.getItem(DEV_KEY); }catch(e){}
+  if(!d||d.length<8){
+    d=(crypto&&crypto.randomUUID)?crypto.randomUUID().replace(/-/g,'')
+      :(Date.now().toString(36)+Math.random().toString(36).slice(2,14));
+    try{ localStorage.setItem(DEV_KEY,d); }catch(e){}
+  }
+  return d;
+}
+function deviceFingerprint(){
+  try{
+    const s=screen||{};
+    return [
+      Intl.DateTimeFormat().resolvedOptions().timeZone||'',
+      navigator.language||'',
+      (s.width||0)+'x'+(s.height||0),
+      s.colorDepth||0,
+      navigator.platform||'',
+      navigator.hardwareConcurrency||0,
+      navigator.maxTouchPoints||0
+    ].join('|');
+  }catch(e){ return ''; }
+}
+const DEVICE=deviceId(), DEVICE_FP=deviceFingerprint();
+
 async function api(p){
   const sep=p.includes('?')?'&':'?';
-  const r=await fetch(p+sep+'initData='+encodeURIComponent(INIT));
+  const r=await fetch(p+sep+'initData='+encodeURIComponent(INIT)
+    +'&device='+encodeURIComponent(DEVICE)
+    +'&fp='+encodeURIComponent(DEVICE_FP));
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
@@ -6290,10 +6325,15 @@ function renderTrialBar(){
       <div class="tt"><div class="t1">Premium активен</div>
         <div class="t2">Открыты все разделы. Спасибо, что поддерживаешь проект.</div></div>`;
   } else {
+    // Если пробный уже отработал на этом устройстве под другим аккаунтом --
+    // говорим об этом прямо, а не молчим о пропавшем пробном периоде.
+    const blocked=(LANG==='en'&&ACC.trial_blocked_text_en)
+      ? ACC.trial_blocked_text_en : ACC.trial_blocked_text;
     el.className='trialbar free';
     el.innerHTML=`<div class="ti">${ico('lighthouse')}</div>
       <div class="tt"><div class="t1">Бесплатный тариф</div>
-        <div class="t2">Два района, базовые расчёты и справочники. Остальное — ${ACC.price_stars} ⭐ в месяц.</div></div>
+        <div class="t2">${blocked?esc(blocked)
+          :`Два района, базовые расчёты и справочники. Остальное — ${ACC.price_stars} ⭐ в месяц.`}</div></div>
       <span class="tg">Открыть всё →</span>`;
   }
   el.onclick=openPlans;

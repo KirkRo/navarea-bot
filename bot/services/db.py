@@ -149,6 +149,15 @@ CREATE TABLE IF NOT EXISTS notices (
     body TEXT,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS device_users (
+    device_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    fingerprint TEXT,
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL,
+    PRIMARY KEY (device_id, user_id)
+);
 """
 
 
@@ -878,6 +887,49 @@ class Database:
         with self._conn() as conn:
             row = conn.execute("SELECT notif_seen_at FROM users WHERE user_id = ?", (user_id,)).fetchone()
         return row["notif_seen_at"] if row else None
+
+    # ------------------------------------------------------------------ #
+    # Связь «устройство -- аккаунт» (см. services/antiabuse.py)
+    # ------------------------------------------------------------------ #
+    def touch_device(self, device_id: str, user_id: int, fingerprint: str = "") -> None:
+        ts = _now()
+        with self._conn() as conn:
+            conn.execute("""
+                INSERT INTO device_users (device_id, user_id, fingerprint, first_seen, last_seen)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(device_id, user_id) DO UPDATE SET
+                    last_seen = excluded.last_seen,
+                    fingerprint = COALESCE(NULLIF(excluded.fingerprint, ''), device_users.fingerprint)
+            """, (device_id, user_id, fingerprint, ts, ts))
+
+    def device_owner(self, device_id: str) -> Optional[int]:
+        """Кто первым завёл это устройство -- ему и принадлежит пробный период."""
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM device_users WHERE device_id = ? "
+                "ORDER BY first_seen, user_id LIMIT 1", (device_id,)).fetchone()
+        return int(row["user_id"]) if row else None
+
+    def fingerprint_owner(self, fingerprint: str) -> Optional[int]:
+        if not fingerprint:
+            return None
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM device_users WHERE fingerprint = ? "
+                "ORDER BY first_seen, user_id LIMIT 1", (fingerprint,)).fetchone()
+        return int(row["user_id"]) if row else None
+
+    def device_accounts(self, min_accounts: int = 2, limit: int = 50) -> list[dict]:
+        """Устройства, на которых побывало несколько аккаунтов -- для владельца."""
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT device_id, COUNT(*) AS n,
+                       GROUP_CONCAT(user_id) AS users,
+                       MIN(first_seen) AS first_seen, MAX(last_seen) AS last_seen
+                FROM device_users GROUP BY device_id
+                HAVING n >= ? ORDER BY n DESC, last_seen DESC LIMIT ?
+            """, (min_accounts, limit)).fetchall()
+        return [dict(r) for r in rows]
 
     def set_notif_seen_at(self, user_id: int, when: str | None = None) -> None:
         # Через вставку с конфликтом: если человек открыл Mini App раньше,

@@ -79,6 +79,14 @@ def validate_init_data(init_data: str, bot_token: str) -> dict | None:
         return None
 
 
+def _bot_api(token: str, method: str) -> str:
+    """Адрес метода Bot API. В тестовой среде Telegram к пути добавляется
+    /test -- там звёзды бесплатные и покупку можно прогнать целиком."""
+    from .config import config
+    suffix = "/test" if config.telegram_test_env else ""
+    return f"https://api.telegram.org/bot{token}{suffix}/{method}"
+
+
 def _user_id_from_query(query: dict) -> int | None:
     init_data = (query.get("initData") or [""])[0]
     user = validate_init_data(init_data, _state["bot_token"])
@@ -304,7 +312,26 @@ def _api_access(query: dict) -> dict:
                 "paid_features": PAID_FEATURES,
                 "trial_days": TRIAL_DAYS, "price_stars": config.stars_price_monthly}
 
+    # Устройство запоминаем при каждом обращении: по нему пробный период
+    # выдаётся один раз, а не заново на каждый новый аккаунт Telegram.
+    from .services import antiabuse
+    device = (query.get("device") or [""])[0]
+    fp_raw = (query.get("fp") or [""])[0]
+    antiabuse.register(db, user_id, device, fp_raw)
+
     st = access_state(db, user_id)
+
+    if st.get("tier") == "trial":
+        ok, why = antiabuse.trial_allowed(db, user_id, device, fp_raw)
+        if not ok:
+            # Пробный на этом устройстве уже отработал под другим аккаунтом.
+            # Не блокируем: просто переводим на бесплатный тариф.
+            st = {"tier": "free", "premium": False, "trial": None,
+                  "title": "Бесплатный тариф", "title_en": "Free plan", "features": [],
+                  "trial_blocked": why,
+                  "trial_blocked_text": antiabuse.DENY_TEXT.get(why, ""),
+                  "trial_blocked_text_en": antiabuse.DENY_TEXT_EN.get(why, "")}
+
     st["paywall"] = True
     st["paid_features"] = PAID_FEATURES
     st["trial_days"] = TRIAL_DAYS
@@ -646,7 +673,7 @@ def _notify_owner(user_id: int, text: str) -> None:
             f"Ответить: /reply {user_id} текст")
     payload = json.dumps({"chat_id": config.owner_ids[0], "text": body}).encode("utf-8")
     req = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/sendMessage",
+        _bot_api(token, "sendMessage"),
         data=payload, headers={"Content-Type": "application/json"}, method="POST")
     try:
         urllib.request.urlopen(req, timeout=15).read()
@@ -700,7 +727,7 @@ def _api_invoice(query: dict) -> dict:
         "subscription_period": SUBSCRIPTION_PERIOD_SECONDS,
     }
     req = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/createInvoiceLink",
+        _bot_api(token, "createInvoiceLink"),
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
         method="POST",
