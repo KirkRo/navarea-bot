@@ -660,10 +660,71 @@ class PostgresDatabase:
             cur.execute(sql, args)
             return [dict(r) for r in cur.fetchall()]
 
+    def admin_growth(self, days: int = 30) -> list[dict]:
+        """Новые люди и звёзды по дням -- см. пояснение в db.py."""
+        start = (datetime.now(timezone.utc) - timedelta(days=days - 1)).date()
+        users: dict[str, int] = {}
+        stars: dict[str, int] = {}
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT substr(created_at, 1, 10) d, COUNT(*) c FROM users "
+                        "WHERE created_at >= %s GROUP BY d", (start.isoformat(),))
+            for r in cur.fetchall():
+                users[r["d"]] = r["c"]
+            cur.execute("SELECT substr(created_at, 1, 10) d, COALESCE(SUM(stars_amount), 0) s "
+                        "FROM payments WHERE created_at >= %s AND refunded_at IS NULL GROUP BY d",
+                        (start.isoformat(),))
+            for r in cur.fetchall():
+                stars[r["d"]] = r["s"]
+
+        out = []
+        for i in range(days):
+            day = (start + timedelta(days=i)).isoformat()
+            out.append({"date": day, "users": users.get(day, 0), "stars": stars.get(day, 0)})
+        return out
+
+    def premium_expiring(self, days: int = 7) -> list[dict]:
+        """У кого Premium заканчивается на днях -- см. пояснение в db.py."""
+        now = datetime.now(timezone.utc)
+        edge = (now + timedelta(days=days)).isoformat()
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT user_id, username, first_name, premium_until, premium_source, sub_cancelled "
+                "FROM users WHERE is_premium = 1 AND premium_until > %s AND premium_until <= %s "
+                "ORDER BY premium_until",
+                (now.isoformat(), edge),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    def user_card(self, user_id: int) -> dict:
+        """Всё, что известно про одного человека -- см. пояснение в db.py."""
+        rows = self.admin_users(limit=1, q=str(user_id))
+        card = next((r for r in rows if r["user_id"] == user_id), None) or {"user_id": user_id}
+
+        with self._conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT * FROM payments WHERE user_id = %s ORDER BY id DESC LIMIT 20",
+                        (user_id,))
+            card["payments"] = [dict(r) for r in cur.fetchall()]
+            cur.execute("SELECT device_id, first_seen, last_seen FROM device_users "
+                        "WHERE user_id = %s ORDER BY last_seen DESC LIMIT 10", (user_id,))
+            card["devices"] = [dict(r) for r in cur.fetchall()]
+        card["areas_list"] = self.get_user_areas(user_id)
+        card["favorites"] = self.get_favorites(user_id)
+        card["support"] = self.get_support_thread(user_id, limit=10)
+        try:
+            vessels, active_id = self.get_vessels(user_id)
+            active = next((v for v in vessels if str(v.get("id")) == str(active_id)), None)
+            card["vessel"] = (active or (vessels[0] if vessels else None) or {}).get("name") or ""
+        except Exception:
+            card["vessel"] = ""
+        return card
+
     def admin_summary(self) -> dict:
         now = _now()
-        week = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-        day = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        stamp = datetime.now(timezone.utc)
+        week = (stamp - timedelta(days=7)).isoformat()
+        day = (stamp - timedelta(days=1)).isoformat()
+        month = (stamp - timedelta(days=30)).isoformat()
+        week_ahead = (stamp + timedelta(days=7)).isoformat()
         with self._conn() as conn, conn.cursor() as cur:
             def one(sql: str, args: tuple = ()) -> int:
                 cur.execute(sql, args)
@@ -679,8 +740,22 @@ class PostgresDatabase:
                 "active_week": one("SELECT COUNT(*) c FROM users WHERE last_seen_at >= %s", (week,)),
                 "active_day": one("SELECT COUNT(*) c FROM users WHERE last_seen_at >= %s", (day,)),
                 "new_week": one("SELECT COUNT(*) c FROM users WHERE created_at >= %s", (week,)),
+                "new_month": one("SELECT COUNT(*) c FROM users WHERE created_at >= %s", (month,)),
+                "opened_app": one("SELECT COUNT(*) c FROM users WHERE last_seen_at IS NOT NULL"),
+                "payers": one("SELECT COUNT(DISTINCT user_id) c FROM payments "
+                              "WHERE refunded_at IS NULL"),
+                "expiring_week": one(
+                    "SELECT COUNT(*) c FROM users WHERE is_premium = 1 "
+                    "AND premium_until > %s AND premium_until <= %s", (now, week_ahead)),
+                "support_open": one(
+                    "SELECT COUNT(DISTINCT user_id) c FROM support_messages "
+                    "WHERE author = 'user' AND seen_by_owner = 0"),
+                "areas_marked": one("SELECT COUNT(*) c FROM favorites"),
+                "vessels": one("SELECT COUNT(*) c FROM vessels"),
             }
         data.update(self.payments_summary())
+        base = data["opened_app"] or data["users"]
+        data["conversion"] = round(100.0 * data["payers"] / base, 1) if base else 0.0
         return data
 
     def get_all_user_ids(self) -> list[int]:

@@ -25,9 +25,22 @@ from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
-# Что нового в самом боте. Ведётся руками: строка сверху -- самая свежая.
-# Дата в ISO, по ней же считается «прочитано или нет».
+# Что нового в самом боте. Строка сверху -- самая свежая, дата в ISO: по ней
+# же считается, прочитал человек запись или нет.
+#
+# Сюда пишутся правки кода, которые видит пользователь. Разовые объявления
+# владелец добавляет из панели («Связь» -> «Написать всем в колокольчик»),
+# они ложатся в таблицу notices и в этот список не попадают.
 CHANGELOG = [
+    {"at": "2026-08-12T00:00:00+00:00",
+     "title": "Подпиской можно управлять в приложении",
+     "title_en": "The subscription is now managed inside the app",
+     "body": "Автопродление включается и выключается в «Настройках», раздел «Доступ». "
+             "Оплаченный период после отключения дорабатывает до конца. Раньше отмена "
+             "жила только командой в чате.",
+     "body_en": "Auto-renewal is switched on and off in Settings, under Access. After you "
+                "switch it off, the period already paid for runs to its end. Cancelling "
+                "used to be possible only through a command in the chat."},
     {"at": "2026-08-09T02:00:00+00:00",
      "title": "Полный английский интерфейс",
      "title_en": "Full English interface",

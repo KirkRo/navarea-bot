@@ -925,6 +925,54 @@ def _api_admin(query: dict) -> dict:
     if action == "payments":
         return {"payments": db.recent_payments(limit=min(200, int(arg("limit", "50") or 50)))}
 
+    if action == "growth":
+        return {"growth": db.admin_growth(days=min(90, int(arg("days", "30") or 30))),
+                "expiring": db.premium_expiring(days=7)}
+
+    if action == "user":
+        uid = arg("user_id")
+        if not uid.lstrip("-").isdigit():
+            return {"error": "bad_user"}
+        card = db.user_card(int(uid))
+        card["owner"] = int(uid) in config.owner_ids
+        return {"card": card}
+
+    if action == "message":
+        # Личное сообщение человеку от лица бота. Ложится в переписку
+        # поддержки, а не уходит в пустоту: иначе человек не понял бы, куда
+        # отвечать, и его ответ потерялся бы.
+        uid, text = arg("user_id"), arg("text").strip()
+        if not uid.lstrip("-").isdigit() or not text:
+            return {"error": "bad_args"}
+        db.add_support_message(int(uid), "owner", text[:2000])
+        db.mark_support_seen(int(uid), "owner")
+        _tell_user(int(uid), f"💬 Сообщение от WatchKeeper:\n\n{text}")
+        return {"done": "message"}
+
+    if action == "support":
+        return {"threads": db.support_threads(limit=40)}
+
+    if action == "thread":
+        uid = arg("user_id")
+        if not uid.lstrip("-").isdigit():
+            return {"error": "bad_user"}
+        db.mark_support_seen(int(uid), "owner")
+        return {"messages": db.get_support_thread(int(uid), limit=60)}
+
+    if action == "notice":
+        # Запись в колокольчик всем сразу. Раньше это была команда /notice
+        # в чате: писать в неё длинный текст с телефона неудобно, а буква
+        # «|» на судовой клавиатуре ещё и не всегда под рукой.
+        title, body = arg("title").strip(), arg("body").strip()
+        if not title:
+            return {"error": "no_title"}
+        kind = arg("kind", "news") or "news"
+        db.add_notice(title[:120], body[:2000], kind=kind if kind in ("news", "release") else "news")
+        return {"done": "notice", "notices": db.get_notices(user_id, limit=10)}
+
+    if action == "sources":
+        return {"sources": _poll_sources_now()}
+
     if action == "grant":
         uid, days = arg("user_id"), arg("days", "30")
         if not uid.lstrip("-").isdigit():
@@ -963,17 +1011,63 @@ def _api_admin(query: dict) -> dict:
         return _admin_balance(db)
 
     # overview -- то, что видно сразу при открытии панели
+    summary = db.admin_summary()
+    # Ожидаемый доход в месяц: сколько принесут действующие подписки, если
+    # никто не отменит. Выданные вручную сюда не входят -- они бесплатные.
+    paid_now = max(0, summary.get("premium", 0) - summary.get("granted", 0))
+    summary["mrr_stars"] = paid_now * config.stars_price_monthly
+    summary["paid_now"] = paid_now
+
     data = {
-        "summary": db.admin_summary(),
+        "summary": summary,
+        "growth": db.admin_growth(days=30),
+        "expiring": db.premium_expiring(days=7),
         "users": _mark_owners(db.admin_users(limit=20)),
         "payments": db.recent_payments(limit=10),
+        "threads": db.support_threads(limit=10),
+        "notices": db.get_notices(user_id, limit=5),
         "price_stars": config.stars_price_monthly,
         "paywall": config.paywall_enabled,
         "test_env": config.telegram_test_env,
+        "trial_days": config.trial_days,
         "build": _build_id(),
+        "database": "Postgres" if config.database_url else "SQLite",
+        "uptime_h": round((time.time() - _state.get("started_at", time.time())) / 3600, 1),
+        "warnings": db.stats(),
     }
     data.update(_admin_balance(db))
     return data
+
+
+def _poll_sources_now() -> list[dict]:
+    """Опрос всех источников NAVAREA по кнопке, как команда /diag.
+
+    Источники асинхронные, а веб-сервер живёт в обычном потоке, поэтому
+    поднимаем для обхода свой цикл событий. Ответ занимает секунды, зато
+    видно живьём, кто из служб отвечает, а кто молчит."""
+    import asyncio
+
+    async def run() -> list[dict]:
+        from .services.sources.registry import SOURCES
+
+        out = []
+        for area_code, source in sorted(SOURCES.items()):
+            try:
+                raw = await source.fetch_raw(area_code)
+                parsed = source.parse(area_code, raw)
+                out.append({"area": area_code, "source": source.source_id,
+                            "ok": True, "count": len(parsed)})
+            except Exception as e:
+                code = getattr(getattr(e, "response", None), "status_code", None)
+                out.append({"area": area_code, "source": source.source_id, "ok": False,
+                            "reason": f"HTTP {code}" if code else type(e).__name__})
+        return out
+
+    try:
+        return asyncio.run(run())
+    except Exception:
+        logger.exception("Опрос источников из панели не удался")
+        return []
 
 
 def _admin_balance(db) -> dict:

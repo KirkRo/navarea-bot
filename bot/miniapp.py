@@ -1530,6 +1530,32 @@ body.kbd .askbar{bottom:0}
 .admcell{background:var(--surf2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 9px}
 .admcell b{display:block;font-size:19px;font-weight:800;letter-spacing:-.4px}
 .admcell span{font-size:10.5px;color:var(--muted);line-height:1.35;display:block;margin-top:2px}
+.admcell.hot{background:rgba(255,107,74,.12);border-color:rgba(255,107,74,.34)}
+
+/* Вкладки разделов. Прокручиваются вбок: пять пунктов с подписями в
+   ширину телефона не влезают, а резать подписи до иконок хуже -- по одной
+   иконке не угадать, где деньги, а где система. */
+.admnav{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.admnav::-webkit-scrollbar{display:none}
+.admnav button{flex:0 0 auto;display:flex;align-items:center;gap:6px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surf);color:var(--muted);
+  font-family:inherit;font-size:12px;font-weight:700;padding:9px 13px;border-radius:11px}
+.admnav button.on{background:var(--amber-soft);border-color:rgba(240,160,60,.4);color:var(--amber)}
+.admnav button .ico{width:14px;height:14px}
+.admhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.admhead-r{text-align:right}
+.admmid{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.admsub{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
+.admline{display:flex;align-items:baseline;justify-content:space-between;font-size:11.5px;
+  color:var(--muted);margin-bottom:5px}
+.admline b{font-size:15px;font-weight:800;color:var(--fg,inherit)}
+.admchart{width:100%;height:46px;display:block;color:var(--muted)}
+.admdates{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-top:5px}
+.admtext{width:100%;box-sizing:border-box;background:var(--surf2);border:1px solid var(--line);
+  border-radius:var(--r-sm);color:inherit;font-family:inherit;font-size:13.5px;padding:11px 12px;
+  resize:vertical}
+.admtext:focus{outline:none;border-color:rgba(240,160,60,.45)}
 .admseg{display:flex;gap:6px;margin-bottom:9px}
 .admseg button{flex:1;border:1px solid var(--line);background:var(--surf2);color:var(--muted);
   font-family:inherit;font-size:11.5px;font-weight:700;padding:9px 6px;border-radius:10px;cursor:pointer}
@@ -3662,7 +3688,7 @@ Object.assign(DICT,{
  'О приложении':'About','Все →':'All →','Открыть →':'Open →','предупреждений на маршруте':'warnings on route',
  'Идёт отладка, все разделы открыты бесплатно.':'Testing in progress, all sections are open for free.',
  'Что входит в Premium':'What Premium includes','нет':'none',
- 'Данные справочные. Официальный источник — оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.':
+ 'Данные справочные. Официальным источником остаются оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.':
    'Reference data only. The official source is GMDSS and NAVTEX equipment, ECDIS and ship publications. The decision rests with the navigator.',
  'Осадка и остойчивость':'Draught and stability','Справочники':'References','Чек-листы':'Checklists',
  'Сигнальные флаги':'Signal flags','МППСС-72':'COLREG 72','Частоты GMDSS':'GMDSS frequencies',
@@ -3707,7 +3733,7 @@ Object.assign(DICT,{
  'Отвечают надёжнее всего':'Most reliable to answer','Остальные станции':'Other stations',
  'В этом регионе станций нет.':'No stations in this region.',
  'Не удалось загрузить справочник станций. Попробуй позже.':'Could not load the station list. Try later.',
- 'Сертификатов пока нет. Добавь — и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.':
+ 'Сертификатов пока нет. Добавь любой, и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.':
    'No certificates yet. Add one and the bot will remind you 60, 30, 14, 7, 3 and 1 day before expiry.',
  'Premium активен':'Premium active','Открытый доступ':'Open access',
  'MARPOL Прил. V':'MARPOL Annex V','Приход в порт':'Arrival in port','Отход из порта':'Departure from port',
@@ -3793,7 +3819,7 @@ Object.assign(DICT,{
 });
 Object.assign(DICT,{
  'Тренажёр ЦИВ':'DSC Simulator','ЦИВ':'DSC','Тренажёр':'Simulator',
- 'Крышка кнопки бедствия — открыть':'Distress button cover — open',
+ 'Крышка кнопки бедствия, открыть':'Distress button cover, open',
  'Удерживай 2 секунды':'Hold for 2 seconds','Режим экзамена':'Exam mode',
  'Выйти из экзамена':'Leave exam','Как это работает':'How it works',
  'Задание':'Task','верно':'correct','Верно':'Correct','Неверно':'Wrong',
@@ -3904,8 +3930,8 @@ Object.assign(DICT,{
  'Оплата отменена.':'Payment cancelled.',
  'Оплата не прошла. Попробуй ещё раз.':'Payment failed. Try again.',
  'Счёт закрыт. Подписка не оформлена.':'Invoice closed, no subscription.',
- 'Оплата доступна только внутри Telegram — открой приложение кнопкой в чате с ботом.':
-   'Payment works only inside Telegram — open the app from the chat with the bot.',
+ 'Оплата доступна только внутри Telegram. Открой приложение кнопкой в чате с ботом.':
+   'Payment works only inside Telegram. Open the app from the chat with the bot.',
  'Подписка уже активна.':'Subscription is already active.',
  'Ты владелец бота, Premium и так открыт.':'You own the bot, Premium is already open.',
  'Бот не настроен: не задан токен.':'Bot is not configured: token missing.',
@@ -3941,11 +3967,11 @@ Object.assign(DICT,{
  'Автопродление включено.':'Auto-renewal is back on.',
  'Подпиской можно управлять только внутри Telegram.':
    'The subscription can only be managed inside Telegram.',
- 'Платёж не найден — отменять нечего.':'No payment found — there is nothing to cancel.',
+ 'Платёж не найден, отменять нечего.':'No payment found, there is nothing to cancel.',
  'Telegram не принял отмену. Попробуй через Настройки Telegram → Мои звёзды → Подписки.':
    'Telegram refused the cancellation. Try Telegram Settings → My Stars → Subscriptions.',
- 'Premium открыт вручную создателем бота — списаний нет.':
-   'Premium was opened manually by the bot owner — nothing is charged.',
+ 'Premium открыт вручную создателем бота, списаний нет.':
+   'Premium was opened manually by the bot owner, nothing is charged.',
  'Создателю бота':'For the bot owner','Админ-панель':'Admin panel',
  'Пользователи, платежи, баланс звёзд, выдача и возврат':
    'Users, payments, star balance, granting and refunds',
@@ -3957,8 +3983,8 @@ Object.assign(DICT,{
  'Платежей пока нет.':'No payments yet.',
  'Найти по id, имени или @нику':'Search by id, name or @username',
  'Баланс не пришёл':'Balance not received',
- 'Это баланс бота в Telegram — деньги за подписки приходят сюда.':
-   'This is the bot balance in Telegram — subscription money arrives here.',
+ 'Это баланс бота в Telegram. Деньги за подписки приходят сюда.':
+   'This is the bot balance in Telegram. Subscription money arrives here.',
  'До вывода не хватает':'Short of the withdrawal minimum by',
  'Минимума для вывода хватает.':'The withdrawal minimum is covered.',
  'Минимум для вывода':'Withdrawal minimum','Выдержка каждой звезды':'Hold on each star',
@@ -3986,18 +4012,72 @@ Object.assign(DICT,{
  'Premium снят.':'Premium revoked.',
  'Звёзды возвращены, Premium снят.':'Stars refunded, Premium revoked.'
 });
+/* ---- Панель создателя бота: разделы, цифры, действия ---- */
+Object.assign(DICT,{
+ 'Обзор':'Overview','Деньги':'Money','Связь':'Messages','Система':'System',
+ 'Сейчас':'Right now','Требует внимания':'Needs attention','Тридцать дней':'Thirty days',
+ 'на балансе бота':'on the bot balance','в месяц с текущих подписок':'a month from current subscriptions',
+ 'человек всего':'people in total','платят сейчас':'paying now','дошли до оплаты':'reached payment',
+ 'пришли за неделю':'joined this week','звёзд за 30 дней':'stars in 30 days',
+ 'ждём в месяц':'expected a month','платили хоть раз':'have paid at least once',
+ 'Новые люди':'New people',
+ 'Ничего не ждёт ответа: обращений нет, подписки в ближайшую неделю не кончаются.':
+   'Nothing is waiting: no support threads, and no subscription ends this week.',
+ 'Обращения без ответа':'Support threads without a reply',
+ 'Подписка кончается на неделе':'Subscriptions ending this week',
+ 'Нажми на человека, чтобы открыть карточку: платежи, устройства, районы и переписка.':
+   'Tap a person to open their card: payments, devices, areas and the message thread.',
+ 'К списку':'Back to the list','К обращениям':'Back to the threads',
+ 'звёзд заплатил':'stars paid','платежей':'payments','районов':'areas','устройств':'devices',
+ 'Пришёл':'Joined','Был в приложении':'Last opened the app','ни разу':'never',
+ 'Premium до':'Premium until','Судно':'Vessel','Написать':'Write','Отправить':'Send',
+ 'Ответить':'Reply','Отправлено.':'Sent.','Сначала напиши текст.':'Write the text first.',
+ 'Сообщение придёт в чат с ботом и ляжет в переписку поддержки':
+   'The message goes to the chat with the bot and into the support thread',
+ 'Ответ придёт в чат с ботом':'The reply goes to the chat with the bot',
+ 'Переписка':'Messages','Устройства':'Devices','Он':'Them','Я':'Me',
+ 'Одно устройство на несколько аккаунтов бывает у сменщиков и курсантов. Пробный период получает только первый из них.':
+   'One device with several accounts is normal for relief crew and cadets. Only the first account gets the trial.',
+ 'Кончается на неделе':'Ending this week','продлится':'renews','уйдёт':'leaves',
+ 'автопродление выключено':'auto-renewal off',
+ 'У кого автопродление выключено, подписка после этой даты просто закончится.':
+   'Where auto-renewal is off, the subscription simply ends after that date.',
+ 'Это баланс бота в Telegram. Деньги за подписки приходят сюда.':
+   'This is the bot balance in Telegram. Subscription money arrives here.',
+ 'Вывод идёт только через Fragment и только в TON. У Bot API такого метода нет, кнопкой из бота его не вызвать. Telegram держит каждую звезду 21 день на случай возврата покупателю.':
+   'Withdrawal goes through Fragment only and in TON only. Bot API has no such method, no button in the bot can call it. Telegram holds every star for 21 days in case of a refund.',
+ 'Обращения':'Support threads','Обращений пока нет.':'No support threads yet.',
+ 'сообщений':'messages','сообщ.':'msg',
+ 'Написать всем в колокольчик':'Post to everyone in the bell',
+ 'Заголовок':'Title','Что изменилось в боте':'What changed in the bot',
+ 'Обновление':'Release','Новость':'News','Опубликовать':'Publish',
+ 'Нужен заголовок.':'A title is required.',
+ 'Опубликовано, запись ушла в колокольчик.':'Published, the entry went to the bell.',
+ 'Запись появится у всех в колокольчике и подсветится как непрочитанная. Сообщением в чат она не уходит и никого не разбудит на вахте.':
+   'The entry appears in everyone’s bell and is marked unread. It is not sent as a chat message and will not wake anyone on watch.',
+ 'Что уже опубликовано':'Already published',
+ 'Бот':'Bot','Сборка':'Build','База':'Database','Сервер поднят':'Server up',
+ 'Тарифы':'Plans','включены':'on','выключены, всё открыто':'off, everything is open',
+ 'Цена подписки':'Subscription price','Пробный период':'Trial period',
+ 'Тестовая среда Telegram':'Telegram test environment','включена':'on',
+ 'Предупреждения в базе':'Warnings in the database','действующих':'in force',
+ 'районов отмечено':'areas marked','Источники':'Sources',
+ 'Опросить источники сейчас':'Poll the sources now','Опрашиваю…':'Polling…',
+ 'Обход занимает несколько секунд: бот стучится в каждую службу и показывает, сколько сообщений она отдала прямо сейчас.':
+   'The round takes a few seconds: the bot knocks on every service and shows how many messages it returned just now.'
+});
 /* ---- Тренажёр ЦИВ: подписи новых экранов ---- */
 Object.assign(DICT,{
  'Ролик':'Dial','крутить: выбор, нажать: ввод':'turn to select, push to enter',
  'разделы станции':'station menu','день / ночь / зелёный':'day / night / green',
  'вахтенный приём':'watch keeping',
- 'Крути — выбор CH/TX/RX':'Turn — pick CH/TX/RX','Крути — меняется значение':'Turn — value changes',
- 'BRILL — ещё раз, чтобы сменить':'BRILL again to change',
- 'СКАНИРОВАНИЕ…':'SCANNING…','SCAN — начать сканирование':'SCAN to start scanning',
- 'CANCEL — продолжить':'CANCEL to resume','Раздел недоступен':'Section unavailable',
+ 'Крути: выбор CH/TX/RX':'Turn: pick CH/TX/RX','Крути: меняется значение':'Turn: value changes',
+ 'BRILL ещё раз, чтобы сменить':'BRILL again to change',
+ 'СКАНИРОВАНИЕ…':'SCANNING…','SCAN начинает сканирование':'SCAN to start scanning',
+ 'CANCEL возвращает к работе':'CANCEL to resume','Раздел недоступен':'Section unavailable',
  'Удерживай 3 секунды':'Hold for 3 seconds','нет данных GPS':'no GPS data',
  'Ввод значения':'Editing the value','Выбор поля':'Choosing a field',
- 'Крути ролик: вправо — больше, влево — меньше. Нажми ещё раз, чтобы зафиксировать.':
+ 'Крути ролик: вправо больше, влево меньше. Нажми ещё раз, чтобы зафиксировать.':
    'Turn the dial: clockwise up, counter-clockwise down. Push again to confirm.',
  'Крути ролик, чтобы перейти между CH, TX и RX. Нажатие открывает поле на изменение.':
    'Turn the dial to move between CH, TX and RX. Pushing opens the field for editing.',
@@ -4059,8 +4139,8 @@ Object.assign(DICT,{
  'Опиши, что не работает или чего не хватает. Прочту и отвечу.':
    'Describe what is broken or missing. I read every message.',
  'Опиши, что случилось…':'Describe what happened…','Ты':'You',
- 'Поддержка работает только внутри Telegram — открой приложение кнопкой в чате с ботом.':
-   'Support works only inside Telegram — open the app from the chat with the bot.',
+ 'Поддержка работает только внутри Telegram. Открой приложение кнопкой в чате с ботом.':
+   'Support works only inside Telegram. Open the app from the chat with the bot.',
  'Найти в справке…':'Search the help…',
  'Инструменты рейса':'Voyage tools','Свернуть инструменты рейса':'Hide voyage tools',
  'Скорость для ETA':'Speed for ETA','Погода по всем портам':'Weather for all ports',
@@ -4075,13 +4155,13 @@ Object.assign(DICT,{
  'Какое время показывать':'Which time to show','Пояс судового времени':'Ship time zone',
  'Переводится приказом по судну, а не телефоном':'Set by the master’s order, not by the phone',
  'судовое':'ship','телефон':'phone',
- 'Полная карта со шкалой времени — по кнопке Windy выше':
-   'Full map with the time bar — use the Windy button above',
- 'Ничего не нашлось. Спроси в поддержке — отвечу и добавлю в справку.':
-   'Nothing found. Ask support — I will answer and add it here.',
+ 'Полная карта со шкалой времени открывается кнопкой Windy выше':
+   'Full map with the time bar: use the Windy button above',
+ 'Ничего не нашлось. Спроси в поддержке, отвечу и добавлю в справку.':
+   'Nothing found. Ask support, I will answer and add it here.',
  'все данные подставлены':'all data filled in',
- 'Библиотека сценариев не загрузилась — нужна связь с сервером.':
-   'The scenario library did not load — a server connection is needed.',
+ 'Библиотека сценариев не загрузилась, нужна связь с сервером.':
+   'The scenario library did not load, a server connection is needed.',
  'Тренажёры':'Simulators','Погода':'Weather','Чем помочь?':'What can I help you with?',
  'Все запросы →':'All prompts →','Сводка с мостика':'Bridge Snapshot',
  'вахтенный':'Officer','Доброе утро':'Good morning','Добрый день':'Good afternoon',
@@ -5979,7 +6059,7 @@ function renderBridge(){
           <button class="heart" style="width:28px;height:28px;font-size:15px" data-delcert="${x.id}">×</button>
         </span></div>`;
     }).join('')
-    : `<div class="empty">${ico('clock')}Сертификатов пока нет. Добавь — и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.</div>`;
+    : `<div class="empty">${ico('clock')}Сертификатов пока нет. Добавь любой, и бот сам напомнит за 60, 30, 14, 7, 3 и 1 день до истечения.</div>`;
 
   $('#bridgeBox').innerHTML=h;
   applyLang();
@@ -6484,7 +6564,7 @@ function openPlans(){
         <ul>${Object.keys(paid).map(k=>`<li>${esc(paid[k])}</li>`).join('')}</ul>
       </div>
     </div>
-    <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда — брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
+    <div class="hint">${ico('alert','xs')} Расчёты, от которых зависит безопасность, остаются бесплатными навсегда: брать за них деньги неправильно. Платно то, что экономит время и ведёт учёт.</div>`;
   $('#tResults').innerHTML = isPaid()
     ? `<div class="tres hi"><span class="tl">Сейчас у тебя</span><span class="tv">${esc(accTitle())}</span></div>`
     : `<button class="btn wide" id="buyBtn">Оформить за ${price} ⭐ в месяц</button>
@@ -6503,7 +6583,7 @@ function openPlans(){
    открывает по ней своё окно оплаты поверх приложения. Раньше кнопка просто
    закрывала Mini App -- со стороны это и выглядело как «выкинуло на главную».*/
 const BUY_ERR={
-  unauthorized:'Оплата доступна только внутри Telegram — открой приложение кнопкой в чате с ботом.',
+  unauthorized:'Оплата доступна только внутри Telegram. Открой приложение кнопкой в чате с ботом.',
   already_premium:'Подписка уже активна.',
   owner:'Ты владелец бота, Premium и так открыт.',
   no_token:'Бот не настроен: не задан токен.',
@@ -6951,7 +7031,7 @@ function renderSettings(){
 
     <div class="dpanel"><h4>О приложении</h4>
       <div class="tres"><span class="tl">WatchKeeper</span><span class="tv" style="font-size:13px">${APP_VERSION}</span></div>
-      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Данные справочные. Официальный источник — оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.</div>
+      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} Данные справочные. Официальным источником остаются оборудование GMDSS и NAVTEX, ECDIS и судовые пособия. Решение принимает судоводитель.</div>
     </div>`;
 
   const th=box.querySelector('[data-set="theme"]');
@@ -7410,7 +7490,7 @@ function askLibHtml(){
   </div>`;
   if(!ASK_LIB_OPEN) return h;
 
-  if(!lib.length) return h+`<div class="hint">${ico('alert','xs')} ${esc(tr('Библиотека сценариев не загрузилась — нужна связь с сервером.'))}</div>`;
+  if(!lib.length) return h+`<div class="hint">${ico('alert','xs')} ${esc(tr('Библиотека сценариев не загрузилась, нужна связь с сервером.'))}</div>`;
 
   h+=`<div class="chips askcats">${lib.map(g=>
     `<button class="chip ${ASK_LIB_CAT===g.id?'on':''}" data-lc="${esc(g.id)}">${esc(tr(g.t))}</button>`).join('')}</div>`;
@@ -7927,7 +8007,7 @@ function bindWxMaps(root){
     holder.appendChild(wrap);
     const note=document.createElement('div');
     note.className='wxnote';
-    note.textContent=tr('Полная карта со шкалой времени — по кнопке Windy выше');
+    note.textContent=tr('Полная карта со шкалой времени открывается кнопкой Windy выше');
     holder.appendChild(note);
   });
 }
@@ -8045,7 +8125,7 @@ function renderFaq(){
   }).filter(x=>x.items.length);
 
   if(!cats.length){
-    box.innerHTML=`<div class="faqempty">${esc(tr('Ничего не нашлось. Спроси в поддержке — отвечу и добавлю в справку.'))}</div>`;
+    box.innerHTML=`<div class="faqempty">${esc(tr('Ничего не нашлось. Спроси в поддержке, отвечу и добавлю в справку.'))}</div>`;
     bindFaq(); return;
   }
 
@@ -8109,7 +8189,7 @@ function renderSupport(){
   const msgs=(SUP&&SUP.messages)||[];
   if(SUP&&SUP.error==='unauthorized'){
     box.innerHTML=`<div class="empty">${ico('alert')}${
-      esc(tr('Поддержка работает только внутри Telegram — открой приложение кнопкой в чате с ботом.'))}</div>`;
+      esc(tr('Поддержка работает только внутри Telegram. Открой приложение кнопкой в чате с ботом.'))}</div>`;
     return;
   }
   if(!msgs.length){
@@ -8158,15 +8238,24 @@ function supPollStart(){
 function supPollStop(){ if(SUP_POLL){ clearInterval(SUP_POLL); SUP_POLL=null; } }
 
 
-/* ================= Админ-панель =================
-   Всё, что раньше жило только командами в чате: кто платил, кто пользуется,
-   выдать доступ, вернуть звёзды. Номер операции для возврата приходилось
-   переносить руками из /payments в /refund -- здесь это одна кнопка.
+/* ================= Панель создателя бота =================
+   Всё, что раньше жило только командами в чате: кто платит, кто пользуется,
+   сколько звёзд пришло, что спрашивают в поддержке. Команды остались, но
+   набирать /refund с номером операции на телефоне почти невозможно.
 
-   Сервер отдаёт данные только владельцу и только по подписи Telegram, так
-   что показ раздела -- вопрос удобства, а не защиты: даже если кто-то
-   доберётся до вёрстки, ответом будет forbidden. */
-let ADM=null, ADM_TAB='all', ADM_Q='', ADM_OPEN=null, ADM_BUSY=false, ADM_TYPING=false;
+   Данные отдаёт сервер и только владельцу, по подписи Telegram. Разделы
+   разнесены по вкладкам: на экране телефона одновременно помещается
+   десяток цифр, а не сорок. */
+let ADM=null, ADM_SEC='over', ADM_TAB='all', ADM_Q='', ADM_OPEN=null;
+let ADM_BUSY=false, ADM_TYPING=false, ADM_CARD=null, ADM_THREAD=null, ADM_SRC=null;
+
+const ADM_SECS=[
+  {v:'over',   t:'Обзор',   i:'gauge'},
+  {v:'people', t:'Люди',    i:'compass'},
+  {v:'money',  t:'Деньги',  i:'star'},
+  {v:'talk',   t:'Связь',   i:'archive'},
+  {v:'sys',    t:'Система', i:'sliders'}
+];
 
 async function loadAdmin(){
   try{ ADM=await api('/api/admin'); }
@@ -8188,14 +8277,12 @@ function admSay(text, cls){
   el.textContent=text||'';
 }
 
-/* Действие владельца: выдать, снять, вернуть. Список после каждого
-   перечитываем целиком -- цифры в шапке (сколько платных, сколько звёзд)
-   меняются вместе со строкой, и обновлять одну строку было бы враньём. */
-async function admAct(qs, okText){
-  if(ADM_BUSY) return;
-  ADM_BUSY=true;
-  hap('medium');
-  admSay(tr('Выполняю…'));
+/* Действие владельца: выдать, снять, вернуть, написать. Список после
+   каждого перечитываем целиком: цифры в шапке меняются вместе со строкой,
+   и обновлять одну строку было бы враньём. */
+async function admAct(qs, okText, keepCard){
+  if(ADM_BUSY) return null;
+  ADM_BUSY=true; hap('medium'); admSay(tr('Выполняю…'));
   let r=null;
   try{ r=await api('/api/admin?'+qs); }
   catch(e){ r={error:'network'}; }
@@ -8204,17 +8291,99 @@ async function admAct(qs, okText){
   if(!r||r.error){
     admSay((r&&r.error==='forbidden'?tr('Нет доступа.'):tr('Не получилось.'))
            +((r&&r.detail)?(' '+r.detail):''),'no');
-    return;
+    return r;
   }
+  const openId=keepCard&&ADM_CARD?ADM_CARD.user_id:null;
   await loadAdmin();
+  if(openId) await admOpenUser(openId);
   admSay(okText,'ok');
+  return r;
 }
 
+/* ---- Мелкие кирпичики оформления ---- */
+function admName(u){
+  const n=[(u.first_name||'').trim(), u.username?('@'+u.username):''].filter(Boolean).join(' ');
+  return n||('id '+u.user_id);
+}
+function admCells(list){
+  return '<div class="admgrid">'+list.map(c=>
+    `<div class="admcell ${c.hot?'hot':''}"><b>${c.v}</b><span>${esc(tr(c.t))}</span></div>`).join('')+'</div>';
+}
+/* Столбики за 30 дней. Рисуем сами, без библиотеки графиков: в рейсе
+   приложение открывается без сети, а тянуть 200 КБ ради тридцати
+   прямоугольников незачем. */
+function admBars(rows, key, color){
+  if(!rows||!rows.length) return '';
+  const max=Math.max(1,...rows.map(r=>r[key]||0));
+  const w=100/rows.length;
+  return `<svg class="admchart" viewBox="0 0 100 30" preserveAspectRatio="none">`+
+    rows.map((r,i)=>{
+      const v=r[key]||0, h=v?Math.max(1.2, v/max*28):0.4;
+      return `<rect x="${(i*w+w*0.15).toFixed(2)}" y="${(29-h).toFixed(2)}"
+        width="${(w*0.7).toFixed(2)}" height="${h.toFixed(2)}" rx="0.5"
+        fill="${v?color:'currentColor'}" opacity="${v?1:.18}"></rect>`;
+    }).join('')+`</svg>`;
+}
+function admSum(rows, key){ return (rows||[]).reduce((a,r)=>a+(r[key]||0),0); }
+
+/* ---- Обзор ---- */
+function admOverview(){
+  const s=ADM.summary||{}, bal=ADM.balance||{}, g=ADM.growth||[];
+  const stars=(bal.stars==null)?null:bal.stars;
+  const need=Math.max(0,((ADM.withdraw||{}).min||1000)-(stars||0));
+
+  const attention=[];
+  if(s.support_open) attention.push({t:'Обращения без ответа', v:s.support_open, go:'talk'});
+  if(s.expiring_week) attention.push({t:'Подписка кончается на неделе', v:s.expiring_week, go:'money'});
+  if(s.cancelled) attention.push({t:'Отключили автопродление', v:s.cancelled, go:'people'});
+
+  return `
+    <div class="dpanel"><h4>Сейчас</h4>
+      ${stars===null
+        ? `<div class="tres warn"><span class="tl">${esc(tr('Баланс не пришёл'))}</span>
+             <span class="tv" style="font-size:12px">${esc(bal.error||'')}</span></div>`
+        : `<div class="admhead">
+             <div><div class="admbig">${stars} ⭐</div>
+               <div class="admsub">${esc(tr('на балансе бота'))}</div></div>
+             <div class="admhead-r"><div class="admmid">${s.mrr_stars||0} ⭐</div>
+               <div class="admsub">${esc(tr('в месяц с текущих подписок'))}</div></div>
+           </div>
+           ${need>0?`<div class="hint" style="padding:8px 0 0">${
+             esc(tr('До вывода не хватает')+' '+need+' ⭐')}</div>`:''}`}
+      ${admCells([
+        {v:s.users||0,        t:'человек всего'},
+        {v:s.active_week||0,  t:'заходили за неделю'},
+        {v:s.paid_now||0,     t:'платят сейчас'},
+        {v:(s.conversion||0)+'%', t:'дошли до оплаты'},
+        {v:s.new_week||0,     t:'пришли за неделю'},
+        {v:s.stars_30d||0,    t:'звёзд за 30 дней'}
+      ])}
+    </div>
+
+    ${attention.length?`<div class="dpanel"><h4>Требует внимания</h4>
+      ${attention.map(a=>`<div class="sw" data-adm-go="${a.go}">
+        <div style="min-width:0"><div class="t">${ico('alert','sm')}${esc(tr(a.t))}</div></div>
+        <span class="rtag am">${a.v}</span></div>`).join('')}
+    </div>`:`<div class="dpanel"><h4>Требует внимания</h4>
+      <div class="hint" style="padding:10px 0">${ico('anchor','xs')} ${
+        esc(tr('Ничего не ждёт ответа: обращений нет, подписки в ближайшую неделю не кончаются.'))}</div>
+    </div>`}
+
+    <div class="dpanel"><h4>Тридцать дней</h4>
+      <div class="admline"><span>${esc(tr('Новые люди'))}</span><b>${admSum(g,'users')}</b></div>
+      ${admBars(g,'users','var(--ok)')}
+      <div class="admline" style="margin-top:12px"><span>${esc(tr('Звёзды'))}</span><b>${admSum(g,'stars')}</b></div>
+      ${admBars(g,'stars','var(--amber)')}
+      <div class="admdates"><span>${esc(String((g[0]||{}).date||'').slice(5))}</span>
+        <span>${esc(String((g[g.length-1]||{}).date||'').slice(5))}</span></div>
+    </div>`;
+}
+
+/* ---- Люди ---- */
 function admUserRow(u){
-  const name=[(u.first_name||'').trim(), u.username?('@'+u.username):''].filter(Boolean).join(' ');
   const paid=u.is_premium&&u.premium_until&&new Date(u.premium_until)>new Date();
   // Владелец идёт первым случаем: доступ у него из настроек бота, а не из
-  // базы, и без отдельной пометки он выглядел бы как бесплатный тариф.
+  // базы, и без пометки он выглядел бы как бесплатный тариф.
   const tag=u.owner
     ? `<span class="rtag am">${tr('владелец')}</span>`
     : paid
@@ -8225,29 +8394,107 @@ function admUserRow(u){
   const bits=['id '+u.user_id];
   if(paid) bits.push(tr('до')+' '+subDate(u.premium_until));
   if(u.sub_cancelled&&paid) bits.push(tr('без автопродления'));
-  // Сумму в строке показываем, только если её нет в теге справа
   if(u.paid_stars&&(paid||u.owner)) bits.push(u.paid_stars+' ⭐');
   bits.push(u.last_seen_at?(tr('заходил')+' '+ago(u.last_seen_at)):tr('в приложение не заходил'));
 
-  const open=(ADM_OPEN===u.user_id);
   return `<div class="sw" data-adm-user="${u.user_id}">
-      <div style="min-width:0"><div class="t">${esc(name||('id '+u.user_id))}</div>
+      <div style="min-width:0"><div class="t">${esc(admName(u))}</div>
         <div class="d">${esc(bits.join(' · '))}</div></div>
       ${tag}
+    </div>`;
+}
+function admPeople(){
+  if(ADM_CARD) return admCardView();
+  const users=(ADM.users||[]);
+  return `
+    <div class="dpanel"><h4>Люди</h4>
+      <div class="admseg">
+        <button data-adm-tab="all" class="${ADM_TAB==='all'?'on':''}">${esc(tr('Все'))}</button>
+        <button data-adm-tab="paid" class="${ADM_TAB==='paid'?'on':''}">${esc(tr('С Premium'))}</button>
+        <button data-adm-tab="active" class="${ADM_TAB==='active'?'on':''}">${esc(tr('Активные'))}</button>
+      </div>
+      <div class="sbox" style="margin-bottom:9px">
+        <input id="admQ" placeholder="${esc(tr('Найти по id, имени или @нику'))}"
+               autocomplete="off" value="${esc(ADM_Q)}">
+      </div>
+      ${users.length?users.map(admUserRow).join('')
+        :`<div class="hint" style="padding:14px 0">${esc(tr('Никого не нашлось.'))}</div>`}
+      <div class="buystate" id="admState"></div>
+      <div class="hint" style="margin:4px 0 0">${ico('alert','xs')} ${
+        esc(tr('Нажми на человека, чтобы открыть карточку: платежи, устройства, районы и переписка.'))}</div>
+    </div>`;
+}
+
+/* Карточка одного человека. Открывается вместо списка, а не под строкой:
+   на телефоне раскрывающийся блок уводит список за край экрана, и назад
+   приходится листать вслепую. */
+function admCardView(){
+  const u=ADM_CARD;
+  const paid=u.is_premium&&u.premium_until&&new Date(u.premium_until)>new Date();
+  const pays=(u.payments||[]), dev=(u.devices||[]), sup=(u.support||[]);
+  const spent=pays.filter(p=>!p.refunded_at).reduce((a,p)=>a+(p.stars_amount||0),0);
+
+  return `
+    <div class="dpanel">
+      <button class="btn g wide" id="admBack" style="margin-bottom:11px">← ${esc(tr('К списку'))}</button>
+      <div class="admhead">
+        <div><div class="admmid">${esc(admName(u))}</div>
+          <div class="admsub">id ${u.user_id}${u.owner?(' · '+esc(tr('владелец'))):''}</div></div>
+        <span class="rtag ${paid?'ok':''}">${paid
+          ? (u.premium_source==='granted'?tr('выдан'):tr('оплачен')) : tr('бесплатный')}</span>
+      </div>
+      ${admCells([
+        {v:spent,                t:'звёзд заплатил'},
+        {v:pays.length,          t:'платежей'},
+        {v:(u.areas||0),         t:'районов'},
+        {v:dev.length,           t:'устройств'}
+      ])}
+      <div class="tres"><span class="tl">${esc(tr('Пришёл'))}</span>
+        <span class="tv" style="font-size:13px">${esc(subDate(u.created_at))}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Был в приложении'))}</span>
+        <span class="tv" style="font-size:13px">${u.last_seen_at?esc(ago(u.last_seen_at)):esc(tr('ни разу'))}</span></div>
+      ${paid?`<div class="tres"><span class="tl">${esc(tr('Premium до'))}</span>
+        <span class="tv" style="font-size:13px">${esc(subDate(u.premium_until))}${
+          u.sub_cancelled?(' · '+esc(tr('без автопродления'))):''}</span></div>`:''}
+      ${u.vessel?`<div class="tres"><span class="tl">${esc(tr('Судно'))}</span>
+        <span class="tv" style="font-size:13px">${esc(u.vessel)}</span></div>`:''}
+      <div class="admacts" style="margin-top:11px">
+        <button class="btn g" data-grant="${u.user_id}" data-days="7">+7 ${tr('дн')}</button>
+        <button class="btn g" data-grant="${u.user_id}" data-days="30">+30 ${tr('дн')}</button>
+        <button class="btn g" data-grant="${u.user_id}" data-days="365">+365 ${tr('дн')}</button>
+        ${paid?`<button class="btn g" data-revoke="${u.user_id}">${tr('Снять Premium')}</button>`:''}
+      </div>
+      <div class="buystate" id="admState"></div>
     </div>
-    ${open?`<div class="admacts">
-      <button class="btn g" data-grant="${u.user_id}" data-days="7">+7 ${tr('дн')}</button>
-      <button class="btn g" data-grant="${u.user_id}" data-days="30">+30 ${tr('дн')}</button>
-      <button class="btn g" data-grant="${u.user_id}" data-days="365">+365 ${tr('дн')}</button>
-      ${paid?`<button class="btn g" data-revoke="${u.user_id}">${tr('Снять Premium')}</button>`:''}
+
+    <div class="dpanel"><h4>Написать</h4>
+      <textarea id="admMsg" class="admtext" rows="3"
+        placeholder="${esc(tr('Сообщение придёт в чат с ботом и ляжет в переписку поддержки'))}"></textarea>
+      <button class="btn wide" id="admSend" style="margin-top:9px">${esc(tr('Отправить'))}</button>
+    </div>
+
+    ${pays.length?`<div class="dpanel"><h4>Платежи</h4>
+      ${pays.map(admPayRow).join('')}</div>`:''}
+
+    ${sup.length?`<div class="dpanel"><h4>Переписка</h4>
+      ${sup.slice(-6).map(m=>`<div class="supmsg ${m.author==='user'?'me':'owner'}">
+        <div class="who">${esc(tr(m.author==='user'?'Он':'Я'))} · ${esc(ago(m.created_at))}</div>
+        ${esc(m.text)}</div>`).join('')}</div>`:''}
+
+    ${dev.length?`<div class="dpanel"><h4>Устройства</h4>
+      ${dev.map(d=>`<div class="tres"><span class="tl mono">${esc(String(d.device_id).slice(0,12))}…</span>
+        <span class="tv" style="font-size:12px">${esc(ago(d.last_seen))}</span></div>`).join('')}
+      <div class="hint" style="margin:6px 0 0">${ico('alert','xs')} ${
+        esc(tr('Одно устройство на несколько аккаунтов бывает у сменщиков и курсантов. Пробный период получает только первый из них.'))}</div>
     </div>`:''}`;
 }
 
+/* ---- Деньги ---- */
 function admPayRow(p){
-  const name=[(p.first_name||'').trim(), p.username?('@'+p.username):''].filter(Boolean).join(' ');
   const gone=!!p.refunded_at;
+  const who=p.first_name||p.username?admName(p):('id '+p.user_id);
   return `<div class="admpay ${gone?'gone':''}">
-      <div class="pw"><span>${esc(name||('id '+p.user_id))}</span><span>${p.stars_amount} ⭐</span></div>
+      <div class="pw"><span>${esc(who)}</span><span>${p.stars_amount} ⭐</span></div>
       <div class="pd">id ${p.user_id} · ${esc(String(p.created_at||'').slice(0,16).replace('T',' '))}${
         p.is_recurring?(' · '+tr('автопродление')):''}${gone?(' · '+tr('возвращено')):''}</div>
       <div class="pc">${esc(p.charge_id||'')}</div>
@@ -8256,7 +8503,160 @@ function admPayRow(p){
           tr('Вернуть звёзды')}</button></div>`}
     </div>`;
 }
+function admMoney(){
+  const s=ADM.summary||{}, bal=ADM.balance||{}, w=ADM.withdraw||{};
+  const stars=(bal.stars==null)?null:bal.stars;
+  const need=Math.max(0,(w.min||1000)-(stars||0));
+  const pct=Math.min(100, Math.round(((stars||0)/(w.min||1000))*100));
+  const pays=(ADM.payments||[]), exp=(ADM.expiring||[]);
 
+  return `
+    <div class="dpanel"><h4>Звёзды</h4>
+      ${stars===null
+        ? `<div class="tres warn"><span class="tl">${esc(tr('Баланс не пришёл'))}</span>
+             <span class="tv" style="font-size:12px">${esc(bal.error||'')}</span></div>`
+        : `<div class="admbig">${stars} ⭐</div>
+           <div class="hint" style="padding:6px 0 0">${
+             esc(tr('Это баланс бота в Telegram. Деньги за подписки приходят сюда.'))}</div>
+           <div class="admbar"><i style="width:${pct}%"></i></div>
+           <div class="hint" style="padding:0">${need>0
+             ? esc(tr('До вывода не хватает')+' '+need+' ⭐ '+tr('из')+' '+(w.min||1000))
+             : esc(tr('Минимума для вывода хватает.'))}</div>`}
+      ${admCells([
+        {v:s.stars_total||0,    t:'получено всего'},
+        {v:s.stars_30d||0,      t:'за 30 дней'},
+        {v:s.refunded_stars||0, t:'возвращено'},
+        {v:s.mrr_stars||0,      t:'ждём в месяц'},
+        {v:s.payers||0,         t:'платили хоть раз'},
+        {v:(s.conversion||0)+'%', t:'дошли до оплаты'}
+      ])}
+    </div>
+
+    <div class="dpanel"><h4>Вывод</h4>
+      <div class="tres"><span class="tl">${esc(tr('Минимум для вывода'))}</span>
+        <span class="tv">${w.min||1000} ⭐</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Выдержка каждой звезды'))}</span>
+        <span class="tv">${w.hold_days||21} ${esc(tr('дн'))}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Срок прошли, по моему учёту'))}</span>
+        <span class="tv">${w.ripe_estimate||0} ⭐</span></div>
+      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${esc(tr(
+        'Вывод идёт только через Fragment и только в TON. У Bot API такого метода нет, кнопкой из бота его не вызвать. Telegram держит каждую звезду 21 день на случай возврата покупателю.'))}</div>
+      <button class="btn wide" id="admFragment" style="margin-top:9px">${esc(tr('Открыть Fragment'))}</button>
+    </div>
+
+    ${exp.length?`<div class="dpanel"><h4>Кончается на неделе</h4>
+      ${exp.map(u=>`<div class="sw" data-adm-user="${u.user_id}">
+        <div style="min-width:0"><div class="t">${esc(admName(u))}</div>
+          <div class="d">${esc(tr('до')+' '+subDate(u.premium_until))}${
+            u.sub_cancelled?(' · '+esc(tr('автопродление выключено'))):''}</div></div>
+        <span class="rtag ${u.sub_cancelled?'':'ok'}">${u.sub_cancelled?tr('уйдёт'):tr('продлится')}</span>
+      </div>`).join('')}
+      <div class="hint" style="margin:4px 0 0">${ico('alert','xs')} ${esc(tr(
+        'У кого автопродление выключено, подписка после этой даты просто закончится.'))}</div>
+    </div>`:''}
+
+    <div class="dpanel"><h4>Платежи</h4>
+      ${pays.length?pays.map(admPayRow).join('')
+        :`<div class="hint" style="padding:14px 0">${esc(tr('Платежей пока нет.'))}</div>`}
+      <div class="buystate" id="admState"></div>
+      <div class="hint" style="margin:4px 0 0">${ico('alert','xs')} ${esc(tr(
+        'Возврат отдаёт звёзды покупателю целиком и снимает Premium. Отменить возврат нельзя.'))}</div>
+    </div>`;
+}
+
+/* ---- Связь: поддержка и объявления ---- */
+function admTalk(){
+  if(ADM_THREAD) return admThreadView();
+  const th=(ADM.threads||[]), nt=(ADM.notices||[]);
+  return `
+    <div class="dpanel"><h4>Обращения</h4>
+      ${th.length?th.map(t=>`<div class="sw" data-adm-thread="${t.user_id}">
+        <div style="min-width:0"><div class="t">${esc(t.first_name||('id '+t.user_id))}${
+          t.username?(' @'+esc(t.username)):''}</div>
+          <div class="d">${esc(tr('сообщений')+' '+t.total+' · '+ago(t.last_at))}</div></div>
+        <span class="rtag ${t.unread?'am':''}">${t.unread?t.unread:'→'}</span>
+      </div>`).join('')
+        :`<div class="hint" style="padding:14px 0">${esc(tr('Обращений пока нет.'))}</div>`}
+    </div>
+
+    <div class="dpanel"><h4>Написать всем в колокольчик</h4>
+      <input id="admNtTitle" class="admtext" placeholder="${esc(tr('Заголовок'))}" autocomplete="off">
+      <textarea id="admNtBody" class="admtext" rows="3" style="margin-top:8px"
+        placeholder="${esc(tr('Что изменилось в боте'))}"></textarea>
+      <div class="admseg" style="margin:9px 0">
+        <button data-adm-kind="release" class="on">${esc(tr('Обновление'))}</button>
+        <button data-adm-kind="news">${esc(tr('Новость'))}</button>
+      </div>
+      <button class="btn wide" id="admPublish">${esc(tr('Опубликовать'))}</button>
+      <div class="buystate" id="admState"></div>
+      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${esc(tr(
+        'Запись появится у всех в колокольчике и подсветится как непрочитанная. Сообщением в чат она не уходит и никого не разбудит на вахте.'))}</div>
+    </div>
+
+    ${nt.length?`<div class="dpanel"><h4>Что уже опубликовано</h4>
+      ${nt.map(n=>`<div class="tres"><span class="tl">${esc(n.title)}</span>
+        <span class="tv" style="font-size:12px">${esc(ago(n.created_at))}</span></div>`).join('')}
+    </div>`:''}`;
+}
+function admThreadView(){
+  const t=ADM_THREAD;
+  return `
+    <div class="dpanel">
+      <button class="btn g wide" id="admBack" style="margin-bottom:11px">← ${esc(tr('К обращениям'))}</button>
+      <div class="admmid">${esc(t.name||('id '+t.user_id))}</div>
+      <div class="admsub" style="margin-bottom:11px">id ${t.user_id}</div>
+      ${(t.messages||[]).map(m=>`<div class="supmsg ${m.author==='user'?'me':'owner'}">
+        <div class="who">${esc(tr(m.author==='user'?'Он':'Я'))} · ${esc(ago(m.created_at))}</div>
+        ${esc(m.text)}</div>`).join('')}
+      <textarea id="admMsg" class="admtext" rows="3" style="margin-top:11px"
+        placeholder="${esc(tr('Ответ придёт в чат с ботом'))}"></textarea>
+      <button class="btn wide" id="admSend" style="margin-top:9px">${esc(tr('Ответить'))}</button>
+      <div class="buystate" id="admState"></div>
+    </div>`;
+}
+
+/* ---- Система ---- */
+function admSys(){
+  const w=ADM.warnings||{};
+  return `
+    <div class="dpanel"><h4>Бот</h4>
+      <div class="tres"><span class="tl">${esc(tr('Сборка'))}</span>
+        <span class="tv mono" style="font-size:13px">${esc(ADM.build||'')}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('База'))}</span>
+        <span class="tv" style="font-size:13px">${esc(ADM.database||'')}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Сервер поднят'))}</span>
+        <span class="tv" style="font-size:13px">${ADM.uptime_h||0} ${esc(tr('ч'))}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Тарифы'))}</span>
+        <span class="tv" style="font-size:13px">${esc(tr(ADM.paywall?'включены':'выключены, всё открыто'))}</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Цена подписки'))}</span>
+        <span class="tv">${ADM.price_stars||0} ⭐</span></div>
+      <div class="tres"><span class="tl">${esc(tr('Пробный период'))}</span>
+        <span class="tv" style="font-size:13px">${ADM.trial_days||0} ${esc(tr('дн'))}</span></div>
+      ${ADM.test_env?`<div class="tres warn"><span class="tl">${esc(tr('Тестовая среда Telegram'))}</span>
+        <span class="tv" style="font-size:13px">${esc(tr('включена'))}</span></div>`:''}
+    </div>
+
+    <div class="dpanel"><h4>Предупреждения в базе</h4>
+      ${admCells([
+        {v:w.active_warnings||0, t:'действующих'},
+        {v:w.total_warnings||0,  t:'всего'},
+        {v:(ADM.summary||{}).areas_marked||0, t:'районов отмечено'}
+      ])}
+    </div>
+
+    <div class="dpanel"><h4>Источники</h4>
+      <button class="btn wide" id="admSources">${esc(tr('Опросить источники сейчас'))}</button>
+      <div class="buystate" id="admState"></div>
+      ${ADM_SRC?`<div style="margin-top:11px">${ADM_SRC.map(s=>
+        `<div class="tres ${s.ok?'':'warn'}"><span class="tl">${esc(s.area)} · ${esc(s.source)}</span>
+         <span class="tv" style="font-size:13px">${s.ok?(s.count+' '+esc(tr('сообщ.'))):esc(s.reason||'')}</span>
+        </div>`).join('')}</div>`
+        :`<div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${esc(tr(
+          'Обход занимает несколько секунд: бот стучится в каждую службу и показывает, сколько сообщений она отдала прямо сейчас.'))}</div>`}
+    </div>`;
+}
+
+/* ---- Сборка экрана и обработчики ---- */
 function renderAdmin(){
   const box=$('#admBox'); if(!box) return;
 
@@ -8272,91 +8672,33 @@ function renderAdmin(){
     return;
   }
 
-  const s=ADM.summary||{}, bal=ADM.balance||{}, w=ADM.withdraw||{};
-  const stars=(bal.stars==null)?null:bal.stars;
-  const need=Math.max(0,(w.min||1000)-(stars||0));
-  const pct=Math.min(100, Math.round(((stars||0)/(w.min||1000))*100));
+  const nav=`<div class="admnav">${ADM_SECS.map(s=>
+    `<button data-adm-sec="${s.v}" class="${ADM_SEC===s.v?'on':''}">${ico(s.i,'sm')}<span>${esc(tr(s.t))}</span></button>`
+    ).join('')}</div>`;
 
-  const money=`
-    <div class="dpanel"><h4>Звёзды</h4>
-      ${stars===null
-        ? `<div class="tres warn"><span class="tl">${esc(tr('Баланс не пришёл'))}</span>
-             <span class="tv" style="font-size:12px">${esc(bal.error||'')}</span></div>`
-        : `<div class="admbig">${stars} ⭐</div>
-           <div class="hint" style="padding:6px 0 0">${
-             esc(tr('Это баланс бота в Telegram — деньги за подписки приходят сюда.'))}</div>
-           <div class="admbar"><i style="width:${pct}%"></i></div>
-           <div class="hint" style="padding:0">${need>0
-             ? esc(tr('До вывода не хватает')+' '+need+' ⭐ '+tr('из')+' '+(w.min||1000))
-             : esc(tr('Минимума для вывода хватает.'))}</div>`}
-      <div class="admgrid" style="margin-top:11px">
-        <div class="admcell"><b>${s.stars_total||0}</b><span>${esc(tr('получено всего'))}</span></div>
-        <div class="admcell"><b>${s.stars_30d||0}</b><span>${esc(tr('за 30 дней'))}</span></div>
-        <div class="admcell"><b>${s.refunded_stars||0}</b><span>${esc(tr('возвращено'))}</span></div>
-      </div>
-    </div>
+  let body='';
+  if(ADM_SEC==='over')   body=admOverview();
+  if(ADM_SEC==='people') body=admPeople();
+  if(ADM_SEC==='money')  body=admMoney();
+  if(ADM_SEC==='talk')   body=admTalk();
+  if(ADM_SEC==='sys')    body=admSys();
+  box.innerHTML=nav+body;
 
-    <div class="dpanel"><h4>Вывод</h4>
-      <div class="tres"><span class="tl">${esc(tr('Минимум для вывода'))}</span>
-        <span class="tv">${w.min||1000} ⭐</span></div>
-      <div class="tres"><span class="tl">${esc(tr('Выдержка каждой звезды'))}</span>
-        <span class="tv">${w.hold_days||21} ${esc(tr('дн'))}</span></div>
-      <div class="tres"><span class="tl">${esc(tr('Срок прошли, по моему учёту'))}</span>
-        <span class="tv">${w.ripe_estimate||0} ⭐</span></div>
-      <div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${esc(tr(
-        'Вывод идёт только через Fragment и только в TON — у Bot API такого метода нет, кнопкой из бота его не вызвать. Telegram держит каждую звезду 21 день на случай возврата покупателю.'))}</div>
-      <button class="btn wide" id="admFragment" style="margin-top:9px">${esc(tr('Открыть Fragment'))}</button>
-    </div>`;
-
-  const people=`
-    <div class="dpanel"><h4>Люди</h4>
-      <div class="admgrid">
-        <div class="admcell"><b>${s.users||0}</b><span>${esc(tr('всего'))}</span></div>
-        <div class="admcell"><b>${s.active_week||0}</b><span>${esc(tr('заходили за неделю'))}</span></div>
-        <div class="admcell"><b>${s.active_day||0}</b><span>${esc(tr('за сутки'))}</span></div>
-        <div class="admcell"><b>${s.premium||0}</b><span>${esc(tr('с Premium'))}</span></div>
-        <div class="admcell"><b>${s.granted||0}</b><span>${esc(tr('выдано вручную'))}</span></div>
-        <div class="admcell"><b>${s.new_week||0}</b><span>${esc(tr('новых за неделю'))}</span></div>
-      </div>
-      ${s.cancelled?`<div class="hint" style="margin:9px 0 0">${ico('alert','xs')} ${
-        esc(tr('Отключили автопродление')+': '+s.cancelled)}</div>`:''}
-    </div>`;
-
-  const users=(ADM.users||[]);
-  const list=`
-    <div class="dpanel"><h4>Пользователи</h4>
-      <div class="admseg">
-        <button data-adm-tab="all" class="${ADM_TAB==='all'?'on':''}">${esc(tr('Все'))}</button>
-        <button data-adm-tab="paid" class="${ADM_TAB==='paid'?'on':''}">${esc(tr('С Premium'))}</button>
-        <button data-adm-tab="active" class="${ADM_TAB==='active'?'on':''}">${esc(tr('Активные'))}</button>
-      </div>
-      <div class="sbox" style="margin-bottom:9px">
-        <input id="admQ" placeholder="${esc(tr('Найти по id, имени или @нику'))}"
-               autocomplete="off" value="${esc(ADM_Q)}">
-      </div>
-      ${users.length?users.map(admUserRow).join('')
-        :`<div class="hint" style="padding:14px 0">${esc(tr('Никого не нашлось.'))}</div>`}
-      <div class="buystate" id="admState"></div>
-    </div>`;
-
-  const pays=(ADM.payments||[]);
-  const payments=`
-    <div class="dpanel"><h4>Платежи</h4>
-      ${pays.length?pays.map(admPayRow).join('')
-        :`<div class="hint" style="padding:14px 0">${esc(tr('Платежей пока нет.'))}</div>`}
-      <div class="hint" style="margin:4px 0 0">${ico('alert','xs')} ${esc(tr(
-        'Возврат отдаёт звёзды покупателю целиком и снимает Premium. Отменить возврат нельзя.'))}</div>
-    </div>`;
-
-  box.innerHTML=money+people+list+payments;
+  box.querySelectorAll('[data-adm-sec]').forEach(b=>b.onclick=()=>{
+    ADM_SEC=b.dataset.admSec; ADM_CARD=null; ADM_THREAD=null; hap(); renderAdmin();
+  });
+  box.querySelectorAll('[data-adm-go]').forEach(b=>b.onclick=()=>{
+    ADM_SEC=b.dataset.admGo; hap(); renderAdmin();
+  });
+  const back=$('#admBack');
+  if(back) back.onclick=()=>{ ADM_CARD=null; ADM_THREAD=null; hap(); renderAdmin(); };
 
   const fr=$('#admFragment');
   if(fr) fr.onclick=()=>{
     hap('medium');
-    // Fragment -- внешний сайт, а не страница Telegram: openLink открывает
-    // его в браузере, openTelegramLink на нём просто ничего не сделает.
-    try{ TG.openLink(w.fragment||'https://fragment.com/stars'); }
-    catch(e){ window.open(w.fragment||'https://fragment.com/stars','_blank'); }
+    // Fragment живёт вне Telegram, поэтому openLink, а не openTelegramLink.
+    const url=(ADM.withdraw||{}).fragment||'https://fragment.com/stars';
+    try{ TG.openLink(url); }catch(e){ window.open(url,'_blank'); }
   };
 
   box.querySelectorAll('[data-adm-tab]').forEach(b=>b.onclick=()=>{
@@ -8368,36 +8710,95 @@ function renderAdmin(){
     q.oninput=()=>{ ADM_TYPING=true; clearTimeout(t);
       t=setTimeout(()=>{ ADM_Q=q.value; ADM_OPEN=null; loadAdminUsers(); },350); };
     q.onblur=()=>{ ADM_TYPING=false; };
-    // Список перерисовывается на каждую букву, а вместе с ним и само поле.
-    // Без возврата фокуса на телефоне после первой же буквы закрывалась
-    // клавиатура -- набрать что-то длиннее «55» становилось невозможно.
+    // Список перерисовывается на каждую букву вместе с полем ввода. Без
+    // возврата фокуса на телефоне после первой же буквы закрывалась
+    // клавиатура, и набрать что-то длиннее «55» было невозможно.
     if(ADM_TYPING){
       q.focus();
       try{ q.setSelectionRange(q.value.length, q.value.length); }catch(e){}
     }
   }
+
   box.querySelectorAll('[data-adm-user]').forEach(el=>el.onclick=()=>{
-    const id=parseInt(el.dataset.admUser,10);
-    ADM_OPEN=(ADM_OPEN===id)?null:id;
-    hap(); renderAdmin();
+    hap(); admOpenUser(parseInt(el.dataset.admUser,10));
   });
+  box.querySelectorAll('[data-adm-thread]').forEach(el=>el.onclick=()=>{
+    hap(); admOpenThread(parseInt(el.dataset.admThread,10));
+  });
+
   box.querySelectorAll('[data-grant]').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
     admAct('action=grant&user_id='+b.dataset.grant+'&days='+b.dataset.days,
-           tr('Premium выдан, человек получил сообщение.'));
+           tr('Premium выдан, человек получил сообщение.'), true);
   });
   box.querySelectorAll('[data-revoke]').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
     if(!confirm(tr('Снять Premium? Деньги при этом не возвращаются.'))) return;
-    admAct('action=revoke&user_id='+b.dataset.revoke, tr('Premium снят.'));
+    admAct('action=revoke&user_id='+b.dataset.revoke, tr('Premium снят.'), true);
   });
   box.querySelectorAll('[data-refund]').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
     if(!confirm(tr('Вернуть звёзды покупателю? Premium будет снят, отменить возврат нельзя.'))) return;
     admAct('action=refund&user_id='+b.dataset.refund+'&charge_id='+encodeURIComponent(b.dataset.charge),
-           tr('Звёзды возвращены, Premium снят.'));
+           tr('Звёзды возвращены, Premium снят.'), true);
   });
+
+  const send=$('#admSend');
+  if(send) send.onclick=async()=>{
+    const ta=$('#admMsg'); const text=ta?ta.value.trim():'';
+    if(!text){ admSay(tr('Сначала напиши текст.'),'no'); return; }
+    const uid=(ADM_THREAD?ADM_THREAD.user_id:(ADM_CARD?ADM_CARD.user_id:0));
+    if(!uid) return;
+    if(ta) ta.value='';
+    await admAct('action=message&user_id='+uid+'&text='+encodeURIComponent(text),
+                 tr('Отправлено.'), !ADM_THREAD);
+    if(ADM_THREAD) admOpenThread(uid);
+  };
+
+  const pub=$('#admPublish');
+  if(pub) pub.onclick=async()=>{
+    const t=$('#admNtTitle'), b=$('#admNtBody');
+    const title=t?t.value.trim():'', body=b?b.value.trim():'';
+    if(!title){ admSay(tr('Нужен заголовок.'),'no'); return; }
+    const kind=(box.querySelector('[data-adm-kind].on')||{}).dataset
+      ? box.querySelector('[data-adm-kind].on').dataset.admKind : 'release';
+    if(t) t.value=''; if(b) b.value='';
+    await admAct('action=notice&kind='+kind+'&title='+encodeURIComponent(title)
+                 +'&body='+encodeURIComponent(body), tr('Опубликовано, запись ушла в колокольчик.'));
+  };
+  box.querySelectorAll('[data-adm-kind]').forEach(b=>b.onclick=()=>{
+    box.querySelectorAll('[data-adm-kind]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); hap();
+  });
+
+  const src=$('#admSources');
+  if(src) src.onclick=async()=>{
+    hap('medium'); src.disabled=true; src.textContent=tr('Опрашиваю…');
+    try{ const r=await api('/api/admin?action=sources'); ADM_SRC=r.sources||[]; }
+    catch(e){ ADM_SRC=[]; }
+    renderAdmin();
+  };
+
   applyLang();
+}
+
+async function admOpenUser(id){
+  try{
+    const r=await api('/api/admin?action=user&user_id='+id);
+    if(r&&r.card){ ADM_CARD=r.card; ADM_SEC='people'; ADM_THREAD=null; }
+  }catch(e){}
+  renderAdmin();
+}
+async function admOpenThread(id){
+  try{
+    const r=await api('/api/admin?action=thread&user_id='+id);
+    const who=(ADM.threads||[]).find(t=>t.user_id===id)||{};
+    ADM_THREAD={user_id:id, messages:r.messages||[],
+                name:[(who.first_name||'').trim(), who.username?('@'+who.username):''].filter(Boolean).join(' ')};
+    ADM_SEC='talk'; ADM_CARD=null;
+    paintBell();
+  }catch(e){}
+  renderAdmin();
 }
 
 
