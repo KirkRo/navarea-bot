@@ -32,6 +32,18 @@ logger = logging.getLogger(__name__)
 # владелец добавляет из панели («Связь» -> «Написать всем в колокольчик»),
 # они ложатся в таблицу notices и в этот список не попадают.
 CHANGELOG = [
+    {"at": "2026-08-12T10:00:00+00:00",
+     "title": "Порты мира, астрономия и планшет расхождения",
+     "title_en": "World ports, celestial sights and the manoeuvring plot",
+     "body": "Добавлен справочник на 3559 портов из World Port Index: гавань, укрытие и средняя "
+             "величина прилива, всё работает без сети. Появились альманах Солнца и Луны с "
+             "линией положения и маневренный планшет в расчёте расхождения. Предупреждения "
+             "выгружаются девятью форматами, включая Shapefile и GeoPackage.",
+     "body_en": "A directory of 3559 ports from the World Port Index has been added: harbour "
+                "type, shelter and mean tide range, all of it working offline. There is now a "
+                "Sun and Moon almanac with the position line, and a manoeuvring plot in the "
+                "passing distance tool. Warnings export in nine formats, Shapefile and "
+                "GeoPackage among them."},
     {"at": "2026-08-12T09:00:00+00:00",
      "title": "Канадская Арктика и выгрузка файлов",
      "title_en": "The Canadian Arctic and file export",

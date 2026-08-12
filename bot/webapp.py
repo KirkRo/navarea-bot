@@ -226,13 +226,64 @@ def _api_favorites(query: dict) -> dict:
 
 
 def _api_ports(query: dict) -> dict:
+    """Поиск порта. Сначала свой короткий список с русскими названиями
+    стран, затем World Port Index на 3559 портов.
+
+    Порядок именно такой: в своём списке лежат крупные порты, которые ищут
+    чаще всего, и подписаны они привычно. WPI добавляет всё остальное,
+    вплоть до рыбацких гаваней, но названия там официальные."""
+    from .services import wpi
     from .services.voyage import find_ports
 
     q = (query.get("q") or [""])[0]
-    return {"results": [
-        {"name": p.name, "country": p.country, "lat": p.lat, "lon": p.lon, "label": p.label}
-        for p in find_ports(q)
-    ]}
+    lang = (query.get("lang") or ["ru"])[0]
+
+    results = [{"name": p.name, "country": p.country, "lat": p.lat, "lon": p.lon,
+                "label": p.label, "source": "own"}
+               for p in find_ports(q)]
+
+    seen = {(round(r["lat"], 1), round(r["lon"], 1)) for r in results}
+    for p in wpi.search(q, limit=12, lang=lang):
+        key = (round(p["lat"], 1), round(p["lon"], 1))
+        if key in seen:
+            continue  # тот же порт уже пришёл из своего списка
+        seen.add(key)
+        results.append({
+            "name": p["name"], "country": p["cc"], "lat": p["lat"], "lon": p["lon"],
+            "label": f"{p['name']}, {p['cc']}", "source": "wpi",
+            "harbor": p.get("type_text"), "shelter": p.get("shelter_text"),
+            "size": p.get("size_text"), "tide_m": p.get("tide_m"),
+        })
+    return {"results": results[:18]}
+
+
+def _api_port_info(query: dict) -> dict:
+    """Карточка порта из World Port Index: тип гавани, укрытие, приливы.
+
+    Отвечает на вопрос, который возникает перед подходом: насколько там
+    ходит вода и что за гавань. Данные лежат в приложении файлом, поэтому
+    раздел работает без сети."""
+    from .services import wpi
+
+    lang = (query.get("lang") or ["ru"])[0]
+    port_id = (query.get("id") or [""])[0]
+    if port_id.isdigit():
+        port = wpi.by_id(int(port_id), lang)
+        return {"port": port, "tide_note": wpi.tide_note(port or {}, lang)} if port else {"error": "not_found"}
+
+    lat, lon = (query.get("lat") or [""])[0], (query.get("lon") or [""])[0]
+    if lat and lon:
+        try:
+            near = wpi.nearest(float(lat), float(lon), limit=5, lang=lang)
+        except ValueError:
+            return {"error": "bad_coords"}
+        return {"nearest": near, "total": wpi.count()}
+
+    q = (query.get("q") or [""])[0]
+    found = wpi.search(q, limit=8, lang=lang)
+    if not found:
+        return {"error": "not_found", "total": wpi.count()}
+    return {"port": found[0], "tide_note": wpi.tide_note(found[0], lang), "others": found[1:]}
 
 
 def _api_voyage(query: dict) -> dict:
@@ -1112,12 +1163,13 @@ def _api_export(query: dict) -> dict:
     """Выгрузка предупреждений в форматы, которые понимают чужие программы.
 
     Пока данные жили только внутри приложения, готовить по ним переход
-    было нечем: штурман переписывал координаты руками. GeoJSON открывают
-    QGIS и почти все планировщики, KML открывает Google Earth, CSV идёт
-    в таблицу.
+    было нечем: штурман переписывал координаты руками. Сами форматы и
+    оговорка про ECDIS лежат в services/export.py.
 
-    Отдаём JSON с готовым текстом файла, а не файл: Mini App работает
-    внутри Telegram, и сохранение делает уже сам браузер из строки."""
+    Без send=1 отдаём разбор с числом объектов, но без содержимого файла:
+    двоичный GeoPackage в JSON всё равно не положить, а весить он может
+    мегабайты."""
+    from .services import export
     from .services.geo import extract_coordinates, extract_shapes
 
     db = _state["db"]
@@ -1155,28 +1207,51 @@ def _api_export(query: dict) -> dict:
             "points": points,
         })
 
-    if fmt == "kml":
-        body, mime, name = _as_kml(features), "application/vnd.google-earth.kml+xml", "warnings.kml"
-    elif fmt == "csv":
-        body, mime, name = _as_csv(features), "text/csv", "warnings.csv"
-    else:
-        body, mime, name = _as_geojson(features), "application/geo+json", "warnings.geojson"
+    if fmt == "formats":
+        # Список того, что можно выгрузить, для кнопок в приложении
+        lang = (query.get("lang") or ["ru"])[0]
+        return {"formats": [{"id": key, "title": title}
+                            for key, (title, _m, _e, _k) in export.FORMATS.items()],
+                "ecdis": list(export.ECDIS_FORMATS),
+                "ecdis_note": export.ecdis_note(lang),
+                "ready": len(features), "total": len(rows)}
+
+    # Каждый район уходит своим файлом. В одном файле их складывать нельзя:
+    # на мостике районы грузят в разные слои и разбирают по очереди, а
+    # общая свалка заставляет отделять чужие предупреждения руками.
+    by_area = export.group_by_area(features)
 
     # Внутри Telegram файл из Mini App не сохранить: WebView не отдаёт
-    # загрузки в файловую систему. Поэтому выгрузку отправляем документом
-    # в чат с ботом, откуда её открывают чем угодно, хоть ECDIS на мостике.
+    # загрузки в файловую систему. Поэтому выгрузку отправляем документами
+    # в чат с ботом, откуда их открывают чем угодно.
     if (query.get("send") or [""])[0] == "1":
         if not user_id:
             return {"error": "unauthorized"}
         if not features:
             return {"error": "empty"}
-        ok = _send_document(user_id, name, body.encode("utf-8"), mime,
-                            caption=f"Предупреждения: {len(features)} шт., формат {fmt.upper()}")
-        return {"sent": ok, "count": len(features), "filename": name,
-                **({} if ok else {"error": "send_failed"})}
 
-    return {"format": fmt, "filename": name, "mime": mime,
-            "count": len(features), "total": len(rows), "body": body}
+        sent, failed = [], []
+        for area, items in sorted(by_area.items()):
+            blob, mime, name = export.build(fmt, items, area=area)
+            ok = _send_document(
+                user_id, name, blob, mime,
+                caption=f"{area}: {len(items)} шт., формат {fmt.upper()}")
+            (sent if ok else failed).append({"area": area, "count": len(items), "file": name})
+            # Пауза между документами: Telegram считает частые отправки в
+            # один чат флудом и начинает отвечать отказом.
+            if len(by_area) > 1:
+                time.sleep(0.4)
+
+        return {"sent": len(sent), "failed": len(failed), "areas": sent,
+                "count": len(features),
+                **({} if sent else {"error": "send_failed"})}
+
+    preview = []
+    for area, items in sorted(by_area.items()):
+        blob, mime, name = export.build(fmt, items, area=area)
+        preview.append({"area": area, "count": len(items), "filename": name,
+                        "bytes": len(blob), "mime": mime})
+    return {"format": fmt, "files": preview, "count": len(features), "total": len(rows)}
 
 
 def _send_document(chat_id: int, filename: str, blob: bytes, mime: str, caption: str = "") -> bool:
@@ -1212,88 +1287,6 @@ def _send_document(chat_id: int, filename: str, blob: bytes, mime: str, caption:
     except Exception:
         logger.exception("Не удалось отправить выгрузку документом")
         return False
-
-
-def _as_geojson(features: list[dict]) -> str:
-    """Точки и области одним слоем.
-
-    Область отдаём полигоном, одиночную точку точкой: программы, которые
-    читают GeoJSON, рисуют их по-разному, и подсовывать полигон из одной
-    вершины значит получить пустое место на карте."""
-    out = []
-    for f in features:
-        geoms = []
-        for shape in f["shapes"]:
-            pts = shape.get("points") or []
-            if len(pts) >= 3:
-                ring = [[p[1], p[0]] for p in pts]
-                ring.append(ring[0])          # GeoJSON требует замкнутое кольцо
-                geoms.append({"type": "Polygon", "coordinates": [ring]})
-            elif len(pts) == 2:
-                geoms.append({"type": "LineString", "coordinates": [[p[1], p[0]] for p in pts]})
-        if not geoms:
-            for lat, lon in f["points"][:20]:
-                geoms.append({"type": "Point", "coordinates": [lon, lat]})
-        for geom in geoms:
-            out.append({
-                "type": "Feature",
-                "geometry": geom,
-                "properties": {"area": f["area"], "number": f["number"],
-                               "region": f["region"], "issued": f["issued"],
-                               "text": f["text"][:4000]},
-            })
-    return json.dumps({"type": "FeatureCollection", "features": out},
-                      ensure_ascii=False, indent=1)
-
-
-def _as_kml(features: list[dict]) -> str:
-    def esc(text: str) -> str:
-        return (str(text).replace("&", "&amp;").replace("<", "&lt;")
-                .replace(">", "&gt;").replace('"', "&quot;"))
-
-    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
-             '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>',
-             "<name>NAVAREA warnings</name>"]
-    for f in features:
-        title = f"{f['area']} {f['number']}".strip()
-        desc = esc(f["text"][:3000])
-        drawn = False
-        for shape in f["shapes"]:
-            pts = shape.get("points") or []
-            if len(pts) >= 3:
-                ring = pts + [pts[0]]
-                coords = " ".join(f"{p[1]},{p[0]},0" for p in ring)
-                parts.append(f"<Placemark><name>{esc(title)}</name>"
-                             f"<description>{desc}</description>"
-                             f"<Polygon><outerBoundaryIs><LinearRing>"
-                             f"<coordinates>{coords}</coordinates>"
-                             f"</LinearRing></outerBoundaryIs></Polygon></Placemark>")
-                drawn = True
-        if not drawn:
-            for lat, lon in f["points"][:20]:
-                parts.append(f"<Placemark><name>{esc(title)}</name>"
-                             f"<description>{desc}</description>"
-                             f"<Point><coordinates>{lon},{lat},0</coordinates></Point></Placemark>")
-    parts.append("</Document></kml>")
-    return "\n".join(parts)
-
-
-def _as_csv(features: list[dict]) -> str:
-    """Разделитель точка с запятой: Excel в русской локали открывает запятую
-    как разделитель разрядов и складывает всю строку в одну ячейку."""
-    import csv
-    import io as _io
-
-    buf = _io.StringIO()
-    writer = csv.writer(buf, delimiter=";", quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
-    writer.writerow(["area", "number", "region", "issued", "lat", "lon", "text"])
-    for f in features:
-        lat, lon = ("", "")
-        if f["points"]:
-            lat, lon = f["points"][0]
-        writer.writerow([f["area"], f["number"], f["region"], f["issued"],
-                         lat, lon, " ".join(f["text"].split())[:2000]])
-    return buf.getvalue()
 
 
 def _now_iso() -> str:
@@ -1610,6 +1603,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/port-info": _api_port_info,
     "/api/export": _api_export,
     "/api/subscription": _api_subscription,
     "/api/admin": _api_admin,

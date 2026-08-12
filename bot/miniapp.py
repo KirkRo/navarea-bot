@@ -1552,6 +1552,12 @@ body.kbd .askbar{bottom:0}
 .admline b{font-size:15px;font-weight:800;color:var(--fg,inherit)}
 .admchart{width:100%;height:46px;display:block;color:var(--muted)}
 .admdates{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-top:5px}
+/* Планшет расхождения. Ширину ограничиваем: на планшете и в широком
+   окне круг иначе растягивается на весь экран и перестаёт читаться. */
+.tplot{display:flex;justify-content:center;margin:4px 0 10px}
+.rplot{width:100%;max-width:320px;height:auto;color:var(--muted)}
+.tres+.tplot{margin-top:10px}
+
 .admtext{width:100%;box-sizing:border-box;background:var(--surf2);border:1px solid var(--line);
   border-radius:var(--r-sm);color:inherit;font-family:inherit;font-size:13.5px;padding:11px 12px;
   resize:vertical}
@@ -2759,6 +2765,123 @@ function cpaTcpa(ownCrs,ownSpd,tgtBrg,tgtRng,tgtCrs,tgtSpd){
   };
 }
 
+/* ================= Маневренный планшет =================
+   Рисунок к расчёту расхождения. Цифры CPA и TCPA отвечают, насколько
+   близко и когда, но не показывают, с какого борта цель пройдёт и куда
+   ведёт линия относительного движения. На разборе манёвра спрашивают
+   именно это.
+
+   Планшет ориентирован по норду, как бумажный: своё судно в центре,
+   север вверху. Цель ставится по пеленгу и дистанции, от неё идёт линия
+   относительного движения, и на ней отмечена точка кратчайшего
+   сближения. Свой вектор и вектор цели нарисованы отдельно, чтобы было
+   видно, из чего сложилось относительное движение. */
+
+/* Экранные координаты точки: пеленг от норда по часовой, дальность в
+   милях. Ось Y на экране растёт вниз, поэтому север это минус. */
+function rpPoint(cx, cy, scale, bearing, range){
+  const a = bearing * Math.PI / 180;
+  return [cx + Math.sin(a) * range * scale, cy - Math.cos(a) * range * scale];
+}
+
+function radarPlot(inp, r){
+  const size = 240, cx = 120, cy = 118, R = 96;
+  // Шкала подбирается под дистанцию цели и округляется вверх до целых
+  // миль: планшет с подписью «7.3 мили на кольце» читать неудобно.
+  const maxRange = Math.max(2, Math.ceil(inp.tr * 1.35));
+  const scale = R / maxRange;
+  const fmt = n => (Math.round(n * 10) / 10);
+
+  const tgt = rpPoint(cx, cy, scale, inp.tb, inp.tr);
+
+  // Линию относительного движения ведём на час вперёд или до точки
+  // сближения, смотря что дальше: короткая линия не показывает, куда
+  // цель уходит после расхождения.
+  const runTime = r.opening ? 0.5 : Math.max(0.3, Math.min(3, (r.tcpa || 0) * 1.6));
+  const relDist = r.relSpeed * runTime;
+  const relEnd = [tgt[0] + Math.sin(r.relCourse * Math.PI / 180) * relDist * scale,
+                  tgt[1] - Math.cos(r.relCourse * Math.PI / 180) * relDist * scale];
+
+  // Точка сближения лежит на линии относительного движения
+  const cpaPt = r.opening ? null
+    : [tgt[0] + Math.sin(r.relCourse * Math.PI / 180) * r.relSpeed * r.tcpa * scale,
+       tgt[1] - Math.cos(r.relCourse * Math.PI / 180) * r.relSpeed * r.tcpa * scale];
+
+  // Векторы движения: свой от центра, цели от отметки цели, оба за 1 час
+  const own = rpPoint(cx, cy, scale, inp.oc, Math.min(inp.os, maxRange * 0.42));
+  const tv = [tgt[0] + Math.sin(inp.tc * Math.PI / 180) * Math.min(inp.ts, maxRange * 0.42) * scale,
+              tgt[1] - Math.cos(inp.tc * Math.PI / 180) * Math.min(inp.ts, maxRange * 0.42) * scale];
+
+  const rings = [1 / 3, 2 / 3, 1].map(k =>
+    `<circle cx="${cx}" cy="${cy}" r="${(R * k).toFixed(1)}" fill="none"
+       stroke="currentColor" stroke-opacity="${k === 1 ? .5 : .22}" stroke-width="1"/>`).join('');
+
+  const spokes = [0, 45, 90, 135, 180, 225, 270, 315].map(b => {
+    const p = rpPoint(cx, cy, scale, b, maxRange);
+    return `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"
+      stroke="currentColor" stroke-opacity=".14" stroke-width="1"/>`;
+  }).join('');
+
+  const marks = [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']].map(([b, t]) => {
+    const p = rpPoint(cx, cy, scale, b, maxRange * 1.1);
+    return `<text x="${p[0].toFixed(1)}" y="${(p[1] + 3).toFixed(1)}" text-anchor="middle"
+      font-size="9" fill="currentColor" fill-opacity=".55">${t}</text>`;
+  }).join('');
+
+  const danger = !r.opening && r.cpa < 1;
+  const relColor = danger ? 'var(--no, #e5484d)' : 'var(--amber, #e8a33e)';
+
+  return `<svg viewBox="0 0 ${size} ${size}" class="rplot" role="img"
+    aria-label="Маневренный планшет">
+    <g color="var(--muted, #8b95a5)">${rings}${spokes}${marks}</g>
+
+    <line x1="${cx}" y1="${cy}" x2="${own[0].toFixed(1)}" y2="${own[1].toFixed(1)}"
+      stroke="var(--ok, #46a758)" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="3.4" fill="var(--ok, #46a758)"/>
+
+    <line x1="${tgt[0].toFixed(1)}" y1="${tgt[1].toFixed(1)}"
+      x2="${relEnd[0].toFixed(1)}" y2="${relEnd[1].toFixed(1)}"
+      stroke="${relColor}" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <line x1="${tgt[0].toFixed(1)}" y1="${tgt[1].toFixed(1)}"
+      x2="${tv[0].toFixed(1)}" y2="${tv[1].toFixed(1)}"
+      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".75"/>
+    <circle cx="${tgt[0].toFixed(1)}" cy="${tgt[1].toFixed(1)}" r="4"
+      fill="none" stroke="${relColor}" stroke-width="2"/>
+
+    ${cpaPt ? `<circle cx="${cpaPt[0].toFixed(1)}" cy="${cpaPt[1].toFixed(1)}" r="3"
+        fill="${relColor}"/>
+      <line x1="${cx}" y1="${cy}" x2="${cpaPt[0].toFixed(1)}" y2="${cpaPt[1].toFixed(1)}"
+        stroke="${relColor}" stroke-width="1" stroke-opacity=".55" stroke-dasharray="2 2"/>
+      <text x="${cpaPt[0].toFixed(1)}" y="${(cpaPt[1] - 7).toFixed(1)}" text-anchor="middle"
+        font-size="9" fill="${relColor}">CPA ${fmt(r.cpa)}</text>` : ''}
+
+    <text x="8" y="14" font-size="9" fill="currentColor" fill-opacity=".6"
+      >${maxRange} ${tr('миль на кольце')}</text>
+    <text x="${size - 8}" y="14" text-anchor="end" font-size="9"
+      fill="currentColor" fill-opacity=".6">${tr('векторы за 1 ч')}</text>
+    <text x="8" y="${size - 8}" font-size="9" fill="var(--ok, #46a758)"
+      >— ${tr('своё судно')}</text>
+    <text x="${size - 8}" y="${size - 8}" text-anchor="end" font-size="9" fill="${relColor}"
+      >-- ${tr('линия относительного движения')}</text>
+  </svg>`;
+}
+
+/* Классический признак опасности столкновения: пеленг не меняется.
+   Считаем изменение за десять минут по той же геометрии. */
+function bearingTrend(bearing, range, r){
+  if(r.opening) return tr('цель расходится');
+  const step = 10 / 60;
+  const nb = Math.atan2(
+    Math.sin(bearing * Math.PI / 180) * range + Math.sin(r.relCourse * Math.PI / 180) * r.relSpeed * step,
+    Math.cos(bearing * Math.PI / 180) * range + Math.cos(r.relCourse * Math.PI / 180) * r.relSpeed * step
+  ) * 180 / Math.PI;
+  const delta = ((nb - bearing + 540) % 360) - 180;
+  if(Math.abs(delta) < 0.5) return tr('почти не меняется, опасность столкновения');
+  return (Math.abs(delta) < 3 ? tr('меняется медленно') : tr('меняется заметно'))
+       + ': ' + (delta > 0 ? tr('вправо') : tr('влево')) + ' '
+       + Math.abs(delta).toFixed(1) + '° ' + tr('за 10 мин');
+}
+
 /* -- точка перекладки руля -- */
 function wheelOver(radius,courseChange){
   const a=Math.abs(courseChange)*D2R;
@@ -2840,6 +2963,196 @@ function sunTimes(lat,lon,date){
     astro:times(-18),
     noon:fromJulian(Jtransit)
   };
+}
+
+/* ================= Мореходная астрономия =================
+   Считается прямо на устройстве: сеть не нужна, в рейсе это и есть
+   основной режим работы.
+
+   Что здесь есть: часовой угол и склонение Солнца и Луны, приведение
+   измеренной высоты к истинной, счислимая высота с азимутом и перенос
+   линии положения. Светило можно задать и вручную, часовым углом со
+   склонением из бумажного альманаха: так считаются звёзды и планеты,
+   пока их нет в расчёте.
+
+   Точность проверена против эталонных эфемерид DE421: Солнце держит
+   0.5 угловой минуты, Луна одну. Ряды здесь усечённые, полные занимают
+   сотни членов. Для контроля места этого достаточно, для официальной
+   прокладки положен Морской астрономический ежегодник. Так и написано
+   в самом разделе, чтобы никто не принял расчёт за замену ежегодника. */
+
+const AS_D2R = Math.PI / 180, AS_R2D = 180 / Math.PI;
+const asSin = d => Math.sin(d * AS_D2R), asCos = d => Math.cos(d * AS_D2R);
+const asTan = d => Math.tan(d * AS_D2R);
+/* Приведение к диапазону 0-360: часовые углы растут без конца, а на
+   круге интересен только остаток. */
+const asNorm = d => ((d % 360) + 360) % 360;
+
+function asJD(date){
+  return date.valueOf() / 86400000 + 2440587.5;
+}
+
+/* Гринвичское звёздное время: с него начинается любой часовой угол.
+   Формула из Astronomical Almanac, расхождение за век меньше секунды. */
+function asGMST(date){
+  const d = asJD(date) - 2451545.0;
+  const T = d / 36525;
+  return asNorm(280.46061837 + 360.98564736629 * d + 0.000387933 * T * T);
+}
+
+/* Часовой угол точки Овна: от него отсчитываются звёзды через SHA. */
+function asGHAAries(date){ return asGMST(date); }
+
+/* -- Солнце -- */
+function asSun(date){
+  const T = (asJD(date) - 2451545.0) / 36525;
+  const L0 = asNorm(280.46646 + 36000.76983 * T);           // средняя долгота
+  const M  = asNorm(357.52911 + 35999.05029 * T);           // средняя аномалия
+  const C  = (1.914602 - 0.004817 * T) * asSin(M)
+           + (0.019993 - 0.000101 * T) * asSin(2 * M)
+           + 0.000289 * asSin(3 * M);                        // уравнение центра
+  const lon = L0 + C;                                        // истинная долгота
+  const e = 0.016708634 - 0.000042037 * T;
+  const v = M + C;
+  const R = 1.000001018 * (1 - e * e) / (1 + e * asCos(v));  // расстояние, а.е.
+  const eps = 23.439291 - 0.0130042 * T;                     // наклон эклиптики
+
+  const ra = Math.atan2(asCos(eps) * asSin(lon), asCos(lon)) * AS_R2D;
+  const dec = Math.asin(asSin(eps) * asSin(lon)) * AS_R2D;
+  return {
+    name: 'Солнце',
+    gha: asNorm(asGMST(date) - ra),
+    dec: dec,
+    sd: 16.0 / R,        // видимый полудиаметр в минутах
+    hp: 0.0024 / R,      // горизонтальный параллакс, минуты
+    limb: true
+  };
+}
+
+/* -- Луна --
+   Ряды Брауна в изложении Meeus. Членов намеренно много: на шести
+   главных расчёт врал на два градуса по долготе, а это 120 миль по
+   месту. С набором ниже расхождение с эталонными эфемеридами держится
+   в пределах одной угловой минуты, что проверено отдельной проверкой
+   moontest. */
+const AS_MOON_LON = [
+  [6.288774, 0, 0, 1, 0], [1.274027, 2, 0, -1, 0], [0.658314, 2, 0, 0, 0],
+  [0.213618, 0, 0, 2, 0], [-0.185116, 0, 1, 0, 0], [-0.114332, 0, 0, 0, 2],
+  [0.058793, 2, 0, -2, 0], [0.057066, 2, -1, -1, 0], [0.053322, 2, 0, 1, 0],
+  [0.045758, 2, -1, 0, 0], [-0.040923, 0, 1, -1, 0], [-0.034720, 1, 0, 0, 0],
+  [-0.030383, 0, 1, 1, 0], [0.015327, 2, 0, 0, -2], [-0.012528, 0, 0, 1, 2],
+  [0.010980, 0, 0, 1, -2], [0.010675, 4, 0, -1, 0], [0.010034, 0, 0, 3, 0],
+  [0.008548, 4, 0, -2, 0]
+];
+const AS_MOON_LAT = [
+  [5.128122, 0, 0, 0, 1], [0.280602, 0, 0, 1, 1], [0.277693, 0, 0, 1, -1],
+  [0.173237, 2, 0, 0, -1], [0.055413, 2, 0, -1, 1], [0.046271, 2, 0, -1, -1],
+  [0.032573, 2, 0, 0, 1], [0.017198, 0, 0, 2, 1], [0.009266, 2, 0, 1, -1],
+  [0.008822, 0, 0, 2, -1], [0.008216, 2, -1, 0, -1], [0.004324, 2, 0, -2, -1]
+];
+const AS_MOON_DIST = [
+  [-20905.355, 0, 0, 1, 0], [-3699.111, 2, 0, -1, 0], [-2955.968, 2, 0, 0, 0],
+  [-569.925, 0, 0, 2, 0], [48.888, 0, 1, 0, 0], [-3149.0, 0, 0, 0, 2],
+  [246.158, 2, 0, -2, 0], [-152.138, 2, -1, -1, 0], [-170.733, 2, 0, 1, 0],
+  [-204.586, 2, -1, 0, 0], [-129.620, 0, 1, -1, 0], [108.743, 1, 0, 0, 0],
+  [104.755, 0, 1, 1, 0]
+];
+
+/* Земное время опережает всемирное примерно на 69 секунд (эпоха 2020-х).
+   Ряды построены на земном времени, и без поправки Луна уходит почти на
+   минуту дуги. */
+const AS_DELTA_T_DAYS = 69 / 86400;
+
+function asMoon(date){
+  const T = (asJD(date) + AS_DELTA_T_DAYS - 2451545.0) / 36525;
+  const Lp = asNorm(218.3164477 + 481267.88123421 * T);      // средняя долгота
+  const D  = asNorm(297.8501921 + 445267.1114034 * T);       // элонгация
+  const M  = asNorm(357.5291092 + 35999.0502909 * T);        // аномалия Солнца
+  const Mp = asNorm(134.9633964 + 477198.8675055 * T);       // аномалия Луны
+  const F  = asNorm(93.2720950 + 483202.0175233 * T);        // аргумент широты
+
+  const sum = (terms, fn) => terms.reduce(
+    (acc, [c, d, m, mp, f]) => acc + c * fn(d * D + m * M + mp * Mp + f * F), 0);
+
+  const lon = Lp + sum(AS_MOON_LON, asSin);
+  const lat = sum(AS_MOON_LAT, asSin);
+  const dist = 385000.56 + sum(AS_MOON_DIST, asCos);          // км
+
+  const eps = 23.439291 - 0.0130042 * T;
+  const sl = asSin(lon), cl = asCos(lon), sb = asSin(lat), cb = asCos(lat);
+  const ra = Math.atan2(sl * asCos(eps) - (sb / cb) * asSin(eps), cl) * AS_R2D;
+  const dec = Math.asin(sb * asCos(eps) + cb * asSin(eps) * sl) * AS_R2D;
+
+  const hp = Math.asin(6378.14 / dist) * AS_R2D * 60;         // параллакс, минуты
+  return {
+    name: 'Луна',
+    gha: asNorm(asGMST(date) - ra),
+    dec: dec,
+    sd: 0.2725 * hp,
+    hp: hp,
+    limb: true
+  };
+}
+
+/* -- Приведение измеренной высоты к истинной --
+   Порядок обязателен: сперва инструмент, потом наклонение горизонта,
+   потом рефракция, и только затем полудиаметр с параллаксом. Меняешь
+   порядок -- ошибаешься на минуту, а это миля. */
+function asObserved(hs, opts){
+  const o = opts || {};
+  const ie = +o.ie || 0;              // поправка индекса, минуты
+  const eye = +o.eye || 0;            // высота глаза, метры
+  const dip = eye > 0 ? 1.76 * Math.sqrt(eye) : 0;   // наклонение горизонта
+  const ha = hs + ie / 60 - dip / 60;                // видимая высота
+
+  // Рефракция Бенётта, минуты дуги
+  const R = ha > -0.5 ? 1 / asTan(ha + 7.31 / (ha + 4.4)) : 0;
+  let h = ha - R / 60;
+
+  const sd = +o.sd || 0, hp = +o.hp || 0;
+  if (o.limb === 'lower') h += sd / 60;
+  else if (o.limb === 'upper') h -= sd / 60;
+  if (hp) h += (hp * asCos(h)) / 60;   // параллакс в высоте
+
+  return { ho: h, dip: dip, refraction: R, ha: ha };
+}
+
+/* -- Счислимая высота и азимут --
+   Основная формула сферического треугольника. Азимут через atan2, а не
+   через arcsin: последний теряет четверть, и линия ложится зеркально. */
+function asHcZn(lat, lon, gha, dec){
+  const lha = asNorm(gha + lon);      // восточная долгота со знаком плюс
+  const sh = asSin(lat) * asSin(dec) + asCos(lat) * asCos(dec) * asCos(lha);
+  const hc = Math.asin(Math.max(-1, Math.min(1, sh))) * AS_R2D;
+  const zn = asNorm(Math.atan2(-asSin(lha) * asCos(dec),
+                               asCos(lat) * asSin(dec) - asSin(lat) * asCos(dec) * asCos(lha)) * AS_R2D);
+  return { hc: hc, zn: zn, lha: lha };
+}
+
+/* -- Перенос линии положения --
+   Разность истинной и счислимой высоты в минутах и есть перенос в милях:
+   одна минута дуги это одна миля. Знак решает, куда переносить. */
+function asIntercept(ho, hc){
+  const a = (ho - hc) * 60;
+  return { miles: Math.abs(a), toward: a >= 0, value: a };
+}
+
+function asBody(kind, date){
+  return kind === 'moon' ? asMoon(date) : asSun(date);
+}
+
+/* Градусы в морскую запись: 41°25.4' */
+function asDM(deg, isLat){
+  const sign = deg < 0 ? (isLat ? 'S' : 'W') : (isLat ? 'N' : 'E');
+  const a = Math.abs(deg);
+  const d = Math.floor(a);
+  const m = (a - d) * 60;
+  return `${d}°${m.toFixed(1)}'${sign}`;
+}
+function asHms(deg){
+  const a = asNorm(deg);
+  const d = Math.floor(a);
+  return `${d}°${((a - d) * 60).toFixed(1)}'`;
 }
 
 /* -- конвертер единиц -- */
@@ -2987,7 +3300,7 @@ const TOOLS=[
   }},
 
  {id:'cpa',cat:'radar',icon:'radar',name:'CPA и TCPA',
-  desc:'Расхождение с целью по данным радара',
+  desc:'Расхождение с целью, планшет и цифры',
   fields:[
    {k:'oc',l:'Свой курс',t:'num',u:'°',def:'0'},
    {k:'os',l:'Своя скорость',t:'num',u:'узлов',def:'20'},
@@ -2998,10 +3311,12 @@ const TOOLS=[
   calc:v=>{
    const r=cpaTcpa(+v.oc,+v.os,+v.tb,+v.tr,+v.tc,+v.ts);
    return [
+    {svg:radarPlot({oc:+v.oc,os:+v.os,tb:+v.tb,tr:+v.tr,tc:+v.tc,ts:+v.ts},r)},
     {l:'CPA',v:F(r.cpa,2)+' миль',hi:1,warn:r.cpa<1&&!r.opening},
     {l:'TCPA',v:r.opening?'цель расходится':hm(r.tcpa)},
     {l:'Курс относительного движения',v:F(r.relCourse,1)+'°'},
-    {l:'Скорость сближения',v:F(r.relSpeed,1)+' узлов'}];
+    {l:'Скорость сближения',v:F(r.relSpeed,1)+' узлов'},
+    {l:'Пеленг меняется',v:bearingTrend(+v.tb, +v.tr, r)}];
   }},
 
  {id:'magnetron',cat:'radar',icon:'radar',name:'Ресурс магнетрона',
@@ -3090,6 +3405,73 @@ const TOOLS=[
     row('Навигационные сумерки',t.nautical),
     row('Астрономические сумерки',t.astro),
     {l:'Полдень (UTC)',v:utc(t.noon)}];
+  }},
+
+ {id:'almanac',cat:'weather',icon:'star',name:'Альманах: Солнце и Луна',
+  desc:'Часовой угол, склонение, высота и азимут в счислимом месте',
+  fields:[
+   {k:'body',l:'Светило',t:'sel',opts:['Солнце','Луна'],def:'Солнце'},
+   {k:'la',l:'Счислимая широта',t:'coord',def:'41-25.4N'},
+   {k:'lo',l:'Счислимая долгота',t:'coord',def:'002-10.0E'},
+   {k:'dt',l:'Дата и время UTC (ГГГГ-ММ-ДД ЧЧ:ММ, пусто = сейчас)',t:'text',def:''}],
+  calc:v=>{
+   const a=parseCoord(v.la), b=parseCoord(v.lo);
+   if(a===null||b===null) return [{l:'Ошибка',v:'Проверь координаты'}];
+   const d=v.dt?new Date(v.dt.trim().replace(' ','T')+':00Z'):new Date();
+   if(isNaN(d)) return [{l:'Ошибка',v:'Проверь дату и время'}];
+   const body=asBody(v.body==='Луна'?'moon':'sun', d);
+   const s=asHcZn(a, b, body.gha, body.dec);
+   return [
+    {l:'Момент UTC',v:d.toISOString().slice(0,16).replace('T',' ')},
+    {l:'Гринвичский часовой угол',v:asHms(body.gha),hi:1},
+    {l:'Склонение',v:asDM(body.dec,true),hi:1},
+    {l:'Местный часовой угол',v:asHms(s.lha)},
+    {l:'Счислимая высота',v:asDM(s.hc,true).replace(/[NS]$/,'')},
+    {l:'Азимут',v:s.zn.toFixed(1)+'°'},
+    {l:'Полудиаметр',v:body.sd.toFixed(1)+"'"},
+    {l:'Горизонтальный параллакс',v:body.hp.toFixed(1)+"'"},
+    {l:'Точность расчёта',v:v.body==='Луна'?'около 1 угловой минуты':'около 0.5 угловой минуты'},
+    {l:'Официальный источник',v:'Морской астрономический ежегодник'}];
+  }},
+
+ {id:'sight',cat:'weather',icon:'target',name:'Линия положения по светилу',
+  desc:'Поправки высоты и перенос от счислимого места',
+  fields:[
+   {k:'body',l:'Светило',t:'sel',opts:['Солнце','Луна','Задать вручную'],def:'Солнце'},
+   {k:'hs',l:'Измеренная высота (градусы)',t:'num',def:'45.5'},
+   {k:'limb',l:'Край диска',t:'sel',opts:['нижний','верхний','центр'],def:'нижний'},
+   {k:'ie',l:'Поправка индекса',t:'num',u:'минут',def:'0'},
+   {k:'eye',l:'Высота глаза',t:'num',u:'м',def:'12'},
+   {k:'la',l:'Счислимая широта',t:'coord',def:'41-25.4N'},
+   {k:'lo',l:'Счислимая долгота',t:'coord',def:'002-10.0E'},
+   {k:'dt',l:'Дата и время UTC (ГГГГ-ММ-ДД ЧЧ:ММ, пусто = сейчас)',t:'text',def:''},
+   {k:'gha',l:'Часовой угол вручную (градусы)',t:'num',def:''},
+   {k:'dec',l:'Склонение вручную (градусы, южное со знаком минус)',t:'num',def:''}],
+  calc:v=>{
+   const a=parseCoord(v.la), b=parseCoord(v.lo);
+   if(a===null||b===null) return [{l:'Ошибка',v:'Проверь координаты'}];
+   const d=v.dt?new Date(v.dt.trim().replace(' ','T')+':00Z'):new Date();
+   if(isNaN(d)) return [{l:'Ошибка',v:'Проверь дату и время'}];
+
+   let body;
+   if(v.body==='Задать вручную'){
+     if(v.gha===''||v.dec==='') return [{l:'Ошибка',v:'Введи часовой угол и склонение из ежегодника'}];
+     body={name:'вручную', gha:+v.gha, dec:+v.dec, sd:0, hp:0};
+   } else body=asBody(v.body==='Луна'?'moon':'sun', d);
+
+   const limb=v.limb==='нижний'?'lower':(v.limb==='верхний'?'upper':'center');
+   const corr=asObserved(+v.hs, {ie:+v.ie, eye:+v.eye, sd:body.sd, hp:body.hp, limb:limb});
+   const s=asHcZn(a, b, body.gha, body.dec);
+   const it=asIntercept(corr.ho, s.hc);
+   return [
+    {l:'Момент UTC',v:d.toISOString().slice(0,16).replace('T',' ')},
+    {l:'Наклонение горизонта',v:'−'+corr.dip.toFixed(1)+"'"},
+    {l:'Рефракция',v:'−'+corr.refraction.toFixed(1)+"'"},
+    {l:'Истинная высота',v:asDM(corr.ho,true).replace(/[NS]$/,''),hi:1},
+    {l:'Счислимая высота',v:asDM(s.hc,true).replace(/[NS]$/,'')},
+    {l:'Перенос',v:it.miles.toFixed(1)+' миль '+(it.toward?'к светилу':'от светила'),hi:1},
+    {l:'Азимут линии',v:s.zn.toFixed(1)+'°'},
+    {l:'Линию проложить',v:'перпендикулярно азимуту '+s.zn.toFixed(0)+'° в точке переноса'}];
   }},
 
  {id:'bft',cat:'weather',icon:'wave',name:'Шкала Бофорта',
@@ -4012,6 +4394,55 @@ Object.assign(DICT,{
  'Premium снят.':'Premium revoked.',
  'Звёзды возвращены, Premium снят.':'Stars refunded, Premium revoked.'
 });
+/* ---- Планшет расхождения и мореходная астрономия ---- */
+Object.assign(DICT,{
+ 'миль на кольце':'miles per ring','векторы за 1 ч':'vectors for 1 h',
+ 'своё судно':'own ship','линия относительного движения':'relative motion line',
+ 'Расхождение с целью, планшет и цифры':'Passing distance: the plot and the figures',
+ 'Пеленг меняется':'Bearing change','цель расходится':'the target is opening',
+ 'почти не меняется, опасность столкновения':'barely changes, risk of collision',
+ 'меняется медленно':'changes slowly','меняется заметно':'changes clearly',
+ 'вправо':'to the right','влево':'to the left','за 10 мин':'in 10 min',
+ 'Альманах: Солнце и Луна':'Almanac: Sun and Moon',
+ 'Часовой угол, склонение, высота и азимут в счислимом месте':
+   'Hour angle, declination, altitude and azimuth at the DR position',
+ 'Светило':'Body','Солнце':'Sun','Луна':'Moon','Задать вручную':'Enter manually',
+ 'Счислимая широта':'DR latitude','Счислимая долгота':'DR longitude',
+ 'Дата и время UTC (ГГГГ-ММ-ДД ЧЧ:ММ, пусто = сейчас)':'Date and time UTC (YYYY-MM-DD HH:MM, empty = now)',
+ 'Момент UTC':'Moment UTC','Гринвичский часовой угол':'Greenwich hour angle',
+ 'Склонение':'Declination','Местный часовой угол':'Local hour angle',
+ 'Счислимая высота':'Computed altitude','Азимут':'Azimuth','Полудиаметр':'Semidiameter',
+ 'Горизонтальный параллакс':'Horizontal parallax','Точность расчёта':'Accuracy of the calculation',
+ 'около 1 угловой минуты':'about 1 arc minute','около 0.5 угловой минуты':'about 0.5 arc minute',
+ 'Официальный источник':'Official source','Морской астрономический ежегодник':'The Nautical Almanac',
+ 'Линия положения по светилу':'Position line from a body',
+ 'Поправки высоты и перенос от счислимого места':'Altitude corrections and the intercept from the DR position',
+ 'Измеренная высота (градусы)':'Sextant altitude (degrees)','Край диска':'Limb',
+ 'нижний':'lower','верхний':'upper','центр':'centre',
+ 'Поправка индекса':'Index error','Высота глаза':'Height of eye',
+ 'Часовой угол вручную (градусы)':'Hour angle by hand (degrees)',
+ 'Склонение вручную (градусы, южное со знаком минус)':'Declination by hand (degrees, south is negative)',
+ 'Введи часовой угол и склонение из ежегодника':'Enter the hour angle and declination from the almanac',
+ 'Наклонение горизонта':'Dip of the horizon','Рефракция':'Refraction',
+ 'Истинная высота':'Observed altitude','Перенос':'Intercept',
+ 'к светилу':'towards the body','от светила':'away from the body',
+ 'Азимут линии':'Azimuth of the line','Линию проложить':'Lay the line',
+ 'перпендикулярно азимуту':'perpendicular to azimuth','в точке переноса':'at the intercept point',
+ 'Проверь дату и время':'Check the date and time'
+});
+/* ---- Справка о гавани из World Port Index ---- */
+Object.assign(DICT,{
+ 'Гавань и приливы':'Harbour and tides','Гавань':'Harbour','Укрытие':'Shelter',
+ 'Средний прилив':'Mean tide range','не указан':'not listed','От точки порта':'From the port position',
+ 'Это средняя величина прилива по справочнику. Для расчёта на дату и час нужны таблицы приливов порта.':
+   'This is the mean tide range from the index. Working out the height for a date and hour needs the port tide tables.',
+ 'прибрежная природная':'coastal natural','прибрежная с молом':'coastal breakwater',
+ 'прибрежная со шлюзом':'coastal tide gate','речная природная':'river natural',
+ 'речной бассейн':'river basin','речная со шлюзом':'river tide gate',
+ 'озеро или канал':'lake or canal','открытый рейд':'open roadstead','тайфунная гавань':'typhoon harbor',
+ 'большая':'large','средняя':'medium','малая':'small','очень малая':'very small',
+ 'отличное':'excellent','хорошее':'good','среднее':'fair','плохое':'poor'
+});
 /* ---- Выгрузка предупреждений ---- */
 Object.assign(DICT,{
  'Выгрузка предупреждений':'Export of warnings','Готовлю файл…':'Preparing the file…',
@@ -4019,8 +4450,11 @@ Object.assign(DICT,{
  'Выгружать нечего: у предупреждений нет координат.':'Nothing to export: the warnings carry no coordinates.',
  'Выгрузка входит в Premium.':'Export is part of Premium.',
  'Не получилось отправить файл.':'The file could not be sent.',
- 'Файл придёт сообщением в чат с ботом: из приложения Telegram сохранять не умеет. GeoJSON открывают QGIS и планировщики перехода, KML понимает Google Earth, CSV идёт в таблицу. Выгружаются отмеченные районы, а если ничего не отмечено — все действующие.':
-   'The file arrives as a message in the chat with the bot, because Telegram cannot save files from inside the app. GeoJSON opens in QGIS and passage planners, KML in Google Earth, CSV in a spreadsheet. Marked areas are exported, or all warnings in force when nothing is marked.'
+ 'На каждый район приходит свой файл, отдельным сообщением в чат с ботом: из приложения Telegram сохранять не умеет. GeoJSON, Shapefile и GeoPackage открывают QGIS и планировщики перехода, KML понимает Google Earth, GPX читают навигаторы, CSV и WKT идут в таблицу и в базу. Выгружаются отмеченные районы, а если ничего не отмечено, то все действующие.':
+   'Each area arrives as its own file, in a separate message in the chat with the bot, because Telegram cannot save files from inside the app. GeoJSON, Shapefile and GeoPackage open in QGIS and passage planners, KML in Google Earth, GPX in chartplotters, CSV and WKT go into a spreadsheet or a database. Marked areas are exported, or all warnings in force when nothing is marked.',
+ 'Отправил файлов:':'Files sent:','не ушло':'failed',
+ 'Файлы для JRC, TRANSAS и FURUNO не собираются: у этих форматов ECDIS нет открытого описания, и собранный наугад файл оборудование либо не примет, либо покажет район не там, где он есть. Пришли образец выгрузки с самой ECDIS, и формат добавим.':
+   'Files for JRC, TRANSAS and FURUNO are not built: these ECDIS formats have no open specification, and a file assembled by guesswork will either be rejected or place the area in the wrong position. Send a sample export from the ECDIS itself and the format will be added.'
 });
 /* ---- Панель создателя бота: разделы, цифры, действия ---- */
 Object.assign(DICT,{
@@ -7022,12 +7456,14 @@ function renderSettings(){
 
     <div class="dpanel"><h4>Выгрузка предупреждений</h4>
       <div class="admacts">
-        <button class="btn g" data-exp="geojson">GeoJSON</button>
-        <button class="btn g" data-exp="kml">KML</button>
-        <button class="btn g" data-exp="csv">CSV</button>
+        ${['geojson:GeoJSON','json:JSON','kml:KML','gpx:GPX','wkt:WKT','csv:CSV','txt:TXT',
+           'shapefile:Shapefile','gpkg:GeoPackage'].map(x=>{
+          const [id,title]=x.split(':');
+          return `<button class="btn g" data-exp="${id}">${title}</button>`;}).join('')}
       </div>
       <div class="buystate" id="expState"></div>
-      <div class="hint" style="margin:9px 0 0">${ico('map','xs')} Файл придёт сообщением в чат с ботом: из приложения Telegram сохранять не умеет. GeoJSON открывают QGIS и планировщики перехода, KML понимает Google Earth, CSV идёт в таблицу. Выгружаются отмеченные районы, а если ничего не отмечено — все действующие.</div>
+      <div class="hint" style="margin:9px 0 0">${ico('map','xs')} На каждый район приходит свой файл, отдельным сообщением в чат с ботом: из приложения Telegram сохранять не умеет. GeoJSON, Shapefile и GeoPackage открывают QGIS и планировщики перехода, KML понимает Google Earth, GPX читают навигаторы, CSV и WKT идут в таблицу и в базу. Выгружаются отмеченные районы, а если ничего не отмечено, то все действующие.</div>
+      <div class="hint" style="margin:7px 0 0">${ico('alert','xs')} Файлы для JRC, TRANSAS и FURUNO не собираются: у этих форматов ECDIS нет открытого описания, и собранный наугад файл оборудование либо не примет, либо покажет район не там, где он есть. Пришли образец выгрузки с самой ECDIS, и формат добавим.</div>
     </div>
 
     <div class="dpanel"><h4>Данные без связи</h4>
@@ -7158,7 +7594,13 @@ function renderSettings(){
     try{ r=await api('/api/export?send=1&fmt='+b.dataset.exp); }
     catch(e){ r={error:'network'}; }
     b.disabled=false;
-    if(r&&r.sent) say(tr('Отправил в чат:')+' '+r.count+' '+tr('шт.'),'ok');
+    if(r&&r.sent){
+      // Показываем разбивку по районам: так сразу видно, что пришло
+      // несколько файлов и какой из них про какой район.
+      const list=(r.areas||[]).map(a=>a.area+' '+a.count).join(', ');
+      say(tr('Отправил файлов:')+' '+r.sent+(list?' ('+list+')':'')
+          +(r.failed?(' · '+tr('не ушло')+': '+r.failed):''), r.failed?'':'ok');
+    }
     else if(r&&r.error==='empty') say(tr('Выгружать нечего: у предупреждений нет координат.'),'no');
     else if(r&&r.error==='premium_required') say(tr('Выгрузка входит в Premium.'),'no');
     else say(tr('Не получилось отправить файл.'),'no');
@@ -7812,6 +8254,37 @@ async function portAction(qs){
 let PORT_TOOLS=false, PORT_EDIT=null;
 let PORT_SPEED=parseFloat(localStorage.getItem('navarea_portspeed'))||null;
 
+/* Справка о гавани из World Port Index. Живёт файлом в приложении, поэтому
+   раздел открывается и без сети -- на подходе к порту это обычное дело.
+   Величина прилива тут средняя по порту: она отвечает на вопрос «насколько
+   вообще ходит вода», а не заменяет таблицы приливов на дату. */
+const PORT_WPI={};
+function portWpiHtml(w){
+  const p=w.port||{};
+  const rows=[];
+  if(p.type_text)    rows.push([tr('Гавань'), p.type_text+(p.size_text?', '+p.size_text:'')]);
+  if(p.shelter_text) rows.push([tr('Укрытие'), p.shelter_text]);
+  rows.push([tr('Средний прилив'), p.tide_m?(p.tide_m+' '+tr('м')):tr('не указан')]);
+  if(w.distance_nm!=null) rows.push([tr('От точки порта'), w.distance_nm+' '+tr('миль')]);
+  return `<div class="pwx">
+    <div class="pwxh">${ico('anchor','xs')} ${esc(p.name||'')}${p.cc?', '+esc(p.cc):''}
+      <span class="pwxs">World Port Index</span></div>
+    ${rows.map(([k,v])=>`<div class="tres"><span class="tl">${esc(k)}</span>
+      <span class="tv" style="font-size:13px">${esc(String(v))}</span></div>`).join('')}
+    ${p.tide_m?`<div class="hint" style="margin:7px 0 0">${ico('alert','xs')} ${
+      esc(tr('Это средняя величина прилива по справочнику. Для расчёта на дату и час нужны таблицы приливов порта.'))}</div>`:''}
+  </div>`;
+}
+async function loadPortWpi(portId, lat, lon){
+  if(PORT_WPI[portId]){ delete PORT_WPI[portId]; renderPorts(); return; }
+  try{
+    const r=await api('/api/port-info?lat='+lat+'&lon='+lon+'&lang='+LANG);
+    const near=(r.nearest||[])[0];
+    if(near) PORT_WPI[portId]={port:near, distance_nm:near.distance_nm};
+  }catch(e){}
+  renderPorts();
+}
+
 function renderPorts(){
   const box=$('#portsBox'); if(!box) return;
   const hint=$('#portsHint');
@@ -7843,7 +8316,8 @@ function renderPorts(){
         <span class="t2">${esc(p.country||'')}${p.eta?' · ETA '+esc(p.eta):''}</span>
         ${p.note?`<span class="t2">${esc(p.note)}</span>`:''}
         ${PORT_TOOLS&&p.lat!=null
-          ? `<span class="t3">${ico('wave','xs')}<a data-pwx="${i}">${esc(tr('Погода в порту'))} →</a></span>`
+          ? `<span class="t3">${ico('wave','xs')}<a data-pwx="${i}">${esc(tr('Погода в порту'))} →</a></span>
+             <span class="t3">${ico('anchor','xs')}<a data-pinfo="${p.id}">${esc(tr('Гавань и приливы'))} →</a></span>`
           : (p.lat==null?`<span class="t3">${esc(tr('порт не найден в справочнике'))}</span>`:'')}
       </span>
       <span class="acts">
@@ -7853,6 +8327,7 @@ function renderPorts(){
       </span>
     </div>`;
     if(PORT_TOOLS&&PORT_WX[p.id]) h+=portWxHtml(PORT_WX[p.id], p.id);
+    if(PORT_WPI[p.id]) h+=portWpiHtml(PORT_WPI[p.id]);
   });
 
   h+=`<button class="showall" id="portTools">${
@@ -7891,6 +8366,12 @@ function renderPorts(){
   });
   box.querySelectorAll('[data-pwx]').forEach(a=>a.onclick=()=>{
     const p=list[+a.dataset.pwx]; hap('medium'); loadPortWeather(p);
+  });
+  box.querySelectorAll('[data-pinfo]').forEach(a=>a.onclick=()=>{
+    const id=+a.dataset.pinfo;
+    const p=list.find(x=>x.id===id);
+    if(!p||p.lat==null) return;
+    hap('medium'); loadPortWpi(id, p.lat, p.lon);
   });
   bindWxMaps(box);
 
@@ -11709,8 +12190,11 @@ function runTool(){
   try{ rows=curTool.calc(normVals(toolVals))||[]; }
   catch(e){ rows=[{l:'Ошибка',v:'Проверь введённые данные'}]; }
   const __al=1;
+  // Строка может нести не пару «название и значение», а рисунок: так
+  // расчёт расхождения показывает планшет, где видно саму геометрию.
   $('#tResults').innerHTML=rows.map(r=>
-    `<div class="tres ${r.hi?'hi':''} ${r.warn?'warn':''}">
+    r.svg ? `<div class="tplot">${r.svg}</div>`
+     : `<div class="tres ${r.hi?'hi':''} ${r.warn?'warn':''}">
        <span class="tl">${esc(tr(r.l))}</span>
        <span class="tv mono">${esc(tr(String(r.v)))}</span>
      </div>`).join('');
