@@ -4012,6 +4012,16 @@ Object.assign(DICT,{
  'Premium снят.':'Premium revoked.',
  'Звёзды возвращены, Premium снят.':'Stars refunded, Premium revoked.'
 });
+/* ---- Выгрузка предупреждений ---- */
+Object.assign(DICT,{
+ 'Выгрузка предупреждений':'Export of warnings','Готовлю файл…':'Preparing the file…',
+ 'Отправил в чат:':'Sent to the chat:','шт.':'items',
+ 'Выгружать нечего: у предупреждений нет координат.':'Nothing to export: the warnings carry no coordinates.',
+ 'Выгрузка входит в Premium.':'Export is part of Premium.',
+ 'Не получилось отправить файл.':'The file could not be sent.',
+ 'Файл придёт сообщением в чат с ботом: из приложения Telegram сохранять не умеет. GeoJSON открывают QGIS и планировщики перехода, KML понимает Google Earth, CSV идёт в таблицу. Выгружаются отмеченные районы, а если ничего не отмечено — все действующие.':
+   'The file arrives as a message in the chat with the bot, because Telegram cannot save files from inside the app. GeoJSON opens in QGIS and passage planners, KML in Google Earth, CSV in a spreadsheet. Marked areas are exported, or all warnings in force when nothing is marked.'
+});
 /* ---- Панель создателя бота: разделы, цифры, действия ---- */
 Object.assign(DICT,{
  'Обзор':'Overview','Деньги':'Money','Связь':'Messages','Система':'System',
@@ -7010,6 +7020,16 @@ function renderSettings(){
       </div>
     </div>`:''}
 
+    <div class="dpanel"><h4>Выгрузка предупреждений</h4>
+      <div class="admacts">
+        <button class="btn g" data-exp="geojson">GeoJSON</button>
+        <button class="btn g" data-exp="kml">KML</button>
+        <button class="btn g" data-exp="csv">CSV</button>
+      </div>
+      <div class="buystate" id="expState"></div>
+      <div class="hint" style="margin:9px 0 0">${ico('map','xs')} Файл придёт сообщением в чат с ботом: из приложения Telegram сохранять не умеет. GeoJSON открывают QGIS и планировщики перехода, KML понимает Google Earth, CSV идёт в таблицу. Выгружаются отмеченные районы, а если ничего не отмечено — все действующие.</div>
+    </div>
+
     <div class="dpanel"><h4>Данные без связи</h4>
       <div class="tres"><span class="tl">Последняя синхронизация</span><span class="tv" style="font-size:13px">${esc(cached)}</span></div>
       <div class="hint" style="margin:9px 0 0">${ico('radar','xs')} Предупреждения, станции и справочники сохраняются на устройстве — в рейсе приложение открывается и работает без сети. Расчёты работают всегда.</div>
@@ -7127,6 +7147,21 @@ function renderSettings(){
   [['ntf_new','warn'],['ntf_cert','cert'],['ntf_gmdss','gmdss']].forEach(([sel,key])=>{
     const el=box.querySelector('[data-set="'+sel+'"]');
     if(el) el.onclick=()=>{ NTF[key]=!NTF[key]; saveNtf(); hap('medium'); renderSettings(); };
+  });
+
+  box.querySelectorAll('[data-exp]').forEach(b=>b.onclick=async()=>{
+    hap('medium');
+    const st=$('#expState');
+    const say=(t,c)=>{ if(st){ st.className='buystate'+(c?' '+c:''); st.textContent=t; } };
+    b.disabled=true; say(tr('Готовлю файл…'));
+    let r=null;
+    try{ r=await api('/api/export?send=1&fmt='+b.dataset.exp); }
+    catch(e){ r={error:'network'}; }
+    b.disabled=false;
+    if(r&&r.sent) say(tr('Отправил в чат:')+' '+r.count+' '+tr('шт.'),'ok');
+    else if(r&&r.error==='empty') say(tr('Выгружать нечего: у предупреждений нет координат.'),'no');
+    else if(r&&r.error==='premium_required') say(tr('Выгрузка входит в Premium.'),'no');
+    else say(tr('Не получилось отправить файл.'),'no');
   });
 
   const pl=$('#setPlans'); if(pl) pl.onclick=openPlans;

@@ -32,6 +32,15 @@ logger = logging.getLogger(__name__)
 # владелец добавляет из панели («Связь» -> «Написать всем в колокольчик»),
 # они ложатся в таблицу notices и в этот список не попадают.
 CHANGELOG = [
+    {"at": "2026-08-12T09:00:00+00:00",
+     "title": "Канадская Арктика и выгрузка файлов",
+     "title_en": "The Canadian Arctic and file export",
+     "body": "Заработали районы XVII и XVIII: море Бофорта, Гудзонов залив и Северо-Западный "
+             "проход теперь отслеживаются автоматически. Предупреждения можно выгрузить "
+             "в GeoJSON, KML или CSV, файл придёт сообщением в чат.",
+     "body_en": "NAVAREA XVII and XVIII are live: the Beaufort Sea, Hudson Bay and the "
+                "Northwest Passage are now polled automatically. Warnings can be exported "
+                "as GeoJSON, KML or CSV, and the file arrives as a message in the chat."},
     {"at": "2026-08-12T00:00:00+00:00",
      "title": "Подпиской можно управлять в приложении",
      "title_en": "The subscription is now managed inside the app",

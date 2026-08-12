@@ -1108,6 +1108,194 @@ def _tell_user(user_id: int, text: str) -> None:
         logger.exception("Не удалось написать пользователю %s", user_id)
 
 
+def _api_export(query: dict) -> dict:
+    """Выгрузка предупреждений в форматы, которые понимают чужие программы.
+
+    Пока данные жили только внутри приложения, готовить по ним переход
+    было нечем: штурман переписывал координаты руками. GeoJSON открывают
+    QGIS и почти все планировщики, KML открывает Google Earth, CSV идёт
+    в таблицу.
+
+    Отдаём JSON с готовым текстом файла, а не файл: Mini App работает
+    внутри Telegram, и сохранение делает уже сам браузер из строки."""
+    from .services.geo import extract_coordinates, extract_shapes
+
+    db = _state["db"]
+    user_id, denied = _require("coastal", query, personal=False)
+    if denied:
+        return denied
+    if db is None:
+        return {"error": "no_db"}
+
+    fmt = ((query.get("fmt") or ["geojson"])[0] or "geojson").lower()
+    areas = [a for a in (query.get("areas") or [""])[0].split(",") if a]
+    if not areas and user_id:
+        areas = db.get_favorites(user_id) or []
+
+    rows = []
+    for row in db.all_active_warnings(limit=1200):
+        if areas and row["area_code"] not in areas:
+            continue
+        rows.append(row)
+
+    features = []
+    for row in rows:
+        text = row["raw_text"]
+        shapes = extract_shapes(text)
+        points = extract_coordinates(text)
+        if not shapes and not points:
+            continue
+        features.append({
+            "area": row["area_code"],
+            "number": row["msg_number"] or "",
+            "region": row["region"] or "",
+            "issued": row["issued_at"] or row["first_seen_at"],
+            "text": text,
+            "shapes": shapes,
+            "points": points,
+        })
+
+    if fmt == "kml":
+        body, mime, name = _as_kml(features), "application/vnd.google-earth.kml+xml", "warnings.kml"
+    elif fmt == "csv":
+        body, mime, name = _as_csv(features), "text/csv", "warnings.csv"
+    else:
+        body, mime, name = _as_geojson(features), "application/geo+json", "warnings.geojson"
+
+    # Внутри Telegram файл из Mini App не сохранить: WebView не отдаёт
+    # загрузки в файловую систему. Поэтому выгрузку отправляем документом
+    # в чат с ботом, откуда её открывают чем угодно, хоть ECDIS на мостике.
+    if (query.get("send") or [""])[0] == "1":
+        if not user_id:
+            return {"error": "unauthorized"}
+        if not features:
+            return {"error": "empty"}
+        ok = _send_document(user_id, name, body.encode("utf-8"), mime,
+                            caption=f"Предупреждения: {len(features)} шт., формат {fmt.upper()}")
+        return {"sent": ok, "count": len(features), "filename": name,
+                **({} if ok else {"error": "send_failed"})}
+
+    return {"format": fmt, "filename": name, "mime": mime,
+            "count": len(features), "total": len(rows), "body": body}
+
+
+def _send_document(chat_id: int, filename: str, blob: bytes, mime: str, caption: str = "") -> bool:
+    """Отправка файла в чат. Тело собираем вручную: sendDocument принимает
+    только multipart, а тянуть ради одного метода requests в проект,
+    который обходится стандартной библиотекой, не хочется."""
+    import urllib.request
+    import uuid
+
+    token = _state["bot_token"]
+    if not token:
+        return False
+
+    boundary = uuid.uuid4().hex
+    sep = f"--{boundary}\r\n".encode()
+    parts = [sep,
+             b'Content-Disposition: form-data; name="chat_id"\r\n\r\n',
+             str(chat_id).encode(), b"\r\n", sep,
+             b'Content-Disposition: form-data; name="caption"\r\n\r\n',
+             caption.encode("utf-8"), b"\r\n", sep,
+             f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode(),
+             f"Content-Type: {mime}\r\n\r\n".encode(), blob, b"\r\n",
+             f"--{boundary}--\r\n".encode()]
+    body = b"".join(parts)
+
+    req = urllib.request.Request(
+        _bot_api(token, "sendDocument"), data=body, method="POST",
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}",
+                 "Content-Length": str(len(body))})
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            return bool(json.loads(resp.read().decode("utf-8")).get("ok"))
+    except Exception:
+        logger.exception("Не удалось отправить выгрузку документом")
+        return False
+
+
+def _as_geojson(features: list[dict]) -> str:
+    """Точки и области одним слоем.
+
+    Область отдаём полигоном, одиночную точку точкой: программы, которые
+    читают GeoJSON, рисуют их по-разному, и подсовывать полигон из одной
+    вершины значит получить пустое место на карте."""
+    out = []
+    for f in features:
+        geoms = []
+        for shape in f["shapes"]:
+            pts = shape.get("points") or []
+            if len(pts) >= 3:
+                ring = [[p[1], p[0]] for p in pts]
+                ring.append(ring[0])          # GeoJSON требует замкнутое кольцо
+                geoms.append({"type": "Polygon", "coordinates": [ring]})
+            elif len(pts) == 2:
+                geoms.append({"type": "LineString", "coordinates": [[p[1], p[0]] for p in pts]})
+        if not geoms:
+            for lat, lon in f["points"][:20]:
+                geoms.append({"type": "Point", "coordinates": [lon, lat]})
+        for geom in geoms:
+            out.append({
+                "type": "Feature",
+                "geometry": geom,
+                "properties": {"area": f["area"], "number": f["number"],
+                               "region": f["region"], "issued": f["issued"],
+                               "text": f["text"][:4000]},
+            })
+    return json.dumps({"type": "FeatureCollection", "features": out},
+                      ensure_ascii=False, indent=1)
+
+
+def _as_kml(features: list[dict]) -> str:
+    def esc(text: str) -> str:
+        return (str(text).replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace('"', "&quot;"))
+
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>',
+             "<name>NAVAREA warnings</name>"]
+    for f in features:
+        title = f"{f['area']} {f['number']}".strip()
+        desc = esc(f["text"][:3000])
+        drawn = False
+        for shape in f["shapes"]:
+            pts = shape.get("points") or []
+            if len(pts) >= 3:
+                ring = pts + [pts[0]]
+                coords = " ".join(f"{p[1]},{p[0]},0" for p in ring)
+                parts.append(f"<Placemark><name>{esc(title)}</name>"
+                             f"<description>{desc}</description>"
+                             f"<Polygon><outerBoundaryIs><LinearRing>"
+                             f"<coordinates>{coords}</coordinates>"
+                             f"</LinearRing></outerBoundaryIs></Polygon></Placemark>")
+                drawn = True
+        if not drawn:
+            for lat, lon in f["points"][:20]:
+                parts.append(f"<Placemark><name>{esc(title)}</name>"
+                             f"<description>{desc}</description>"
+                             f"<Point><coordinates>{lon},{lat},0</coordinates></Point></Placemark>")
+    parts.append("</Document></kml>")
+    return "\n".join(parts)
+
+
+def _as_csv(features: list[dict]) -> str:
+    """Разделитель точка с запятой: Excel в русской локали открывает запятую
+    как разделитель разрядов и складывает всю строку в одну ячейку."""
+    import csv
+    import io as _io
+
+    buf = _io.StringIO()
+    writer = csv.writer(buf, delimiter=";", quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+    writer.writerow(["area", "number", "region", "issued", "lat", "lon", "text"])
+    for f in features:
+        lat, lon = ("", "")
+        if f["points"]:
+            lat, lon = f["points"][0]
+        writer.writerow([f["area"], f["number"], f["region"], f["issued"],
+                         lat, lon, " ".join(f["text"].split())[:2000]])
+    return buf.getvalue()
+
+
 def _now_iso() -> str:
     from datetime import datetime, timezone
     return datetime.now(timezone.utc).isoformat()
@@ -1422,6 +1610,7 @@ def _api_history(query: dict) -> dict:
 
 
 API_ROUTES = {
+    "/api/export": _api_export,
     "/api/subscription": _api_subscription,
     "/api/admin": _api_admin,
     "/api/cyclones": _api_cyclones,

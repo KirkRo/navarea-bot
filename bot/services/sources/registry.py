@@ -31,6 +31,7 @@ from typing import Optional
 
 from ...config import config
 from .base import FallbackSource, WarningSource
+from .canada_ccg import CanadaCcgSource
 from .nga import NgaSource
 from .peru_dhn import PeruDhnSource
 from .sealagom import SealagomCoastalSource, SealagomSource
@@ -84,9 +85,9 @@ AREAS: dict[str, AreaInfo] = {
     "XVI": AreaInfo("XVI", "Перу", "Перу (DHN)",
                      "https://www.dhn.mil.pe/portal/navarea/radioavisos-warnings", "live"),
     "XVII": AreaInfo("XVII", "Зап. Канада", "Канада (CCG)",
-                      "https://nis.ccg-gcc.gc.ca/public/rest/messages/en/search-navareas?navareas=2&status=PUBLISHED&sortBy=DATE&maxHits=50", "listed"),
+                      "https://nis.ccg-gcc.gc.ca/public/rest/messages/en/search-navareas?navareas=2&status=PUBLISHED&sortBy=DATE&maxHits=50", "live"),
     "XVIII": AreaInfo("XVIII", "Канадская Арктика", "Канада (CCG)",
-                       "https://nis.ccg-gcc.gc.ca/public/rest/messages/en/search-navareas?navareas=4&status=PUBLISHED&sortBy=DATE&maxHits=50", "listed"),
+                       "https://nis.ccg-gcc.gc.ca/public/rest/messages/en/search-navareas?navareas=4&status=PUBLISHED&sortBy=DATE&maxHits=50", "live"),
     "XIX": AreaInfo("XIX", "Норвегия", "Норвегия (Norwegian Coastal Administration)",
                      "https://kyvreports.kystverket.no/NavcoReport/navareaxixvarsler.aspx", "listed"),
     "XX": AreaInfo("XX", "Баренцево море (Россия)", "Россия", None, "none"),
@@ -110,6 +111,7 @@ _nga = NgaSource()
 _ukho = UkhoSource()
 _spain = SpainIhmSource()
 _peru = PeruDhnSource()
+_canada = CanadaCcgSource()
 
 _OWN_SOURCES: dict[str, WarningSource] = {
     "I": _ukho,
@@ -120,6 +122,8 @@ _OWN_SOURCES: dict[str, WarningSource] = {
     "HYDROLANT": _nga,
     "HYDROPAC": _nga,
     "XVI": _peru,
+    "XVII": _canada,
+    "XVIII": _canada,
 }
 
 SOURCES: dict[str, WarningSource] = dict(_OWN_SOURCES)
