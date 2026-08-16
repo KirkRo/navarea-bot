@@ -109,6 +109,64 @@ body.light .lamp .base{fill:#b98a3c}
   .geobtn b,body.light .lamp .halo{animation:none}
 }
 
+/* ---- Полоса моря под шапкой ----
+   Узкая лента, по которой идёт судно. Смысл не декоративный: она
+   отделяет служебную шапку от содержимого и сразу говорит, что
+   приложение про море, а не про почту. */
+.seastrip{
+  position:relative;height:34px;overflow:hidden;flex:none;
+  background:linear-gradient(180deg,var(--sea1,#1a6390),var(--sea2,#071d31));
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.seastrip .ship{position:absolute;left:0;bottom:5px;width:96px;height:24px;
+  animation:stripSail 26s linear infinite}
+.seastrip .waves{position:absolute;inset:0;width:100%;height:100%}
+@keyframes stripSail{from{transform:translateX(-110px)}to{transform:translateX(430px)}}
+@keyframes stripWave{from{transform:translateX(0)}to{transform:translateX(-90px)}}
+@keyframes mastFlash{0%,88%{opacity:.28}91%,95%{opacity:1}98%,100%{opacity:.28}}
+@keyframes navGreen{0%,20%{opacity:.3}24%,34%{opacity:1}38%,100%{opacity:.3}}
+
+/* ---- Заставка при запуске ----
+   Держится, пока грузятся предупреждения, и уходит сама. Нужна не ради
+   красоты: первый экран без неё секунду стоит пустым, и на плохом
+   судовом канале это читается как «приложение не открылось». */
+.splash{
+  position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;text-align:center;
+  background:linear-gradient(180deg,var(--sky1,#071a2c),var(--sky2,#12406b) 58%,var(--sky3,#2a5c7e));
+  transition:opacity .6s ease,visibility .6s;
+}
+.splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+.splash .scene{position:absolute;left:0;bottom:0;width:100%;height:58%}
+.splash .body{position:relative;z-index:2;padding:22vh 24px 0;width:100%}
+.splash .mark{
+  width:52px;height:52px;margin:0 auto 16px;border-radius:17px;display:flex;
+  align-items:center;justify-content:center;color:var(--amber);
+  background:rgba(240,160,60,.16);border:1px solid rgba(240,160,60,.4);
+  animation:riseUp .7s .2s both;
+}
+.splash .ttl{font-size:22px;font-weight:850;letter-spacing:2.6px;color:#f4f8fc;
+  animation:riseUp .7s .34s both}
+.splash .sub{font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:var(--amber);
+  margin-top:8px;animation:riseUp .7s .46s both}
+.splash .bar{width:150px;height:3px;border-radius:2px;background:rgba(255,255,255,.16);
+  margin:20px auto 0;overflow:hidden}
+.splash .bar i{display:block;height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--amber),var(--amber2,#ff8b3d));
+  animation:fillBar 2.5s ease-out both}
+.splash .note{font-size:8.5px;font-weight:750;color:#7f96ac;margin-top:11px;
+  letter-spacing:.4px;animation:riseUp .7s .6s both}
+@keyframes riseUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fillBar{from{width:4%}to{width:100%}}
+@keyframes stairLight{0%{opacity:.1}45%{opacity:1}100%{opacity:.5}}
+@keyframes winBlink{0%,100%{opacity:.22}45%,55%{opacity:.95}}
+@keyframes lhSplash{0%,72%{opacity:.3}76%,88%{opacity:1}92%,100%{opacity:.3}}
+@media (prefers-reduced-motion: reduce){
+  .seastrip .ship,.splash .mark,.splash .ttl,.splash .sub,.splash .note,
+  .splash .bar i,.splash [style*="stairLight"],.splash [style*="winBlink"]{animation:none}
+  .splash .bar i{width:100%}
+}
+
 /* ---- Поиск ---- */
 .srow{display:flex;gap:9px;margin-bottom:16px}
 .sbox{
@@ -2093,6 +2151,63 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
 </head>
 <body>
 
+<!-- Заставка. Лежит до .wrap, чтобы перекрыть пустой первый экран целиком. -->
+<div class="splash" id="splash">
+  <svg class="scene" viewBox="0 0 300 300" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+    <g fill="#dcecff" opacity=".75">
+      <circle cx="42" cy="34" r="1.1"/><circle cx="96" cy="18" r=".9"/><circle cx="158" cy="30" r="1"/>
+      <circle cx="226" cy="22" r="1.1"/><circle cx="268" cy="46" r=".9"/><circle cx="128" cy="52" r=".8"/>
+    </g>
+    <rect x="70" y="104" width="160" height="8" fill="#0b2137"/>
+    <g fill="#102b45">
+      <rect x="52" y="82" width="18" height="22"/><rect x="74" y="74" width="12" height="30"/>
+      <rect x="214" y="78" width="16" height="26"/><rect x="234" y="86" width="14" height="18"/>
+    </g>
+    <g fill="#ffd894">
+      <rect x="56" y="88" width="3" height="4" style="animation:winBlink 5s infinite"/>
+      <rect x="63" y="88" width="3" height="4" style="animation:winBlink 6s -1s infinite"/>
+      <rect x="78" y="80" width="3" height="4" style="animation:winBlink 7s -2s infinite"/>
+      <rect x="219" y="84" width="3" height="4" style="animation:winBlink 5.5s -3s infinite"/>
+      <rect x="238" y="92" width="3" height="4" style="animation:winBlink 6.5s -1.5s infinite"/>
+    </g>
+    <g>
+      <rect x="145" y="88" width="10" height="16" fill="#1b3f5e"/>
+      <rect x="142" y="85" width="16" height="4" fill="#16334f"/>
+      <path d="M150 85V72" stroke="#9fc0da" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="150" cy="69" r="3" fill="#ffd894" style="animation:lhSplash 2.6s infinite"/>
+    </g>
+    <g stroke="#1b3f5e" stroke-width="1.4" opacity=".8">
+      <path d="M120 118L38 270"/><path d="M180 118L262 270"/>
+    </g>
+    <g fill="#16334f">
+      <path d="M120 118H180l6.8 9H113.2Z" style="animation:stairLight 2.4s ease-out .05s both"/>
+      <path d="M113.2 131H186.8l6.9 9H106.3Z" style="animation:stairLight 2.4s ease-out .13s both"/>
+      <path d="M106.3 144H193.7l6.8 9H99.5Z" style="animation:stairLight 2.4s ease-out .21s both"/>
+      <path d="M99.5 157H200.5l6.8 9H92.7Z" style="animation:stairLight 2.4s ease-out .29s both"/>
+      <path d="M92.7 170H207.3l6.9 9H85.8Z" style="animation:stairLight 2.4s ease-out .37s both"/>
+      <path d="M85.8 183H214.2l6.8 9H79Z" style="animation:stairLight 2.4s ease-out .45s both"/>
+      <path d="M79 196H221l6.8 9H72.2Z" style="animation:stairLight 2.4s ease-out .53s both"/>
+      <path d="M72.2 209H227.8l6.9 9H65.3Z" style="animation:stairLight 2.4s ease-out .61s both"/>
+      <path d="M65.3 222H234.7l6.8 9H58.5Z" style="animation:stairLight 2.4s ease-out .69s both"/>
+      <path d="M58.5 235H241.5l6.8 9H51.7Z" style="animation:stairLight 2.4s ease-out .77s both"/>
+      <path d="M51.7 248H248.3l6.9 9H44.8Z" style="animation:stairLight 2.4s ease-out .85s both"/>
+      <path d="M44.8 261H255.2l6.8 9H38Z" style="animation:stairLight 2.4s ease-out .93s both"/>
+    </g>
+  </svg>
+  <div class="body">
+    <div class="mark">
+      <svg viewBox="0 0 48 48" width="28" height="28" fill="none" stroke="currentColor"
+           stroke-width="2.6" stroke-linecap="round">
+        <path d="M24 9v24M17 20c4 4 10 4 14 0M17 33c4 5 10 5 14 0M13 39h22"/>
+      </svg>
+    </div>
+    <div class="ttl" data-notr>WATCHKEEPER</div>
+    <div class="sub" id="splashSub">NAVAREA · MSI · ГМССБ</div>
+    <div class="bar"><i></i></div>
+    <div class="note" id="splashNote">Загружаем предупреждения…</div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <div class="wkhdr" id="header">
@@ -2130,6 +2245,32 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
     </div>
     <span class="hello" id="hello"></span>
     <span class="hello" id="buildId" style="font-size:9px;opacity:.5"></span>
+  </div>
+
+  <div class="seastrip" aria-hidden="true" data-notr>
+    <svg class="waves" viewBox="0 0 400 34" preserveAspectRatio="none">
+      <path d="M0 20q22 -5 44 0t44 0 44 0 44 0 44 0 44 0 44 0 44 0 44 0v14H0z"
+            fill="var(--w1,#0f4269)" opacity=".55" style="animation:stripWave 9s linear infinite"/>
+      <path d="M0 25q26 -4 52 0t52 0 52 0 52 0 52 0 52 0 52 0 52 0v9H0z"
+            fill="var(--w2,#0b3151)" opacity=".7" style="animation:stripWave 6s linear infinite"/>
+    </svg>
+    <div class="ship">
+      <svg viewBox="0 0 96 24" width="96" height="24">
+        <path d="M6 14h74l-6 7H12z" fill="var(--steel,#1b3f5e)"/>
+        <path d="M6 14h74v2H6z" fill="var(--amber)" opacity=".55"/>
+        <rect x="62" y="7" width="14" height="7" rx="1" fill="var(--stone,#16334f)"/>
+        <rect x="65" y="9" width="2.6" height="2.6" fill="var(--win,#ffd894)"/>
+        <rect x="70" y="9" width="2.6" height="2.6" fill="var(--win,#ffd894)"/>
+        <rect x="14" y="9" width="8" height="5" fill="#2c5a7d"/><rect x="24" y="9" width="8" height="5" fill="#33506b"/>
+        <rect x="34" y="9" width="8" height="5" fill="#26506f"/><rect x="44" y="9" width="8" height="5" fill="#2f5f82"/>
+        <rect x="19" y="4" width="8" height="5" fill="#2f5f82"/><rect x="29" y="4" width="8" height="5" fill="#2c5a7d"/>
+        <path d="M70 7V1" stroke="#8fa8c0" stroke-width="1.3"/>
+        <circle cx="70" cy="1" r="1.7" fill="#fff" style="animation:mastFlash 2.2s infinite"/>
+        <circle cx="79" cy="18" r="1.5" fill="var(--ok)" style="animation:navGreen 3s infinite"/>
+        <path d="M80 18q7 1 11 4-6 1-12-1z" fill="var(--foam,#cfe6fb)" opacity=".45"/>
+        <path d="M12 21q-9 2-15 5 10 1 17-2z" fill="var(--foam,#cfe6fb)" opacity=".3"/>
+      </svg>
+    </div>
   </div>
 
   <div class="srow" id="topSearch">
@@ -4430,6 +4571,10 @@ Object.assign(DICT,{
  'перпендикулярно азимуту':'perpendicular to azimuth','в точке переноса':'at the intercept point',
  'Проверь дату и время':'Check the date and time'
 });
+/* ---- Заставка при запуске ---- */
+Object.assign(DICT,{
+ 'Загружаем предупреждения…':'Loading warnings…'
+});
 /* ---- Справка о гавани из World Port Index ---- */
 Object.assign(DICT,{
  'Гавань и приливы':'Harbour and tides','Гавань':'Harbour','Укрытие':'Shelter',
@@ -5460,6 +5605,10 @@ async function load(spin){
   $('#offline').classList.toggle('on',S.offline);
   renderGeoBtn();
   render();
+  // Данные на экране -- заставку можно убирать. Даже когда сети нет и
+  // список пришёл из кэша: показывать в этом случае нечего, но и держать
+  // человека перед заставкой незачем.
+  if(window.splashDone) window.splashDone();
 }
 
 function render(){renderCats();renderDash();renderAreas();renderZones();applyLang()}
@@ -12300,6 +12449,40 @@ setInterval(()=>{ if(S.view==='dash') renderClock(); }, 20000);
     };
   }
 }
+/* ---- Заставка ----
+   Уходит, когда пришли данные, но не раньше 1.2 секунды и не позже
+   четырёх: мгновенная вспышка выглядит сбоем отрисовки, а зависшая
+   заставка на плохом канале читается как «приложение не открылось».
+   Отмеченные районы подставляем в подпись из кэша: он на устройстве и
+   доступен ещё до ответа сервера. */
+(function(){
+  const el=document.getElementById('splash');
+  if(!el) return;
+  const born=Date.now();
+  let done=false;
+
+  try{
+    const c=JSON.parse(localStorage.getItem(CK)||'null');
+    const favs=(c&&c.favs)||[];
+    const sub=document.getElementById('splashSub');
+    if(sub&&favs.length) sub.textContent=favs.slice(0,3).join(' · ')+' · NAVAREA';
+  }catch(e){}
+
+  const hide=()=>{
+    if(done) return;
+    done=true;
+    const wait=Math.max(0, 1200-(Date.now()-born));
+    setTimeout(()=>{
+      el.classList.add('gone');
+      // из потока убираем позже плавного исчезновения, иначе оно обрывается
+      setTimeout(()=>{ el.style.display='none'; }, 700);
+    }, wait);
+  };
+
+  window.splashDone=hide;
+  setTimeout(hide, 4000);          // страховка, если данные так и не пришли
+})();
+
 /* Уведомления подтягиваем при запуске, чтобы колокольчик был честным */
 loadNotifications(true);
 setInterval(()=>{ if(S.view!=='notif') loadNotifications(true); }, 180000);
