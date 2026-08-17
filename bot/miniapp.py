@@ -729,6 +729,124 @@ section{animation:enter .38s cubic-bezier(.22,.95,.3,1)}
 }
 .geouse:active{border-color:var(--amber);color:var(--amber)}
 
+/* ---- Тренажёр ЭКНИС: Furuno FMD-3300 ----
+   Раскладка экрана взята из мануала OME-44732, раздел 2.1: строка
+   состояния сверху, InstantAccess bar слева, боксы датчиков и маршрута
+   справа, боксы EBL и VRM, позиция курсора и масштаб снизу.
+
+   На настоящей станции экран 23 дюйма, и всё это лежит вокруг карты
+   одновременно. На телефоне так не получится: боковые боксы сжали бы
+   карту до полоски. Поэтому карта занимает всю ширину, а боксы
+   переключаются вкладками под ней. Расположение кнопок при этом
+   сохранено, чтобы человек, пришедший на мостик, узнавал их на месте.
+
+   Палитры day, dusk и night -- те же три, что на приборе, и меняются
+   кнопкой на InstantAccess bar. */
+.ecdis{
+  --ec-bg:#04121c;--ec-panel:#12212c;--ec-line:#2b4557;--ec-txt:#d8e6f0;
+  --ec-dim:#7d97ab;--ec-sea:#0a2b45;--ec-shal:#155278;--ec-land:#5c4a2e;
+  --ec-safe:#0d3b5c;--ec-hi:#ffd257;--ec-ok:#3fc97f;--ec-bad:#ff6b4a;
+  background:linear-gradient(160deg,#2a2d31,#16181b);
+  border:1px solid #3a3e44;border-radius:12px;padding:10px;
+  box-shadow:0 20px 46px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
+  max-width:560px;margin:0 auto;
+}
+.ecdis[data-pal="day"]{
+  --ec-bg:#e9f1f7;--ec-panel:#dbe6ef;--ec-line:#a9c0d2;--ec-txt:#0d2233;
+  --ec-dim:#4a6b82;--ec-sea:#bcd9ee;--ec-shal:#8dbfe0;
+  --ec-land:#e0d3b2;--ec-safe:#d6e8f5;--ec-hi:#b26b00;--ec-ok:#137a45;--ec-bad:#c8341a;
+}
+.ecdis[data-pal="dusk"]{
+  --ec-bg:#0b1a24;--ec-panel:#16262f;--ec-line:#2f4a5a;--ec-txt:#b9cfdd;
+  --ec-sea:#0d3348;--ec-shal:#175f80;--ec-land:#6b5636;
+}
+.ecscreen{background:var(--ec-bg);border:1px solid var(--ec-line);border-radius:6px;
+  overflow:hidden;color:var(--ec-txt);font-size:10px;line-height:1.3}
+
+/* Строка состояния. Кнопки режимов идут в том же порядке, что на приборе:
+   слева выбор дисплея, затем NAVI, CHARTS, PLAN, OTHERS. */
+.ecstatus{display:flex;align-items:stretch;gap:1px;background:var(--ec-line);
+  border-bottom:1px solid var(--ec-line);overflow-x:auto;scrollbar-width:none}
+.ecstatus::-webkit-scrollbar{display:none}
+.ecstatus button{flex:0 0 auto;background:var(--ec-panel);color:var(--ec-dim);border:0;
+  font-family:inherit;font-size:9px;font-weight:800;letter-spacing:.4px;
+  padding:6px 8px;cursor:pointer;white-space:nowrap}
+.ecstatus button.on{background:#1f4f74;color:#fff}
+.ecstatus .ecclock{flex:1 0 auto;display:flex;align-items:center;justify-content:flex-end;
+  gap:6px;background:var(--ec-panel);padding:0 8px;font-size:9px;color:var(--ec-dim)}
+.ecwork{width:11px;height:11px;border-radius:50%;border:1.6px solid var(--ec-ok);
+  border-top-color:transparent;animation:ecSpin 2.4s linear infinite;flex:none}
+@keyframes ecSpin{to{transform:rotate(360deg)}}
+
+/* Карта и то, что поверх неё */
+.ecmapwrap{position:relative;display:flex}
+.ecbar{width:52px;flex:none;background:var(--ec-panel);border-right:1px solid var(--ec-line);
+  display:flex;flex-direction:column;gap:1px;padding:2px;overflow-y:auto;max-height:290px;
+  scrollbar-width:none}
+.ecbar::-webkit-scrollbar{display:none}
+.ecbar button{background:#1b3040;color:var(--ec-txt);border:1px solid var(--ec-line);
+  border-radius:3px;font-family:inherit;font-size:7.6px;font-weight:700;line-height:1.15;
+  padding:5px 2px;cursor:pointer;min-height:26px}
+.ecbar button.on{background:#2a6ea0;border-color:#3f9ad6;color:#fff}
+.ecbar .ecgap{height:6px;flex:none}
+.ecmap{flex:1;min-width:0;position:relative;height:290px;background:var(--ec-sea);
+  touch-action:none;cursor:crosshair}
+.ecmap svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* Бокс тревог: на приборе он всегда на виду, поэтому и здесь висит
+   поверх карты, а не прячется во вкладку. */
+.ecalert{position:absolute;left:0;right:0;bottom:0;background:rgba(20,10,6,.92);
+  border-top:1px solid var(--ec-bad);color:#ffd7cd;font-size:9px;font-weight:700;
+  padding:5px 7px;display:flex;align-items:center;gap:7px}
+.ecalert.ack{background:rgba(12,26,34,.9);border-top-color:var(--ec-line);color:var(--ec-dim)}
+.ecalert b{flex:1;min-width:0;font-weight:800}
+.ecalert button{flex:none;background:var(--ec-bad);color:#fff;border:0;border-radius:3px;
+  font-family:inherit;font-size:8px;font-weight:800;padding:4px 7px;cursor:pointer}
+.ecalert.ack button{background:var(--ec-line);color:var(--ec-txt)}
+
+/* Нижняя строка: масштаб, режим ориентации, позиция курсора */
+.ecfoot{display:flex;align-items:center;gap:7px;background:var(--ec-panel);
+  border-top:1px solid var(--ec-line);padding:4px 7px;font-size:9px;color:var(--ec-dim);
+  flex-wrap:wrap}
+.ecfoot b{color:var(--ec-txt);font-weight:800}
+.ecfoot .sp{flex:1}
+
+/* Вкладки боксов под экраном */
+.ectabs{display:flex;gap:1px;margin-top:8px;background:#0e1319;border-radius:5px;padding:2px}
+.ectabs button{flex:1;background:transparent;color:#8ea3b5;border:0;border-radius:4px;
+  font-family:inherit;font-size:9px;font-weight:800;padding:6px 3px;cursor:pointer}
+.ectabs button.on{background:#1f4f74;color:#fff}
+.ecbox{background:#0e1319;border:1px solid #26323c;border-radius:5px;margin-top:6px;
+  padding:8px;color:#cfe0ec;font-size:11px}
+.ecrow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 0}
+.ecrow+.ecrow{border-top:1px solid rgba(255,255,255,.05)}
+.ecrow span{color:#8ea3b5;font-size:10px}
+.ecrow b{font-weight:800;font-variant-numeric:tabular-nums}
+.ecrow .src{font-size:8.5px;color:#5f7a8e;margin-left:4px;font-weight:700}
+.ecrow.warn b{color:#ffb08a}
+
+/* Пульт RCU-024. Кнопки названы как на приборе, порядок сохранён. */
+.ecrcu{margin-top:10px;background:linear-gradient(160deg,#3c4045,#212427);
+  border:1px solid #4a4f55;border-radius:9px;padding:9px}
+.ecrcu .rcuhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.ecrcu .rcuname{font-size:8px;font-weight:800;color:#aab3bc;letter-spacing:1px}
+.ecled{width:10px;height:10px;border-radius:50%;background:var(--ec-ok);
+  box-shadow:0 0 7px rgba(63,201,127,.75)}
+.ecled.alarm{background:#ff5a3c;box-shadow:0 0 8px rgba(255,90,60,.85);animation:ecBlink .5s steps(2) infinite}
+@keyframes ecBlink{50%{opacity:.25}}
+.ecgrid{display:flex;flex-wrap:wrap;gap:5px}
+.ecgrid button{flex:1 1 52px;background:linear-gradient(180deg,#4b5057,#2c3035);
+  color:#dfe6ec;border:1px solid #565c63;border-radius:5px;font-family:inherit;
+  font-size:8px;font-weight:800;letter-spacing:.2px;padding:7px 3px;cursor:pointer;
+  box-shadow:0 2px 3px rgba(0,0,0,.4)}
+.ecgrid button:active{transform:translateY(1px);box-shadow:none}
+.ecgrid button.on{background:linear-gradient(180deg,#2f7cb0,#1d5a86);border-color:#4b9ed4;color:#fff}
+.ecgrid button.wide{flex:1 1 100%}
+.ecnote{font-size:10px;color:var(--dim);margin-top:9px;line-height:1.45}
+@media (prefers-reduced-motion: reduce){
+  .ecwork,.ecled.alarm{animation:none}
+}
+
 /* ---- Тренажёр ЦИВ: корпус Furuno FS-2575C ----
    Сверено с фотографиями реальной станции. Сетка на клавиатуре --
    flexbox, не CSS grid: так надёжнее на разных WebView внутри Telegram.
@@ -2660,6 +2778,12 @@ select.tinput{background-image:linear-gradient(45deg,transparent 50%,var(--muted
   </section>
 
   <!-- ТРЕНАЖЁР ЦИВ -->
+  <section id="v-ecdis" class="hidden">
+    <div class="vhead"><button class="vback" data-back></button><h3>Тренажёр ЭКНИС</h3></div>
+    <div class="sech" style="display:none"><h3>Тренажёр ЭКНИС</h3></div>
+    <div id="ecdisBox"></div>
+  </section>
+
   <section id="v-dsc" class="hidden">
     <div class="vhead"><button class="vback" data-back></button><h3>Тренажёр ЦИВ</h3></div>
     <div class="sech" style="display:none"><h3>Тренажёр ЦИВ</h3></div>
@@ -4575,6 +4699,21 @@ Object.assign(DICT,{
 Object.assign(DICT,{
  'Загружаем предупреждения…':'Loading warnings…'
 });
+/* ---- Тренажёр ЭКНИС FMD-3300 ---- */
+Object.assign(DICT,{
+ 'Тренажёр ЭКНИС':'ECDIS simulator','ЭКНИС FMD-3300':'ECDIS FMD-3300',
+ 'ДАТЧИКИ':'SENSORS','МАРШРУТ':'ROUTE','ЦЕЛИ':'TARGETS',
+ 'Коснись карты, чтобы поставить курсор':'Tap the chart to place the cursor',
+ 'Датчик':'Sensor','исправен':'valid','выключен':'off',
+ 'Режим EBL':'EBL mode','Как измерять':'How to measure',
+ 'включи EBL1 и VRM1, затем крути ручки ниже':'switch on EBL1 and VRM1, then use the controls below',
+ 'Цели AIS':'AIS targets','Цели РЛС':'Radar targets',
+ 'Отклонение от маршрута больше 0.20 мили':'Cross track limit exceeded',
+ 'Подход к точке поворота WP03':'Waypoint WP03 approach',
+ 'Глубина меньше безопасной изобаты 12 м':'Depth below safety contour 12 m',
+ 'Тренажёр. Карта схематичная, не навигационная: она нужна, чтобы отработать порядок действий на станции. На судне работай по официальным ENC и мануалу своей ЭКНИС.':
+   'Simulator. The chart is schematic, not navigational: it is here to practise the sequence of actions on the set. On board work from official ENCs and the manual of your own ECDIS.'
+});
 /* ---- Справка о гавани из World Port Index ---- */
 Object.assign(DICT,{
  'Гавань и приливы':'Harbour and tides','Гавань':'Harbour','Укрытие':'Shelter',
@@ -6297,13 +6436,13 @@ const GROUPS={
     {v:'faq',t:'Справка',i:'archive'},
     {v:'settings',t:'Настройки',i:'sliders'}]}
 };
-const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','epirb','sart','ship','settings','voy','zones','ask','cyc','ports','faq','support','notif','admin'];
+const ALL_VIEWS=['dash','areas','map','tools','bridge','refs','radio','dsc','ecdis','epirb','sart','ship','settings','voy','zones','ask','cyc','ports','faq','support','notif','admin'];
 const VIEW_GROUP={};
 Object.keys(GROUPS).forEach(g=>GROUPS[g].subs.forEach(x=>VIEW_GROUP[x.v]=g));
 // GMDSS-разделы открываются карточками с главного экрана "Инструменты", а не
 // отдельными вкладками сверху -- так их не пять в ряд, а по категориям, как
 // просили: сначала общий раздел, оборудование ГМССБ внутри него отдельным блоком.
-['radio','dsc','epirb','sart'].forEach(v=>VIEW_GROUP[v]='tools');
+['radio','dsc','ecdis','epirb','sart'].forEach(v=>VIEW_GROUP[v]='tools');
 // Проверка рейса открывается из «Моих портов» и из ассистента, отдельной
 // вкладки у неё больше нет: маршрут задаётся списком портов захода.
 VIEW_GROUP['voy']='profile';
@@ -6443,6 +6582,7 @@ function switchView(v){
   if(v==='cyc'){ renderCyclones(); loadWeatherPorts(); if(!CYC) loadCyclones(); }
   if(v==='ask'){ renderAsk(); loadAskHints().then(renderAsk); setTimeout(bindAskInput,60); }
   if(v==='dsc'){ renderDSC(); loadDSC().then(renderDSC); }
+  if(v==='ecdis'){ renderEcdis(); }
   if(v==='epirb'){ if(gate('#epirbBox','bridge')) loadGmdss().then(()=>renderGmdss('epirb')); }
   if(v==='sart'){ if(gate('#sartBox','bridge')) loadGmdss().then(()=>renderGmdss('sart')); }
   if(v==='radio') setTimeout(()=>{renderRadio();initRmap();if(rmap)rmap.invalidateSize()},70);
@@ -9467,6 +9607,426 @@ async function admOpenThread(id){
 }
 
 
+/* ================= Тренажёр ЭКНИС: Furuno FMD-3300 =================
+   Сверено с мануалом OME-44732 (FMD-3200/3300): раскладка экрана из
+   раздела 2.1, кнопки пульта RCU-024 из 1.5.1, режимы работы из 2.3,
+   палитры и InstantAccess bar из 2.1.3.
+
+   Что имитируется: движение судна по маршруту, боксы датчиков с
+   источниками и цветами по состоянию, измерение пеленга и дистанции
+   через EBL и VRM, тревоги с квитированием, смена масштаба и палитры,
+   метка MOB, режимы NAVI, PLAN и CHARTS с разными наборами кнопок.
+
+   Чего здесь нет и быть не может: настоящих ENC. Карта нарисована
+   схемой одного района, чтобы отрабатывать порядок действий, а не
+   читать по ней глубины. Это написано прямо на экране: человек не
+   должен принять тренажёр за источник навигационных данных. */
+
+/* Район: подходы к Одессе. Координаты условные, но в правильных
+   широтах, чтобы отсчёты выглядели как настоящие. */
+const EC_SCENE={
+  lat0:46.55, lon0:30.70, span:0.42,     // центр и охват сцены в градусах
+  land:'M0,178 L46,171 L84,158 L120,150 L150,140 L172,126 L188,108 L196,86 L204,60 L214,34 L226,0 L0,0 Z',
+  shallow:'M0,196 L54,190 L96,178 L134,168 L166,154 L186,132 L198,104 L208,72 L220,40 L232,0 L226,0 L214,34 L204,60 L196,86 L188,108 L172,126 L150,140 L120,150 L84,158 L46,171 L0,178 Z',
+  buoys:[{x:214,y:118,n:'Fl G 3s'},{x:238,y:150,n:'Fl R 3s'},{x:266,y:190,n:'Fl(2) 6s'}],
+  route:[{x:300,y:262,n:'WP01'},{x:262,y:214,n:'WP02'},{x:232,y:168,n:'WP03'},{x:206,y:126,n:'WP04'}],
+  targets:[{x:180,y:196,cog:48,sog:9.4,n:'MARIA S',ais:1},
+           {x:268,y:104,cog:212,sog:12.1,n:'TT 03',ais:0}]
+};
+
+const EC_ALERTS=[
+  {id:'xte', pri:'WARNING', txt:['Отклонение от маршрута больше 0.20 мили','Cross track limit exceeded']},
+  {id:'wp',  pri:'WARNING', txt:['Подход к точке поворота WP03','Waypoint WP03 approach']},
+  {id:'depth',pri:'ALARM',  txt:['Глубина меньше безопасной изобаты 12 м','Depth below safety contour 12 m']}
+];
+
+let EC={
+  on:true, pal:'night', mode:'navi', disp:'ecdis', tab:'sensor',
+  range:6, north:true, tm:true, chart:'IMO STD',
+  pos:{x:282,y:242}, hdg:312, sog:13.4, stw:12.9,
+  ebl1:false, ebl2:false, vrm1:false, vrm2:false,
+  eblA:44, vrmR:2.4, cursor:null, mob:null,
+  alert:null, acked:false, capture:0, tick:0, timer:null
+};
+
+/* Пересчёт координат сцены в широту и долготу. Сцена нарисована в
+   условных единицах 0-360 по x и 0-290 по y, потому что так проще
+   держать SVG; наружу отдаём градусы, как на приборе. */
+function ecLatLon(x,y){
+  const lat=EC_SCENE.lat0+(145-y)/290*EC_SCENE.span;
+  const lon=EC_SCENE.lon0+(x-180)/360*EC_SCENE.span*1.55;
+  return {lat:lat, lon:lon};
+}
+function ecFmtLat(v){
+  const s=v<0?'S':'N', a=Math.abs(v), d=Math.floor(a);
+  return String(d).padStart(2,'0')+'°'+((a-d)*60).toFixed(3).padStart(6,'0')+"'"+s;
+}
+function ecFmtLon(v){
+  const s=v<0?'W':'E', a=Math.abs(v), d=Math.floor(a);
+  return String(d).padStart(3,'0')+'°'+((a-d)*60).toFixed(3).padStart(6,'0')+"'"+s;
+}
+/* Масштаб влияет и на цену деления: одна условная единица сцены при
+   6 милях шкалы даёт примерно 0.02 мили. */
+const ecScale=()=>EC.range/145;
+function ecRangeBrg(from,to){
+  const dx=to.x-from.x, dy=to.y-from.y;
+  return {r:Math.sqrt(dx*dx+dy*dy)*ecScale(),
+          b:((Math.atan2(dx,-dy)*180/Math.PI)+360)%360};
+}
+
+function ecShipXY(){ return EC.pos; }
+
+/* Ход судна по маршруту. На настоящей станции это делает приёмник, тут
+   двигаем сами: без движения не проверить ни подход к точке поворота,
+   ни тревогу по отклонению. */
+function ecStep(){
+  if(!EC.on) return;
+  EC.tick++;
+  const wp=EC_SCENE.route.find((w,i)=>i>0&&ecRangeBrg(EC.pos,w).r>0.05);
+  const target=wp||EC_SCENE.route[EC_SCENE.route.length-1];
+  const rb=ecRangeBrg(EC.pos,target);
+  EC.hdg=Math.round(rb.b);
+  const step=EC.sog/3600*4/ecScale();      // четыре секунды хода
+  if(rb.r>0.05){
+    EC.pos={x:EC.pos.x+Math.sin(rb.b*Math.PI/180)*step,
+            y:EC.pos.y-Math.cos(rb.b*Math.PI/180)*step};
+  }
+  // Тревога о подходе к точке поворота -- на приборе это WARNING
+  if(!EC.alert && rb.r<0.8 && EC.tick>4) ecRaise('wp');
+  ecRender();
+}
+
+function ecRaise(id){
+  const a=EC_ALERTS.find(x=>x.id===id); if(!a) return;
+  EC.alert=a; EC.acked=false;
+  if(typeof snd==='function' && DSC_SND) snd('alert');
+  hap('heavy');
+  // Перерисовываем сразу: тревога, которая появится только со следующим
+  // шагом судна, на приборе выглядела бы как пропущенная.
+  ecPaintAlert();
+}
+
+function ecRender(){
+  const box=$('#ecdisBox'); if(!box) return;
+  const wrap=box.querySelector('.ecdis'); if(!wrap) return;
+  wrap.setAttribute('data-pal',EC.pal);
+  ecPaintMap();
+  ecPaintStatus();
+  ecPaintBar();
+  ecPaintFoot();
+  ecPaintBoxes();
+  ecPaintAlert();
+}
+
+function ecPaintMap(){
+  const svg=$('#ecMap'); if(!svg) return;
+  const ship=ecShipXY(), sc=ecScale();
+  const cur=EC.cursor;
+  const ringR=EC.vrm1?EC.vrmR/sc:0;
+
+  const routeLine=EC_SCENE.route.map((w,i)=>(i?'L':'M')+w.x+','+w.y).join(' ');
+  const wps=EC_SCENE.route.map(w=>
+    `<g><circle cx="${w.x}" cy="${w.y}" r="4" fill="none" stroke="var(--ec-hi)" stroke-width="1.4"/>
+       <text x="${w.x+6}" y="${w.y-5}" font-size="8" fill="var(--ec-hi)">${w.n}</text></g>`).join('');
+
+  const buoys=EC_SCENE.buoys.map(b=>
+    `<g><path d="M${b.x},${b.y-5} l3.4,5 -3.4,5 -3.4,-5 z" fill="var(--ec-hi)" opacity=".9"/>
+       <text x="${b.x+6}" y="${b.y+3}" font-size="7" fill="var(--ec-dim)">${b.n}</text></g>`).join('');
+
+  const tgts=EC_SCENE.targets.map(t=>{
+    const len=t.sog*1.1;
+    const x2=t.x+Math.sin(t.cog*Math.PI/180)*len, y2=t.y-Math.cos(t.cog*Math.PI/180)*len;
+    return t.ais
+      ? `<g><path d="M${t.x},${t.y-6} l4.6,10 -9.2,0 z" fill="none" stroke="var(--ec-ok)" stroke-width="1.4"
+            transform="rotate(${t.cog} ${t.x} ${t.y})"/>
+           <line x1="${t.x}" y1="${t.y}" x2="${x2}" y2="${y2}" stroke="var(--ec-ok)" stroke-width="1.1"/>
+           <text x="${t.x+8}" y="${t.y+10}" font-size="7" fill="var(--ec-ok)">${t.n}</text></g>`
+      : `<g><circle cx="${t.x}" cy="${t.y}" r="5" fill="none" stroke="var(--ec-hi)" stroke-width="1.4"/>
+           <line x1="${t.x}" y1="${t.y}" x2="${x2}" y2="${y2}" stroke="var(--ec-hi)" stroke-width="1.1"/>
+           <text x="${t.x+8}" y="${t.y+10}" font-size="7" fill="var(--ec-hi)">${t.n}</text></g>`;
+  }).join('');
+
+  // Вектор своего судна: три минуты хода, как ставят на приборе
+  const vlen=EC.sog/60*3/sc;
+  const vx=ship.x+Math.sin(EC.hdg*Math.PI/180)*vlen, vy=ship.y-Math.cos(EC.hdg*Math.PI/180)*vlen;
+
+  svg.innerHTML=`
+    <rect x="0" y="0" width="360" height="290" fill="var(--ec-sea)"/>
+    <path d="${EC_SCENE.shallow}" fill="var(--ec-shal)" opacity=".75"/>
+    <path d="${EC_SCENE.land}" fill="var(--ec-land)"/>
+    <g stroke="var(--ec-line)" stroke-width=".5" opacity=".45">
+      ${[0,72,144,216,288].map(x=>`<line x1="${x}" y1="0" x2="${x}" y2="290"/>`).join('')}
+      ${[0,58,116,174,232,290].map(y=>`<line x1="0" y1="${y}" x2="360" y2="${y}"/>`).join('')}
+    </g>
+    <path d="${routeLine}" fill="none" stroke="var(--ec-hi)" stroke-width="1.6" stroke-dasharray="7 4"/>
+    ${wps}${buoys}${tgts}
+    ${EC.vrm1?`<circle cx="${ship.x}" cy="${ship.y}" r="${ringR}" fill="none"
+        stroke="#48d1ff" stroke-width="1.2" stroke-dasharray="4 3"/>`:''}
+    ${EC.ebl1?`<line x1="${ship.x}" y1="${ship.y}"
+        x2="${ship.x+Math.sin(EC.eblA*Math.PI/180)*400}"
+        y2="${ship.y-Math.cos(EC.eblA*Math.PI/180)*400}"
+        stroke="#48d1ff" stroke-width="1.2"/>`:''}
+    ${EC.mob?`<g><circle cx="${EC.mob.x}" cy="${EC.mob.y}" r="6" fill="none" stroke="#ff4d4d" stroke-width="2"/>
+        <text x="${EC.mob.x+8}" y="${EC.mob.y+4}" font-size="8" fill="#ff4d4d" font-weight="bold">MOB</text></g>`:''}
+    <g>
+      <line x1="${ship.x}" y1="${ship.y}" x2="${vx}" y2="${vy}" stroke="#fff" stroke-width="1.4"/>
+      <path d="M${ship.x},${ship.y-7} l4,14 -8,0 z" fill="none" stroke="#fff" stroke-width="1.5"
+            transform="rotate(${EC.hdg} ${ship.x} ${ship.y})"/>
+    </g>
+    ${cur?`<g stroke="#ffe08a" stroke-width="1"><line x1="${cur.x-7}" y1="${cur.y}" x2="${cur.x+7}" y2="${cur.y}"/>
+        <line x1="${cur.x}" y1="${cur.y-7}" x2="${cur.x}" y2="${cur.y+7}"/></g>`:''}
+    <text x="6" y="14" font-size="8" fill="var(--ec-dim)">${EC.north?'NORTH UP':'COURSE UP'} · ${EC.tm?'TM':'RM'}</text>`;
+}
+
+function ecPaintStatus(){
+  const el=$('#ecStatus'); if(!el) return;
+  const now=new Date();
+  const hhmm=String(now.getUTCHours()).padStart(2,'0')+':'+String(now.getUTCMinutes()).padStart(2,'0');
+  const modes=[['navi','NAVI'],['charts','CHARTS'],['plan','PLAN'],['others','OTHERS']];
+  el.innerHTML=
+    `<button data-ecdisp="ecdis" class="${EC.disp==='ecdis'?'on':''}">ECDIS</button>`+
+    `<button data-ecdisp="conning" class="${EC.disp==='conning'?'on':''}">CONNING</button>`+
+    modes.map(([k,t])=>`<button data-ecmode="${k}" class="${EC.mode===k?'on':''}">${t}</button>`).join('')+
+    `<button data-ecact="std">STD DISP</button>`+
+    `<button data-ecact="chart">${EC.chart}</button>`+
+    `<div class="ecclock"><span>${hhmm} UTC</span><i class="ecwork"></i></div>`;
+}
+
+/* Наборы кнопок InstantAccess bar. Верхняя часть меняется по режиму,
+   нижняя общая -- ровно как в мануале, раздел 2.1.3. */
+const EC_BAR={
+  navi:[['route','Voyage<br>Route'],['track','Instant<br>Track'],['uchart','User<br>Chart'],
+        ['minfo','Monitor<br>INFO'],['msg','MSG'],['mini','Mini<br>Conning']],
+  plan:[['plan','Planning'],['report','Report'],['guide','Guide<br>Box'],['mdata','Manage<br>Data']],
+  charts:[['import','AUTO<br>Import'],['manage','Manage<br>Charts'],['cell','Cell<br>Status'],
+          ['lic','License'],['sys','System']],
+  others:[['silent','SILENT'],['play','Playback']]
+};
+function ecPaintBar(){
+  const el=$('#ecBar'); if(!el) return;
+  // data-notr на каждой кнопке: надписи на приборе английские, и словарь
+  // приложения переводил «Voyage Route» по словам, получая «РейсМаршрут».
+  // На мостике человек ищет глазами ровно ту надпись, что на станции.
+  const top=(EC_BAR[EC.mode]||[]).map(([k,t])=>
+    `<button data-ecbar="${k}" data-notr>${t}</button>`).join('');
+  el.innerHTML=top+`<div class="ecgap"></div>`+
+    `<button data-ecbar="info" data-notr>Chart<br>INFO</button>`+
+    `<button data-ecbar="disp" data-notr>DISP<br>SET</button>`+
+    `<button data-ecbar="log" data-notr>Log</button>`+
+    `<button data-ecbar="pal" data-notr>${EC.pal.toUpperCase()}</button>`+
+    `<button data-ecbar="mob" data-notr>MOB</button>`+
+    `<button data-ecbar="cap" data-notr>Capture</button>`+
+    `<button data-ecbar="undo" data-notr>Undo</button>`;
+}
+
+function ecPaintFoot(){
+  const el=$('#ecFoot'); if(!el) return;
+  const c=EC.cursor;
+  const p=c?ecLatLon(c.x,c.y):null;
+  const rb=c?ecRangeBrg(ecShipXY(),c):null;
+  el.innerHTML=
+    `<span>SCALE <b>1:${(EC.range*12000).toLocaleString('ru-RU')}</b></span>`+
+    `<span>RANGE <b>${EC.range} NM</b></span>`+
+    `<span class="sp"></span>`+
+    (p?`<span>CURSOR <b>${ecFmtLat(p.lat)} ${ecFmtLon(p.lon)}</b></span>
+        <span>BRG <b>${rb.b.toFixed(1)}°</b></span><span>RNG <b>${rb.r.toFixed(2)} NM</b></span>`
+      :`<span>${esc(tr('Коснись карты, чтобы поставить курсор'))}</span>`);
+}
+
+function ecPaintBoxes(){
+  const el=$('#ecBoxes'); if(!el) return;
+  const p=ecLatLon(EC.pos.x,EC.pos.y);
+  const next=EC_SCENE.route[2];
+  const rb=ecRangeBrg(EC.pos,next);
+  const rows=[];
+
+  if(EC.tab==='sensor'){
+    rows.push(['HDG', EC.hdg.toFixed(1)+'°T', 'GYRO1', 0]);
+    rows.push(['SPD', EC.stw.toFixed(1)+' kn', 'LOG(WT)', 0]);
+    rows.push(['COG', EC.hdg.toFixed(1)+'°T', 'GPS1', 0]);
+    rows.push(['SOG', EC.sog.toFixed(1)+' kn', 'GPS1', 0]);
+    rows.push(['POSN', ecFmtLat(p.lat)+' '+ecFmtLon(p.lon), 'GPS1', 0]);
+    rows.push([tr('Датчик'), tr('исправен'), '', 0]);
+  } else if(EC.tab==='route'){
+    rows.push([tr('Маршрут'), 'ODESSA APPR', '', 0]);
+    rows.push(['WPT', next.n, '', 0]);
+    rows.push(['BRG', rb.b.toFixed(1)+'°', '', 0]);
+    rows.push(['RNG', rb.r.toFixed(2)+' NM', '', 0]);
+    rows.push(['TTG', (rb.r/EC.sog*60).toFixed(0)+' '+tr('мин'), '', 0]);
+    rows.push(['XTE', '0.04 NM', '', 0]);
+  } else if(EC.tab==='ebl'){
+    rows.push(['EBL1', EC.ebl1?EC.eblA.toFixed(1)+'°':tr('выключен'), '', 0]);
+    rows.push(['VRM1', EC.vrm1?EC.vrmR.toFixed(2)+' NM':tr('выключен'), '', 0]);
+    rows.push([tr('Режим EBL'), EC.north?'TRUE':'RELATIVE', '', 0]);
+    rows.push([tr('Как измерять'), tr('включи EBL1 и VRM1, затем крути ручки ниже'), '', 0]);
+  } else {
+    rows.push([tr('Цели AIS'), String(EC_SCENE.targets.filter(t=>t.ais).length), '', 0]);
+    rows.push([tr('Цели РЛС'), String(EC_SCENE.targets.filter(t=>!t.ais).length), '', 0]);
+    EC_SCENE.targets.forEach(t=>{
+      const r=ecRangeBrg(EC.pos,t);
+      rows.push([t.n, r.b.toFixed(0)+'° · '+r.r.toFixed(2)+' NM · '+t.sog.toFixed(1)+' kn', '', r.r<1.5?1:0]);
+    });
+  }
+
+  el.innerHTML=rows.map(([k,v,src,warn])=>
+    `<div class="ecrow ${warn?'warn':''}"><span>${esc(k)}</span>
+       <b>${esc(v)}${src?`<i class="src">${esc(src)}</i>`:''}</b></div>`).join('');
+}
+
+function ecPaintAlert(){
+  const el=$('#ecAlert'); if(!el) return;
+  if(!EC.alert){ el.style.display='none'; return; }
+  el.style.display='flex';
+  el.className='ecalert'+(EC.acked?' ack':'');
+  el.innerHTML=`<b>${EC.alert.pri} · ${esc(tr(EC.alert.txt[LANG==='en'?1:0]))}</b>
+    <button data-ecact="ack">${EC.acked?'ACKED':'ALARM ACK'}</button>`;
+  // Обработчик вешаем здесь же: бокс тревог перерисовывается отдельно от
+  // всего экрана, и кнопка, привязанная в общей раскладке, после первой же
+  // перерисовки переставала отвечать -- тревогу было нечем квитировать.
+  const btn=el.querySelector('button');
+  if(btn) btn.onclick=()=>{ EC.acked=true; hap('medium'); ecPaintAlert(); };
+  const led=$('#ecLed'); if(led) led.className='ecled'+(EC.acked?'':' alarm');
+}
+
+function renderEcdis(){
+  const box=$('#ecdisBox'); if(!box) return;
+  box.innerHTML=`
+    <div class="ecdis" data-pal="${EC.pal}">
+      <div class="ecscreen">
+        <div class="ecstatus" id="ecStatus" data-notr></div>
+        <div class="ecmapwrap">
+          <div class="ecbar" id="ecBar"></div>
+          <div class="ecmap" id="ecMapWrap">
+            <svg id="ecMap" viewBox="0 0 360 290" preserveAspectRatio="none"></svg>
+            <div class="ecalert" id="ecAlert" style="display:none"></div>
+          </div>
+        </div>
+        <div class="ecfoot" id="ecFoot"></div>
+      </div>
+
+      <div class="ectabs">
+        ${[['sensor','ДАТЧИКИ'],['route','МАРШРУТ'],['ebl','EBL / VRM'],['tgt','ЦЕЛИ']].map(([k,t])=>
+          `<button data-ectab="${k}" class="${EC.tab===k?'on':''}">${esc(tr(t))}</button>`).join('')}
+      </div>
+      <div class="ecbox" id="ecBoxes"></div>
+
+      <div class="ecrcu" data-notr>
+        <div class="rcuhdr"><span class="rcuname">ECDIS CONTROL UNIT RCU-024</span>
+          <i class="ecled" id="ecLed"></i></div>
+        <div class="ecgrid">
+          <button data-eckey="ebl1" class="${EC.ebl1?'on':''}">EBL 1</button>
+          <button data-eckey="ebl-">EBL ◀</button>
+          <button data-eckey="ebl+">EBL ▶</button>
+          <button data-eckey="vrm1" class="${EC.vrm1?'on':''}">VRM 1</button>
+          <button data-eckey="vrm-">VRM −</button>
+          <button data-eckey="vrm+">VRM +</button>
+          <button data-eckey="range-">RANGE −</button>
+          <button data-eckey="range+">RANGE +</button>
+          <button data-eckey="brill">BRILL</button>
+          <button data-eckey="ack">ALARM ACK</button>
+          <button data-eckey="mfd">MFD</button>
+          <button data-eckey="undo">UNDO</button>
+          <button data-eckey="view">VIEW/HIDE</button>
+          <button data-eckey="acq">ACQ/ACT</button>
+          <button data-eckey="tdata">TARGET DATA</button>
+          <button data-eckey="tcancel">TARGET CANCEL</button>
+          <button data-eckey="gain">GAIN (CAPTURE)</button>
+          <button data-eckey="power" class="wide ${EC.on?'on':''}">POWER</button>
+        </div>
+      </div>
+
+      <div class="ecnote">${ico('alert','xs')} ${esc(tr(
+        'Тренажёр. Карта схематичная, не навигационная: она нужна, чтобы отработать порядок действий на станции. На судне работай по официальным ENC и мануалу своей ЭКНИС.'))}</div>
+    </div>`;
+
+  ecRender();
+  ecBind();
+  applyLang();
+}
+
+/* Управление держится на делегировании: строка состояния, боковой бар и
+   бокс тревог перерисовываются по отдельности, и обработчики, навешенные
+   на сами кнопки, после первой же перерисовки отваливались -- прибор
+   переставал отвечать на нажатия. Один слушатель на контейнере это
+   переживает, потому что кнопки ищутся в момент нажатия. */
+function ecBind(){
+  const box=$('#ecdisBox'); if(!box || box.dataset.bound) return;
+  box.dataset.bound='1';
+
+  box.addEventListener('click', ev=>{
+    const el=ev.target.closest('[data-ecmode],[data-ecdisp],[data-ectab],[data-ecact],[data-ecbar],[data-eckey]');
+    if(!el) return;
+    const d=el.dataset;
+
+    if(d.ecmode!==undefined){ EC.mode=d.ecmode; hap(); return ecRender(); }
+    if(d.ecdisp!==undefined){ EC.disp=d.ecdisp; hap(); return ecRender(); }
+    if(d.ectab!==undefined){ EC.tab=d.ectab; hap(); return renderEcdis(); }
+
+    if(d.ecact!==undefined){
+      if(d.ecact==='ack'){ EC.acked=true; hap('medium'); }
+      if(d.ecact==='std'){ EC.chart='IMO STD'; EC.north=true; EC.tm=true; hap(); }
+      if(d.ecact==='chart'){
+        const seq=['IMO BASE','IMO STD','IMO ALL'];
+        EC.chart=seq[(seq.indexOf(EC.chart)+1)%seq.length]; hap();
+      }
+      return ecRender();
+    }
+
+    if(d.ecbar!==undefined){
+      const k=d.ecbar;
+      hap();
+      if(k==='pal'){ const seq=['night','dusk','day']; EC.pal=seq[(seq.indexOf(EC.pal)+1)%seq.length]; }
+      else if(k==='mob'){ EC.mob={x:EC.pos.x,y:EC.pos.y}; hap('heavy'); }
+      else if(k==='undo'){ EC.mob=null; }
+      else if(k==='cap'){ EC.capture++; }
+      else if(k==='msg'){ ecRaise('xte'); }
+      return ecRender();
+    }
+
+    ecKey(d.eckey);
+  });
+
+  // Курсор ставится касанием карты: на приборе это трекбол, и координаты
+  // с пеленгом уходят в ту же строку внизу.
+  box.addEventListener('click', ev=>{
+    const map=ev.target.closest('#ecMapWrap');
+    if(!map || ev.target.closest('.ecalert')) return;
+    const r=map.getBoundingClientRect();
+    EC.cursor={x:(ev.clientX-r.left)/r.width*360, y:(ev.clientY-r.top)/r.height*290};
+    hap(); ecRender();
+  });
+
+  // Ход судна: четыре секунды на шаг, чтобы движение было заметным, но
+  // район не пролетался за полминуты.
+  clearInterval(EC.timer);
+  EC.timer=setInterval(()=>{ if($('#ecdisBox')&&S.view==='ecdis') ecStep(); }, 4000);
+}
+
+function ecKey(k){
+  if(!k) return;
+  {
+    hap('medium');
+    if(k==='ebl1') EC.ebl1=!EC.ebl1;
+    if(k==='vrm1') EC.vrm1=!EC.vrm1;
+    if(k==='ebl+') EC.eblA=(EC.eblA+5)%360;
+    if(k==='ebl-') EC.eblA=(EC.eblA+355)%360;
+    if(k==='vrm+') EC.vrmR=Math.min(EC.range, +(EC.vrmR+0.2).toFixed(2));
+    if(k==='vrm-') EC.vrmR=Math.max(0.2, +(EC.vrmR-0.2).toFixed(2));
+    if(k==='range+') EC.range=Math.min(48, EC.range*2);
+    if(k==='range-') EC.range=Math.max(0.75, EC.range/2);
+    if(k==='brill'){ const seq=['night','dusk','day']; EC.pal=seq[(seq.indexOf(EC.pal)+1)%seq.length]; }
+    if(k==='ack'){ EC.acked=true; }
+    if(k==='mfd'){ EC.disp=EC.disp==='ecdis'?'conning':'ecdis'; }
+    if(k==='undo'){ EC.mob=null; }
+    if(k==='view'){ EC.tab=EC.tab==='sensor'?'route':'sensor'; }
+    if(k==='acq'||k==='tdata'){ EC.tab='tgt'; }
+    if(k==='tcancel'){ EC.cursor=null; }
+    if(k==='gain'){ EC.capture++; }
+    if(k==='power'){ EC.on=!EC.on; if(!EC.on){ EC.alert=null; } }
+    renderEcdis();
+  }
+}
+
 /* ================= Тренажёр ЦИВ (DSC) =================
    Экранная копия Furuno FS-1575: дисплей, клавиатура, кнопка бедствия
    под крышкой. Ничего в эфир не уходит -- вся связь имитируется, включая
@@ -12213,6 +12773,7 @@ function renderTools(){
 }
 const GMDSS_CARDS=[
   {v:'dsc',t:'Тренажёр ЦИВ',i:'radar'},
+  {v:'ecdis',t:'ЭКНИС FMD-3300',i:'map'},
   {v:'epirb',t:'EPIRB Test',i:'buoy'},
   {v:'sart',t:'SART Test',i:'radar'},
   {v:'radio',t:'Радиостанции MF/HF',i:'radar'}

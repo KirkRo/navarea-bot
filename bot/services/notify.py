@@ -32,6 +32,17 @@ logger = logging.getLogger(__name__)
 # владелец добавляет из панели («Связь» -> «Написать всем в колокольчик»),
 # они ложатся в таблицу notices и в этот список не попадают.
 CHANGELOG = [
+    {"at": "2026-08-12T11:00:00+00:00",
+     "title": "Тренажёр ЭКНИС Furuno FMD-3300",
+     "title_en": "ECDIS simulator: Furuno FMD-3300",
+     "body": "В разделе тренажёров появилась ЭКНИС: строка состояния с режимами NAVI, PLAN и "
+             "CHARTS, InstantAccess bar, боксы датчиков и маршрута, измерение пеленга и "
+             "дистанции через EBL и VRM, тревоги с квитированием и пульт RCU-024. Раскладка "
+             "сверена с мануалом станции.",
+     "body_en": "An ECDIS has been added to the simulators: status bar with the NAVI, PLAN and "
+                "CHARTS modes, InstantAccess bar, sensor and route boxes, bearing and range "
+                "measurement with EBL and VRM, alerts with acknowledgement and the RCU-024 "
+                "control unit. The layout follows the equipment manual."},
     {"at": "2026-08-12T10:00:00+00:00",
      "title": "Порты мира, астрономия и планшет расхождения",
      "title_en": "World ports, celestial sights and the manoeuvring plot",
